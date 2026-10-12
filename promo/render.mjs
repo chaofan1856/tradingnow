@@ -41,19 +41,33 @@ if (stillsArg) {
     await page.screenshot({ path: path.join(OUT, `still-${t.toFixed(2)}.png`), clip });
   }
 } else {
+  // frames to disk across parallel pages, then one encode
   const { DURATION, FPS } = await page.evaluate(() => ({ DURATION: window.DURATION, FPS: window.FPS }));
   const frames = Math.round(DURATION * FPS);
-  const silent = path.join(OUT, 'video-silent.mp4');
-  const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-i', '-',
-    '-c:v', 'libx264', '-preset', 'slow', '-crf', '14', '-pix_fmt', 'yuv420p', '-tune', 'film', silent], { stdio: ['pipe', 'inherit', 'inherit'] });
-  const t0 = Date.now();
-  for (let f = 0; f < frames; f++) {
-    await page.evaluate(([t, f]) => window.renderFrame(t, f), [f / FPS, f]);
-    const png = await page.screenshot({ type: 'png', clip });
-    if (!ff.stdin.write(png)) await new Promise(r => ff.stdin.once('drain', r));
-    if (f % 60 === 0) console.log(`frame ${f}/${frames}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+  const FR = path.join(OUT, 'frames');
+  fs.mkdirSync(FR, { recursive: true });
+  const WORKERS = Number(process.env.WORKERS || 3);
+  const pages = [page];
+  for (let i = 1; i < WORKERS; i++) {
+    const p = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+    p.on('pageerror', e => console.error('page error:', e.message));
+    await p.goto(url); await p.evaluate(() => window.ready); pages.push(p);
   }
-  ff.stdin.end();
+  const t0 = Date.now(); let done = 0, next = 0;
+  await Promise.all(pages.map(async pg => {
+    while (next < frames) {
+      const f = next++;
+      const file = path.join(FR, `f${String(f).padStart(4, '0')}.png`);
+      if (fs.existsSync(file)) { done++; continue; }
+      await pg.evaluate(([t, f]) => window.renderFrame(t, f), [f / FPS, f]);
+      await pg.screenshot({ path: file + '.tmp.png', type: 'png', clip });
+      fs.renameSync(file + '.tmp.png', file);
+      if (++done % 30 === 0) console.log(`frame ${done}/${frames}  ${((Date.now() - t0) / 1000).toFixed(0)}s`);
+    }
+  }));
+  const silent = path.join(OUT, 'video-silent.mp4');
+  const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-framerate', String(FPS), '-i', path.join(FR, 'f%04d.png'),
+    '-c:v', 'libx264', '-preset', 'slow', '-crf', '14', '-pix_fmt', 'yuv420p', '-tune', 'film', '-movflags', '+faststart', silent], { stdio: 'inherit' });
   await new Promise(r => ff.on('close', r));
   console.log('wrote', silent);
 }
