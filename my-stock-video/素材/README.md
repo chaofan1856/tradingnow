@@ -11,4 +11,5 @@ Put the original files here with these names; `index.html` uses them automatical
 | `hogarth-south-sea-scheme.jpg` | File:William Hogarth, The South Sea Scheme, 1721, NGA 30435.jpg | CC0 | 6 |
 | `newton-kneller.jpg` | File:GodfreyKneller-IsaacNewton-1689.jpg | Public Domain | 6 |
 
-Download: `https://commons.wikimedia.org/wiki/Special:FilePath/<URL-encoded name>?width=1400`
+Download: `tools/fetch-assets.sh`. Wikimedia rate-limits originals and odd sizes by IP (HTTP 429),
+so the photos are the standard 1280px thumbnails from `upload.wikimedia.org`.

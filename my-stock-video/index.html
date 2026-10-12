@@ -467,15 +467,18 @@ window.ASSETS_READY = Promise.all([
     if (a.cap) $(a.cap).textContent = a.caption;
     return true;
   }),
-  probe('素材/voc.svg').then(im => {                 // the real VOC monogram, traced in dark gold via a mask
+  probe('素材/voc.svg').then(im => {                 // the real VOC monogram, tinted dark gold
     if (!im) return false;
     const g = $('voc'); while (g.firstChild) g.removeChild(g.firstChild);
     g.setAttribute('transform', 'translate(1460 136)');
     const fo = svgEl('foreignObject', { x: 0, y: 0, width: 200, height: 200 }, g);
-    const d = document.createElement('div');
-    d.id = 'vocImg';
-    d.style.cssText = "width:200px;height:200px;background:#C8A96A;-webkit-mask:url('素材/voc.svg') center/contain no-repeat;mask:url('素材/voc.svg') center/contain no-repeat";
-    fo.appendChild(d);
+    // CSS mask-image needs a CORS fetch, which file:// pages don't get — tint on a canvas instead
+    const S = 2, c = document.createElement('canvas'); c.width = c.height = 200 * S;
+    const k = Math.min(200 / im.naturalWidth, 200 / im.naturalHeight) * S, w = im.naturalWidth * k, h = im.naturalHeight * k;
+    const cx = c.getContext('2d'); cx.drawImage(im, (200 * S - w) / 2, (200 * S - h) / 2, w, h);
+    cx.globalCompositeOperation = 'source-in'; cx.fillStyle = '#C8A96A'; cx.fillRect(0, 0, c.width, c.height);
+    c.id = 'vocImg'; c.style.cssText = 'width:200px;height:200px;display:block';
+    fo.appendChild(c);
     return true;
   }),
 ]).then(found => {
