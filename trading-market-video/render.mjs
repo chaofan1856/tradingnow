@@ -12,7 +12,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 9333;
-const W = 1080, H = 1920;
+// 画布尺寸直接读 index.html 顶部的 CANVAS 常量（横竖屏只改一处）
+const [W, H] = (() => { const m = fs.readFileSync(path.join(DIR, 'index.html'), 'utf8').match(/const CANVAS\s*=\s*\{\s*W:\s*(\d+),\s*H:\s*(\d+)/); return m ? [+m[1], +m[2]] : [1920, 1080]; })();
 
 /* ---------- args ---------- */
 const argv = process.argv.slice(2);

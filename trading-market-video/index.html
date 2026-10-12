@@ -10,19 +10,19 @@
 @font-face { font-family: InterD; src: url(fonts/InterDisplay-Light.otf) format('opentype'); font-weight: 300; }
 @font-face { font-family: InterD; src: url(fonts/InterDisplay-SemiBold.otf) format('opentype'); font-weight: 600; }
 html, body { margin: 0; background: #05060A; overflow: hidden; }
-canvas { display: block; width: 1080px; height: 1920px; }
+canvas { display: block; }
 </style>
 </head>
 <body>
-<canvas id="c" width="1080" height="1920"></canvas>
+<canvas id="c"></canvas>
 <script>
 /* ======================================================================
-   《认识交易市场》 —— 逐帧确定性动效工程
+   《认识交易市场》 —— 逐帧确定性动效工程（横版 1920×1080）
    window.seek(frame) 同一帧永远同一画面：无 CSS 动画 / 无 Date.now() / 无 Math.random()
    ====================================================================== */
 
 /* ---------------- 可调参数 ---------------- */
-const CANVAS        = { W: 1080, H: 1920 };   // 横屏：1920x1080，并把纵向运镜改横向、安全区改左右 120
+const CANVAS        = { W: 1920, H: 1080 };   // 横版（B 站 / 视频号）。竖版 1080×1920 的版本见提交 51545bb
 const FPS           = 30;
 const TOTAL_FRAMES  = 2340;                   // 78 秒 —— 目标时长，不要压缩
 const HOOK_FRAMES   = 90;                     // 黄金三秒：第 90 帧标题 + 钩子全部到位（不建议超过 105）
@@ -30,12 +30,14 @@ const BLACKOUT_AT   = [810, 1560];            // 允许的两次黑场（各 ±2
 const GOLD_LEVEL    = 0.7;                    // 金色克制系数：0=不用金，1=放宽
 const STARFIELD     = true;                   // 深空星尘层
 const GRAIN_OPACITY = 0.05;                   // 颗粒噪点，0=干净
-const SAFE          = { L: 96, R: 96, T: 160, B: 300 };
+const BLOOM         = 0.42;                   // 胶片式柔光（只吃亮部），0=关闭
+const VIGNETTE      = 0.38;                   // 暗角强度
+const SAFE          = { L: 120, R: 120, T: 90, B: 140 };
 const READY_FRAMES  = 420;                    // 当前已制作到的帧（0:00–0:14）
 
 /* ---------------- 音效提示表（tools/sound.mjs 直接读取这段 JSON） ---------------- */
 const CUES = /*CUES*/[
-  { "f": 18,  "s": "dust",   "g": 0.75 },
+  { "f": 18,  "s": "dust",   "g": 0.75, "pan": 0.35 },
   { "f": 46,  "s": "dust",   "g": 0.45 },
   { "f": 58,  "s": "whoosh", "g": 0.35, "rev": true },
   { "f": 70,  "s": "whoosh", "g": 1.0 },
@@ -43,22 +45,22 @@ const CUES = /*CUES*/[
   { "f": 112, "s": "dust",   "g": 0.40 },
   { "f": 124, "s": "whoosh", "g": 0.30 },
   { "f": 148, "s": "quote",  "g": 0.45 },
-  { "f": 198, "s": "quote",  "g": 0.40 },
-  { "f": 200, "s": "quote",  "g": 0.40 },
-  { "f": 205, "s": "quote",  "g": 0.40 },
-  { "f": 211, "s": "quote",  "g": 0.40 },
-  { "f": 214, "s": "quote",  "g": 0.45 },
-  { "f": 217, "s": "quote",  "g": 0.50 },
+  { "f": 198, "s": "quote",  "g": 0.40, "pan": -0.3 },
+  { "f": 200, "s": "quote",  "g": 0.40, "pan": 0.3 },
+  { "f": 205, "s": "quote",  "g": 0.40, "pan": -0.3 },
+  { "f": 211, "s": "quote",  "g": 0.40, "pan": -0.3 },
+  { "f": 214, "s": "quote",  "g": 0.45, "pan": 0.3 },
+  { "f": 217, "s": "quote",  "g": 0.50, "pan": -0.3 },
   { "f": 232, "s": "snap",   "g": 1.0 },
   { "f": 233, "s": "whoosh", "g": 0.55 },
   { "f": 246, "s": "quote",  "g": 0.30 },
   { "f": 252, "s": "quote",  "g": 0.30 },
   { "f": 260, "s": "quote",  "g": 0.35 },
-  { "f": 318, "s": "dust",   "g": 0.55 },
+  { "f": 318, "s": "dust",   "g": 0.55, "pan": -0.3 },
   { "f": 352, "s": "whoosh", "g": 0.28 },
-  { "f": 392, "s": "coin",   "g": 0.9 },
-  { "f": 400, "s": "snap",   "g": 0.35 },
-  { "f": 404, "s": "whoosh", "g": 0.45 }
+  { "f": 392, "s": "coin",   "g": 0.9,  "pan": -0.4 },
+  { "f": 400, "s": "snap",   "g": 0.35, "pan": 0.4 },
+  { "f": 404, "s": "whoosh", "g": 0.45, "pan": 0.5 }
 ]/*END*/;
 
 /* ---------------- 色板 ---------------- */
@@ -110,28 +112,32 @@ const cb = (p, t) => { const u = 1 - t; return {
   y: u * u * u * p[0].y + 3 * u * u * t * p[1].y + 3 * u * t * t * p[2].y + t * t * t * p[3].y }; };
 function hexRGB(h) { if (Array.isArray(h)) return h; const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
 function mixHex(a, b, t) { const A = hexRGB(a), B = hexRGB(b); return A.map((v, i) => Math.round(lerp(v, B[i], t))); }
-function rgba(c, a) { const [r, g, b] = Array.isArray(c) ? c : hexRGB(c); return `rgba(${r},${g},${b},${clamp(a)})`; }
+function rgba(c, a) { const [r, g, b] = hexRGB(c); return `rgba(${r},${g},${b},${clamp(a)})`; }
 /* 金色统一出口：GOLD_LEVEL 越低越向冷白退、越淡 */
 const GK = clamp(GOLD_LEVEL / 0.7, 0, 1.4);
 function gold(hex, a) { return rgba(mixHex(COL.white, hex, Math.min(1, GK)), a * Math.min(1.15, 0.35 + 0.65 * GK)); }
 
 /* ---------------- 画布 ---------------- */
-const out = document.getElementById('c').getContext('2d');
-function mk() { const c = document.createElement('canvas'); c.width = W; c.height = H; return [c, c.getContext('2d')]; }
+const mainCanvas = document.getElementById('c');
+mainCanvas.width = W; mainCanvas.height = H; mainCanvas.style.width = W + 'px'; mainCanvas.style.height = H + 'px';
+const out = mainCanvas.getContext('2d');
+function mk(w = W, h = H) { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; }
 const [sceneC, ctx] = mk();          // 场景合成层（引力透镜在它之上做径向扭曲）
 const [tmpC, tctx]  = mk();          // 运动模糊累积层
 const [bgC, bctx]   = mk();          // 景深层（背景 / 中景，统一模糊 + 降对比）
+const [bl1C, bl1]   = mk(W / 4, H / 4);   // 柔光：亮部提取
+const [bl2C, bl2]   = mk(W / 4, H / 4);   // 柔光：模糊
 
 /* ---------------- 虚拟摄像机 ---------------- */
 function camera(f) {
   let z = 1
     + 0.03 * anim(f, 18, 30, EXPO_OUT)       // 光丝启动，轻推
     - 0.03 * anim(f, 70, 18, EXPO_OUT)       // 爆开，被冲击推远
-    + 0.09 * anim(f, 90, 66, EXPO_OUT)       // 长时间曝光式推近（2.2s）——穿过奇点进入 S1
+    + 0.08 * anim(f, 90, 66, EXPO_OUT)       // 长时间曝光式推近（2.2s）——穿过奇点进入 S1
     + 0.02 * anim(f, 156, 150, LINEAR)       // S1 缓慢推轨
-    - 0.07 * anim(f, 306, 48, EXPO_OUT)      // 两卡退向两侧，拉远露出桥（1.6s）
+    - 0.07 * anim(f, 306, 48, EXPO_OUT)      // 两卡收成小台，拉远露出桥（1.6s）
     + 0.012 * anim(f, 354, 66, LINEAR);
-  let x = (f > 18 ? 3 * Math.sin((f - 18) / 55) : 0) + 46 * anim(f, 398, 30, EXPO_IN);
+  let x = (f > 18 ? 4 * Math.sin((f - 18) / 55) : 0) + 70 * anim(f, 398, 30, EXPO_IN);  // 结尾向右横移，接 S2
   let y = f > 18 ? 2 * Math.sin((f - 18) / 80) : 0;
   return { x, y, z };
 }
@@ -195,19 +201,19 @@ function drawBox(c, x, y, s, a, dashed = false) {
   const h = s * 0.5;
   const top = [[x, y - s], [x + s, y - s + h], [x, y - s + 2 * h], [x - s, y - s + h]];
   const poly = (pts, fill) => { c.beginPath(); pts.forEach((p, i) => i ? c.lineTo(p[0], p[1]) : c.moveTo(p[0], p[1])); c.closePath(); c.fillStyle = fill; c.fill(); c.stroke(); };
-  c.save(); c.lineWidth = 2; c.lineJoin = 'round'; c.strokeStyle = rgba(COL.white, 0.9 * a);
+  c.save(); c.lineWidth = 1.6; c.lineJoin = 'round'; c.strokeStyle = rgba(COL.white, 0.9 * a);
   if (dashed) c.setLineDash([6, 6]);
-  poly(top, rgba(COL.white, 0.10 * a));
+  poly(top, rgba(COL.white, 0.12 * a));
   poly([[x - s, y - s + h], [x, y - s + 2 * h], [x, y + s * 0.5 + h], [x - s, y + s * 0.5]], rgba(COL.white, 0.05 * a));
   poly([[x + s, y - s + h], [x, y - s + 2 * h], [x, y + s * 0.5 + h], [x + s, y + s * 0.5]], rgba(COL.white, 0.02 * a));
   c.restore();
 }
 function drawCoin(c, x, y, r, a, sx = 1, sy = 1) {
   c.save(); c.translate(x, y); c.scale(sx, sy);
-  c.lineWidth = 2; c.strokeStyle = rgba(COL.white, 0.9 * a); c.fillStyle = rgba(COL.white, 0.05 * a);
+  c.lineWidth = 1.6; c.strokeStyle = rgba(COL.white, 0.9 * a); c.fillStyle = rgba(COL.white, 0.05 * a);
   c.beginPath(); c.arc(0, 0, r, 0, TAU); c.fill(); c.stroke();
-  c.lineWidth = 1; c.strokeStyle = rgba(COL.white, 0.35 * a); c.beginPath(); c.arc(0, 0, r * 0.76, 0, TAU); c.stroke();
-  c.fillStyle = rgba(COL.white, 0.9 * a); c.font = `600 ${r * 0.95}px InterD`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.lineWidth = 1; c.strokeStyle = rgba(COL.white, 0.3 * a); c.beginPath(); c.arc(0, 0, r * 0.76, 0, TAU); c.stroke();
+  c.fillStyle = rgba(COL.white, 0.9 * a); c.font = `300 ${r * 0.95}px InterD`; c.textAlign = 'center'; c.textBaseline = 'middle';
   c.fillText('¥', 0, r * 0.04);
   c.restore();
 }
@@ -215,19 +221,19 @@ function drawCoin(c, x, y, r, a, sx = 1, sy = 1) {
 /* ======================================================================
    底层：深空黑 + 暖金径向晕 + 深空星尘（全片不停，4px/s 横向漂移）
    ====================================================================== */
-const STARS = Array.from({ length: 320 }, (_, i) => ({
+const STARS = Array.from({ length: 360 }, (_, i) => ({
   x: hash(i * 3.17 + 0.5) * (W + 80), y: hash(i * 7.73 + 1.1) * H,
-  r: 0.5 + hash(i * 1.31 + 2.2) ** 2 * 1.6, a: 0.06 + hash(i * 5.11 + 3.3) * 0.04,
+  r: 0.45 + hash(i * 1.31 + 2.2) ** 2 * 1.5, a: 0.06 + hash(i * 5.11 + 3.3) * 0.04,
   sp: [4, 2.6, 1.6][i % 3], tw: hash(i * 9.7 + 4.4) * TAU,
 }));
-const MOTES = Array.from({ length: 22 }, (_, i) => ({
-  x: hash(i * 13.1 + 7) * (W + 200), y: hash(i * 17.3 + 9) * H, r: 6 + hash(i * 3.9 + 1) * 14, a: 0.03 + hash(i * 2.3) * 0.03,
+const MOTES = Array.from({ length: 24 }, (_, i) => ({
+  x: hash(i * 13.1 + 7) * (W + 200), y: hash(i * 17.3 + 9) * H, r: 6 + hash(i * 3.9 + 1) * 16, a: 0.03 + hash(i * 2.3) * 0.03,
 }));
 function drawBackground(f, cam) {
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   ctx.fillStyle = '#030408'; ctx.fillRect(0, 0, W, H);       // 颗粒层叠加后平均回到 #05060A
-  const g = ctx.createRadialGradient(CX, CY - 80, 0, CX, CY - 80, 1250);
-  g.addColorStop(0, rgba(COL.glow, 0.2)); g.addColorStop(0.45, rgba(COL.glow, 0.12)); g.addColorStop(1, rgba(COL.glow, 0));
+  const g = ctx.createRadialGradient(CX, CY - 40, 0, CX, CY - 40, W * 0.62);
+  g.addColorStop(0, rgba(COL.glow, 0.22)); g.addColorStop(0.45, rgba(COL.glow, 0.12)); g.addColorStop(1, rgba(COL.glow, 0));
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   if (!STARFIELD) return;
   /* 背景层（k=0.28）：先画到景深层，再整体 blur + 降对比 */
@@ -254,21 +260,21 @@ function activity(f) {
   return Math.max(bump(122, 156), bump(220, 266), bump(306, 344), bump(350, 400), bump(402, 430));
 }
 function drawGrid(f, cam) {
-  const a = 0.03 * anim(f, 118, 40, EXPO_OUT);
+  const a = 0.028 * anim(f, 118, 40, EXPO_OUT);
   if (a <= 0.001) return;
   const br = 1 + 0.06 * activity(f), sp = 120;
   bctx.setTransform(1, 0, 0, 1, 0, 0); bctx.clearRect(0, 0, W, H);
   bctx.save(); applyCam(bctx, cam, 0.55);
-  bctx.translate(CX, CY); bctx.scale(br, br); bctx.translate(-CX, -CY + 0.06 * sp * activity(f));
+  bctx.translate(CX, CY); bctx.scale(br, br); bctx.translate(-CX + 0.06 * sp * activity(f), -CY);
   bctx.strokeStyle = rgba(COL.white, 1); bctx.lineWidth = 1;
   bctx.beginPath();
-  for (let x = CX - sp * 6; x <= CX + sp * 6; x += sp) { bctx.moveTo(x, -200); bctx.lineTo(x, H + 200); }
-  for (let y = CY - sp * 10; y <= CY + sp * 10; y += sp) { bctx.moveTo(-200, y); bctx.lineTo(W + 200, y); }
+  for (let x = CX - sp * 10; x <= CX + sp * 10; x += sp) { bctx.moveTo(x, -200); bctx.lineTo(x, H + 200); }
+  for (let y = CY - sp * 6; y <= CY + sp * 6; y += sp) { bctx.moveTo(-200, y); bctx.lineTo(W + 200, y); }
   bctx.stroke();
   bctx.restore();
-  /* 中心亮、四周暗的遮罩，网格只在画面中部若隐若现 */
+  /* 中心亮、四周暗：网格只在画面中部若隐若现 */
   bctx.globalCompositeOperation = 'destination-in';
-  const m = bctx.createRadialGradient(CX, CY, 100, CX, CY, 900);
+  const m = bctx.createRadialGradient(CX, CY, 80, CX, CY, 820);
   m.addColorStop(0, 'rgba(0,0,0,1)'); m.addColorStop(1, 'rgba(0,0,0,0)');
   bctx.fillStyle = m; bctx.fillRect(0, 0, W, H); bctx.globalCompositeOperation = 'source-over';
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.filter = 'blur(2.5px) contrast(0.75)'; ctx.globalAlpha = a; ctx.drawImage(bgC, 0, 0); ctx.restore();
@@ -277,17 +283,18 @@ function drawGrid(f, cam) {
 /* ======================================================================
    S0 · 0–120 · 黄金三秒：静 → 动 → 爆 → 亮字
    ====================================================================== */
-const STAR = { x: 796, y: 540 };
-const FIL = [STAR, { x: 1010, y: 860 }, { x: 860, y: 1210 }, { x: CX, y: CY }];
-const RP = { x: 456, y: 700 }, GP = { x: 624, y: 1220 };
-function pointPos(f, which) {         // 红（买）/ 绿（卖）两个光点：先分开（预备），再弧线相向砸入
+const STAR = { x: 1440, y: 280 };
+const FIL = [STAR, { x: 1740, y: 560 }, { x: 1340, y: 880 }, { x: CX, y: CY }];
+const RP = { x: 1250, y: 430 }, GP = { x: 670, y: 650 };   // 红（买）在右、绿（卖）在左 —— 与 S1 买卖两侧一致
+const RING_R = 430;
+function pointPos(f, which) {         // 两个光点：先分开（预备），再弧线相向砸入
   const P = which === 'r' ? RP : GP, s = which === 'r' ? 1 : -1;
-  if (f < 58) return qb({ x: CX, y: CY }, { x: CX + 70 * s, y: CY - 200 * s }, P, anim(f, 46, 12, EXPO_OUT));
-  return qb(P, { x: CX - 230 * s, y: CY - 40 * s }, { x: CX, y: CY }, anim(f, 58, 12, EXPO_IN));
+  if (f < 58) return qb({ x: CX, y: CY }, { x: CX + 200 * s, y: CY + 80 * s }, P, anim(f, 46, 12, EXPO_OUT));
+  return qb(P, { x: CX + 60 * s, y: CY + 240 * s }, { x: CX, y: CY }, anim(f, 58, 12, EXPO_IN));
 }
 function ringRadius(f) {
-  const rs = 36 + 474 * SNAP(clamp((f - 70) / 20));         // 爆开，SNAP 微过冲
-  return rs - (rs - 4) * anim(f, 88, 32, EXPO_IN);            // 长时间曝光式收缩，坍缩成奇点
+  const rs = 36 + (RING_R - 36) * SNAP(clamp((f - 70) / 20));   // 爆开，SNAP 微过冲
+  return rs - (rs - 4) * anim(f, 88, 32, EXPO_IN);               // 长时间曝光式收缩，坍缩成奇点
 }
 function drawS0(c, f) {
   /* —— 第一拍【静】0–18：一颗极远金色星点 —— */
@@ -312,14 +319,14 @@ function drawS0(c, f) {
       for (let i = 1; i <= N; i++) {
         const t = i / N;
         cc.strokeStyle = gold(t > 0.8 ? COL.goldTop : COL.goldHi, (0.15 + 0.85 * t) * bright);
-        cc.lineWidth = lerp(0.4, 3.4, t);
+        cc.lineWidth = lerp(0.4, 3.2, t);
         cc.beginPath(); cc.moveTo(pts[i - 1].x, pts[i - 1].y); cc.lineTo(pts[i].x, pts[i].y); cc.stroke();
       }
       goldDot(cc, h0.x, h0.y, 3, bright, 34);
       cc.restore();
     });
   }
-  /* 光丝汇聚的中心光团（44–50），无缝交给两个光点 */
+  /* 光丝汇聚的中心光团（42–52），无缝交给两个光点 */
   if (f >= 42 && f < 52) {
     const a = anim(f, 42, 4, EXPO_OUT) * (1 - anim(f, 47, 5, EXPO_IN));
     goldDot(c, CX, CY, 4, a, 46);
@@ -332,8 +339,7 @@ function drawS0(c, f) {
       const col = mixHex(COL.goldHi, w === 'r' ? COL.red : COL.green, tint);
       const core = mixHex(w === 'r' ? COL.red : COL.green, COL.white, 0.45);
       motionBlur(c, p.x - q.x, p.y - q.y, cc => {
-        /* 光尾：最近 2.5 帧的轨迹，越近越粗 */
-        const M = 14; cc.save(); cc.lineCap = 'round';
+        const M = 14; cc.save(); cc.lineCap = 'round';           // 光尾：最近 2.5 帧的轨迹
         for (let i = 1; i <= M; i++) {
           const a0 = pointPos(f - 2.5 * (1 - (i - 1) / M), w), a1 = pointPos(f - 2.5 * (1 - i / M), w);
           cc.strokeStyle = rgba(col, 0.6 * i / M); cc.lineWidth = lerp(0.5, 6, i / M);
@@ -360,16 +366,29 @@ function drawS0(c, f) {
     const r = ringRadius(f);
     const cg = c.createConicGradient(f * 0.012, CX, CY);
     const base = f > 112 ? lerp(0.85, 1, anim(f, 112, 8)) : 0.85;
-    cg.addColorStop(0, gold(COL.goldTop, base)); cg.addColorStop(0.25, gold(COL.goldHi, base * 0.45));
-    cg.addColorStop(0.5, gold(COL.goldTop, base * 0.9)); cg.addColorStop(0.75, gold(COL.gold, base * 0.4)); cg.addColorStop(1, gold(COL.goldTop, base));
+    cg.addColorStop(0, gold(COL.goldTop, base)); cg.addColorStop(0.25, gold(COL.goldHi, base * 0.4));
+    cg.addColorStop(0.5, gold(COL.goldTop, base * 0.9)); cg.addColorStop(0.75, gold(COL.gold, base * 0.35)); cg.addColorStop(1, gold(COL.goldTop, base));
     c.save();
-    c.filter = 'blur(6px)'; c.strokeStyle = gold(COL.gold, 0.28); c.lineWidth = 8;
+    c.filter = 'blur(6px)'; c.strokeStyle = gold(COL.gold, 0.26); c.lineWidth = 8;
     c.beginPath(); c.arc(CX, CY, Math.max(2, r), 0, TAU); c.stroke(); c.filter = 'none';
-    c.strokeStyle = cg; c.lineWidth = lerp(2.2, 1.6, anim(f, 88, 30));
+    c.strokeStyle = cg; c.lineWidth = lerp(1.8, 1.4, anim(f, 88, 30));
     c.beginPath(); c.arc(CX, CY, Math.max(2, r), 0, TAU); c.stroke();
+    /* 精密刻度：光环停稳后，外圈一周细刻度顺时针扫出（冷灰，不用金） */
+    const tickIn = anim(f, 80, 18, EXPO_OUT), tickOut = anim(f, 96, 10, EXPO_IN);
+    if (tickIn > 0 && tickOut < 1) {
+      const n = 120, shown = Math.floor(n * tickIn);
+      c.strokeStyle = rgba(COL.white, 0.16 * (1 - tickOut)); c.lineWidth = 1;
+      c.beginPath();
+      for (let i = 0; i < shown; i++) {
+        const ang = -Math.PI / 2 + i / n * TAU, len = i % 10 === 0 ? 12 : 5, rr = r + 16;
+        c.moveTo(CX + Math.cos(ang) * rr, CY + Math.sin(ang) * rr);
+        c.lineTo(CX + Math.cos(ang) * (rr + len), CY + Math.sin(ang) * (rr + len));
+      }
+      c.stroke();
+    }
     /* 外扩回声环（跟随动作，带走能量） */
     if (f < 106) {
-      const re = 36 + 760 * anim(f, 71, 34, EXPO_OUT), ae = 0.3 * (1 - anim(f, 71, 34, LINEAR));
+      const re = 36 + 980 * anim(f, 71, 34, EXPO_OUT), ae = 0.3 * (1 - anim(f, 71, 34, LINEAR));
       c.strokeStyle = gold(COL.goldTop, ae); c.lineWidth = 1;
       c.beginPath(); c.arc(CX, CY, re, 0, TAU); c.stroke();
     }
@@ -388,111 +407,125 @@ function drawTitle(c, f) {
   if (f < 69 || f > 118) return;
   const tIn = anim(f, 69, 21, EXPO_OUT), tOut = anim(f, 106.4, 11, EXPO_IN);
   const sIn = anim(f, 71.4, 18, EXPO_OUT), sOut = anim(f, 104, 11, EXPO_IN);
+  const oIn = anim(f, 73.8, 16, EXPO_OUT), oOut = anim(f, 101.6, 11, EXPO_IN);
+  /* 极小英文眉题（冷灰、宽字距）——给标题一个"刊头"层级 */
+  {
+    const a = oIn * (1 - oOut);
+    c.save(); c.globalAlpha = a * 0.9; c.filter = oIn < 0.98 || oOut > 0 ? `blur(${6 * (1 - oIn) + 6 * oOut}px)` : 'none';
+    text(c, 'UNDERSTANDING  THE  MARKET', CX, 368 + 16 * (1 - oIn) - 20 * oOut, '300 20px InterD', COL.gray, 'center', '0.5em');
+    c.restore();
+  }
   /* 主标题 */
   {
-    const s = 0.6 + 0.4 * tIn, y = lerp(CY, 830, tIn) - 50 * tOut;
+    const s = 0.6 + 0.4 * tIn, y = lerp(CY, 518, tIn) - 50 * tOut;
     const blur = 16 * (1 - tIn) + 12 * tOut, a = clamp(tIn * 2.2) * (1 - tOut);
     c.save(); c.translate(CX, y); c.scale(s, s);
-    c.font = '500 140px NSC'; c.letterSpacing = '0.02em'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
-    const gr = c.createLinearGradient(0, -118, 0, 14);
+    c.font = '500 128px NSC'; c.letterSpacing = '0.04em'; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    const gr = c.createLinearGradient(0, -108, 0, 12);
     gr.addColorStop(0, gold(COL.goldTop, 1)); gr.addColorStop(1, gold(COL.gold, 1));
-    /* 自下而上的生长遮罩 */
-    const reveal = clamp(tIn * 1.5);
-    c.beginPath(); c.rect(-600, 40 - 200 * reveal, 1200, 220 * reveal + 10); c.clip();
+    const reveal = clamp(tIn * 1.5);                         // 自下而上的生长遮罩
+    c.beginPath(); c.rect(-700, 36 - 180 * reveal, 1400, 200 * reveal + 10); c.clip();
     c.globalAlpha = a; c.filter = blur > 0.05 ? `blur(${blur}px)` : 'none';
     c.shadowColor = gold(COL.gold, 0.2); c.shadowBlur = 4;
-    c.fillStyle = gr; c.strokeStyle = gr; c.lineWidth = 2.6; c.lineJoin = 'round';
+    c.fillStyle = gr; c.strokeStyle = gr; c.lineWidth = 2.2; c.lineJoin = 'round';
     c.strokeText('认识交易市场', 0, 0);      // 同色加粗（等效字重 700），不是描边字
     c.shadowBlur = 0; c.fillText('认识交易市场', 0, 0);
     c.restore();
   }
   /* 副标题：错位 80ms 跟上 */
   {
-    const y = lerp(990, 936, sIn) - 30 * sOut, blur = 8 * (1 - sIn) + 8 * sOut, a = clamp(sIn * 1.8) * (1 - sOut);
+    const y = lerp(650, 606, sIn) - 30 * sOut, blur = 8 * (1 - sIn) + 8 * sOut, a = clamp(sIn * 1.8) * (1 - sOut);
     c.save(); c.globalAlpha = a; c.filter = blur > 0.05 ? `blur(${blur}px)` : 'none';
-    text(c, '3 分钟，看懂你到底在跟谁做交易', CX, y, '300 46px InterD, NSC', COL.gray, 'center');
+    text(c, '3 分钟，看懂你到底在跟谁做交易', CX, y, '300 44px InterD, NSC', COL.gray, 'center', '0.08em');
     c.restore();
   }
 }
 
 /* ======================================================================
-   S1 · 120–420 · 什么是交易
+   S1 · 120–420 · 什么是交易（横版：卖方在左 · 买方在右）
    ====================================================================== */
-const TILE = { sell: { x: 250, y: 960 }, buy: { x: 830, y: 960 } };
-const ROPE = { x0: 371, x1: 709, y: 1000, sag: 14 };
+const CARD = { w: 520, h: 300 };
+const TILE = { sell: { x: 520, y: 560 }, buy: { x: 1400, y: 560 }, w: 240, h: 280 };
+const ROPE = { x0: 655, x1: 1265, y: 600, sag: 16 };
+const BOX_REST = 568;
 function stepVal(f, start, steps) { let v = start; for (const [fr, val] of steps) if (f >= fr) v = val; return v; }
 const BUY_STEPS = [[200, 9.99], [214, 10.00]];
 const SELL_STEPS = [[198, 10.03], [205, 10.02], [211, 10.01], [217, 10.00]];
 function cardState(f, side) {
-  const buy = side === 'buy', sg = buy ? -1 : 1, d = buy ? 0 : 2;   // 卖单晚 2 帧（67ms）错位入场
+  const buy = side === 'buy', sg = buy ? 1 : -1, d = buy ? 0 : 2;   // 卖单晚 2 帧（67ms）错位入场
   const enter = anim(f, 124 + d, 24, EXPO_OUT);
-  let y = lerp(buy ? -260 : H + 260, CY + sg * 200, enter);
-  y += sg * 6 * anim(f, 210, 12, EXPO_OUT);                                   // 预备：先微微后撤
-  y = lerp(y, CY + sg * 150, anim(f, 222, 10, EXPO_IN));                      // 咬合
-  y = lerp(y, CY + sg * 220, anim(f, 240 + d, 22, EXPO_OUT));                 // 跟随：让出读数带
-  let x = CX, w = 680, h = 300;
-  const r = anim(f, 312 + d, 26, EXPO_OUT);                                   // 退向两侧（弧线）
+  let x = lerp(buy ? W + 420 : -420, CX + sg * 300, enter);
+  x += sg * 6 * anim(f, 210, 12, EXPO_OUT);                                   // 预备：先微微后撤
+  x = lerp(x, CX + sg * CARD.w / 2, anim(f, 222, 10, EXPO_IN));               // 咬合
+  x = lerp(x, CX + sg * 460, anim(f, 240 + d, 22, EXPO_OUT));                 // 跟随：让出读数区
+  let y = CY, w = CARD.w, h = CARD.h;
+  const r = anim(f, 312 + d, 26, EXPO_OUT);                                   // 收成两侧的小台（弧线）
   const T = buy ? TILE.buy : TILE.sell;
   if (r > 0) {
-    const p = qb({ x, y }, { x: lerp(x, T.x, 0.9), y: lerp(y, T.y, 0.15) }, T, r);
-    x = p.x; y = p.y; w = lerp(680, 230, r); h = lerp(300, 280, r);
+    const p = qb({ x, y }, { x: lerp(x, T.x, 0.9), y: lerp(y, T.y, 0.1) - 30 }, T, r);
+    x = p.x; y = p.y; w = lerp(CARD.w, TILE.w, r); h = lerp(CARD.h, TILE.h, r);
   }
   /* 挤压与拉伸：咬合瞬间压扁 4%，回弹拉伸 4%（以接缝为锚点） */
-  let sy = 1;
+  let sx = 1;
   if (f >= 232 && f < 252) {
-    sy = f < 235 ? lerp(1, 0.96, anim(f, 232, 3, EXPO_OUT))
+    sx = f < 235 ? lerp(1, 0.96, anim(f, 232, 3, EXPO_OUT))
        : f < 241 ? lerp(0.96, 1.04, anim(f, 235, 6, EXPO_OUT))
        : lerp(1.04, 1, anim(f, 241, 10, SNAP));
   }
-  return { x, y, w, h, sy, sx: 1 / Math.sqrt(sy), r };
+  return { x, y, w, h, sx, sy: 1 / Math.sqrt(sx), r };
 }
-function cardPos(f, side) { const s = cardState(f, side); return { x: s.x, y: s.y }; }
 function drawCard(c, f, side) {
   if (f < 120) return;
   const buy = side === 'buy', S = cardState(f, side), col = buy ? COL.red : COL.green;
-  const p0 = cardPos(f - 1, side);
+  const p0 = cardState(f - 1, side);
   motionBlur(c, S.x - p0.x, S.y - p0.y, cc => {
     cc.save();
-    const anchorY = S.r > 0 ? S.y : (buy ? S.y + S.h / 2 : S.y - S.h / 2);
-    cc.translate(S.x, anchorY); cc.scale(S.sx, S.sy); cc.translate(0, S.y - anchorY);
+    const anchorX = S.r > 0 ? S.x : (buy ? S.x - S.w / 2 : S.x + S.w / 2);
+    cc.translate(anchorX, S.y); cc.scale(S.sx, S.sy); cc.translate(S.x - anchorX, 0);
     const x0 = -S.w / 2, y0 = -S.h / 2;
+    /* 玻璃面板：极淡填充 + 顶部内高光 + 发丝边；颜色只出现在顶边一道细线 */
     const bg = cc.createLinearGradient(0, y0, 0, y0 + S.h);
-    bg.addColorStop(0, rgba(col, 0.07)); bg.addColorStop(1, rgba(COL.white, 0.015));
-    rrect(cc, x0, y0, S.w, S.h, 18); cc.fillStyle = bg; cc.fill();
-    cc.lineWidth = 1.5; cc.strokeStyle = rgba(col, 0.8); cc.stroke();
-    /* 卡片内容：单子 → 退场时先走（比入场快） */
+    bg.addColorStop(0, rgba(COL.white, 0.045)); bg.addColorStop(0.4, rgba(COL.white, 0.018)); bg.addColorStop(1, rgba(COL.white, 0.01));
+    rrect(cc, x0, y0, S.w, S.h, 14); cc.fillStyle = bg; cc.fill();
+    cc.lineWidth = 1; cc.strokeStyle = rgba(COL.white, 0.11); cc.stroke();
+    const ag = cc.createLinearGradient(x0, 0, x0 + S.w, 0);
+    ag.addColorStop(0, rgba(col, 0)); ag.addColorStop(0.5, rgba(col, 0.95)); ag.addColorStop(1, rgba(col, 0));
+    cc.fillStyle = ag; cc.fillRect(x0 + 24, y0, S.w - 48, 2);
+    /* 卡片内容：退场先走（比入场快） */
     const ca = 1 - anim(f, 305 + (buy ? 0 : 2), 7, EXPO_IN);
     if (ca > 0.001) {
       cc.globalAlpha = ca;
-      const L = x0 + 44, R = x0 + S.w - 44;
-      text(cc, buy ? '买单' : '卖单', L, y0 + 70, '500 36px NSC', col);
-      text(cc, buy ? 'BUY' : 'SELL', L + 92, y0 + 68, '600 22px InterD', rgba(COL.gray, 0.9), 'left', '0.2em');
-      text(cc, buy ? '出价' : '要价', L, y0 + 186, '300 30px NSC', COL.gray);
-      text(cc, '数量  100', L, y0 + S.h - 40, '300 30px NSC', COL.gray);
+      const L = x0 + 40, R = x0 + S.w - 40;
+      cc.fillStyle = col; cc.beginPath(); cc.arc(L + 5, y0 + 56, 4, 0, TAU); cc.fill();
+      text(cc, buy ? '买单' : '卖单', L + 20, y0 + 66, '500 30px NSC', COL.white, 'left', '0.1em');
+      text(cc, buy ? 'BID' : 'ASK', R, y0 + 64, '300 20px InterD', COL.gray, 'right', '0.4em');
+      text(cc, buy ? '出价' : '要价', L, y0 + 190, '300 26px NSC', COL.gray, 'left', '0.1em');
+      text(cc, '数量  100', L, y0 + S.h - 36, '300 26px NSC', COL.gray, 'left', '0.1em');
+      cc.fillStyle = rgba(COL.white, 0.08); cc.fillRect(L, y0 + 96, S.w - 80, 1);
       const price = buy ? stepVal(f, 9.98, BUY_STEPS) : stepVal(f, 10.04, SELL_STEPS);
       const changed = (buy ? BUY_STEPS : SELL_STEPS).find(([fr]) => f >= fr && f < fr + 8);
       if (changed) {                             // 报价刷新：数字下方一道冷白微光
         const k = 1 - anim(f, changed[0], 8, EXPO_OUT);
-        cc.fillStyle = rgba(COL.white, 0.08 * k); rrect(cc, R - 250, y0 + 120, 250, 104, 10); cc.fill();
+        cc.fillStyle = rgba(COL.white, 0.07 * k); rrect(cc, R - 236, y0 + 122, 236, 96, 8); cc.fill();
       }
-      cc.fillStyle = COL.white; tabular(cc, price.toFixed(2), R, y0 + 208, 100, 'right');
+      cc.fillStyle = COL.white; tabular(cc, price.toFixed(2), R, y0 + 204, 92, 'right');
     }
-    /* 退到两侧后变成"买方 / 卖方"小台 */
+    /* 收成"买方 / 卖方"小台 */
     const la = anim(f, 326 + (buy ? 0 : 2), 16, EXPO_OUT);
     if (la > 0.001) {
       cc.globalAlpha = la;
-      text(cc, buy ? '买方' : '卖方', 0, y0 + 62 - 10 * (1 - la), '500 34px NSC', col, 'center');
-      cc.strokeStyle = rgba(col, 0.35); cc.lineWidth = 1; cc.beginPath();
-      cc.moveTo(-40, y0 + S.h - 40); cc.lineTo(40, y0 + S.h - 40); cc.stroke();
+      cc.fillStyle = col; cc.beginPath(); cc.arc(-34, y0 + 50 - 10 * (1 - la), 4, 0, TAU); cc.fill();
+      text(cc, buy ? '买方' : '卖方', 10, y0 + 60 - 10 * (1 - la), '500 28px NSC', COL.white, 'center', '0.15em');
+      text(cc, buy ? 'BUYER' : 'SELLER', 0, y0 + S.h - 32, '300 16px InterD', COL.gray, 'center', '0.45em');
     }
     cc.restore();
   });
 }
 function drawCenterline(c, f) {
   if (f < 120 || f >= 232) return;
-  const L = 340 * anim(f, 120, 22, EXPO_OUT) * (1 - anim(f, 222, 10, EXPO_IN));
+  const L = 170 * anim(f, 120, 22, EXPO_OUT) * (1 - anim(f, 222, 10, EXPO_IN));
   c.save(); c.strokeStyle = rgba(COL.white, 0.16); c.lineWidth = 1;
-  c.beginPath(); c.moveTo(CX - L, CY); c.lineTo(CX + L, CY); c.stroke(); c.restore();
+  c.beginPath(); c.moveTo(CX, CY - L); c.lineTo(CX, CY + L); c.stroke(); c.restore();
 }
 /* 成交火花 → 接缝光 → 价格读数（从 0 滚动） */
 function drawDeal(c, f) {
@@ -501,13 +534,13 @@ function drawDeal(c, f) {
     const g = c.createRadialGradient(CX, CY, 0, CX, CY, 30 + 90 * sp);
     g.addColorStop(0, gold(COL.goldTop, a)); g.addColorStop(0.35, gold(COL.goldHi, 0.3 * a)); g.addColorStop(1, gold(COL.gold, 0));
     c.fillStyle = g; c.beginPath(); c.arc(CX, CY, 130, 0, TAU); c.fill();
-    const L = 340 * sp;                         // 光沿接缝扩散
-    const lg = c.createLinearGradient(CX - L, 0, CX + L, 0);
+    const L = 150 * sp;                         // 光沿接缝扩散
+    const lg = c.createLinearGradient(0, CY - L, 0, CY + L);
     lg.addColorStop(0, gold(COL.goldHi, 0)); lg.addColorStop(0.5, gold(COL.goldTop, 0.9 * a)); lg.addColorStop(1, gold(COL.goldHi, 0));
-    c.fillStyle = lg; c.fillRect(CX - L, CY - 1.5, 2 * L, 3);
+    c.fillStyle = lg; c.fillRect(CX - 1.5, CY - L, 3, 2 * L);
   }
   if (f >= 240 && f < 326) {
-    const roll = anim(f, 242, 26, EXPO_OUT);
+    const r0 = anim(f, 242, 26, EXPO_OUT), roll = r0 > 0.996 ? 1 : r0;   // 尾段直接落到终值，避免 9.98/9.99 被误读成价格跳动
     const col = anim(f, 244, 30, EXPO_OUT);
     const shut = anim(f, 303, 9, EXPO_IN);
     const aL = anim(f, 246, 18, EXPO_OUT) * (1 - anim(f, 300, 9, EXPO_IN));
@@ -518,96 +551,94 @@ function drawDeal(c, f) {
     gr.addColorStop(0, gold(COL.goldTop, 1)); gr.addColorStop(1, gold(mixHex(COL.goldHi, COL.gold, col), 1));
     c.fillStyle = gr; c.shadowColor = gold(COL.gold, 0.2); c.shadowBlur = 4;
     c.globalAlpha = anim(f, 240, 6, EXPO_OUT);
-    tabular(c, (10 * roll).toFixed(2), 0, 34, 104, 'center');
+    tabular(c, (10 * roll).toFixed(2), 0, 36, 108, 'center');
     c.restore();
-    c.save(); c.globalAlpha = aL; text(c, '成交价', CX - 316, CY + 12 + 12 * (1 - aL), '500 30px NSC', COL.white); c.restore();
+    c.save(); c.globalAlpha = aL;
+    text(c, '成交价', CX, CY - 78 + 12 * (1 - aL), '300 26px NSC', COL.white, 'center', '0.3em');
+    c.fillStyle = rgba(COL.white, 0.2); c.fillRect(CX - 20, CY - 60 + 12 * (1 - aL), 40, 1);
+    c.restore();
     c.save(); c.globalAlpha = aR; c.fillStyle = COL.gray;
-    text(c, '数量', CX + 316 - 92, CY + 12 + 12 * (1 - aR), '300 28px NSC', COL.gray, 'right');
-    tabular(c, String(Math.round(100 * roll)), CX + 316, CY + 12 + 12 * (1 - aR), 30, 'right');
+    const yq = CY + 102 + 12 * (1 - aR);
+    text(c, '数量', CX - 8, yq, '300 24px NSC', COL.gray, 'right', '0.2em');
+    tabular(c, String(Math.round(100 * roll)), CX + 8, yq, 26, 'left');
     c.restore();
     if (shut > 0 && f < 318) goldDot(c, CX, CY, 4, shut, 30);
   }
 }
 /* 火花（共享元素）：读数收回成一点 → 沿中线上方弧线飞向卖方 → 原地变成货物 */
-const SPARK_PATH = [{ x: CX, y: CY }, { x: 380, y: 700 }, { x: TILE.sell.x, y: 968 }];
+const SPARK_PATH = [{ x: CX, y: CY }, { x: 760, y: 300 }, { x: TILE.sell.x, y: BOX_REST }];
 function sparkPos(f) { return qb(...SPARK_PATH, anim(f, 318, 20, EXPO_OUT)); }
-function boxPos(f) {
-  const x0 = TILE.sell.x, x1 = TILE.buy.x;
-  let s = anim(f, 350, 42, EXPO_INOUT);
-  let x = lerp(x0, x1, s), y = 968;
-  /* 在绳上：载荷使绳下沉，箱子随绳走一条下沉弧线 */
-  if (x > ROPE.x0 && x < ROPE.x1) y = ropeY(f, x, x) - 32;
-  else if (x <= ROPE.x0) y = 968 - 10 * Math.sin(Math.PI * clamp((x - x0) / (ROPE.x0 - x0)));
-  /* 落地：先上升 3px（预备动作），再落下 */
-  y -= 3 * anim(f, 393, 3, EXPO_OUT) * (1 - anim(f, 396, 4, EXPO_IN));
-  /* 继续向右滑出画面（弧线，cut on motion） */
-  const e = anim(f, 404, 15, EXPO_IN);
-  if (e > 0) { const p = qb({ x: x1, y: 968 }, { x: 1010, y: 900 }, { x: 1240, y: 930 }, e); x = p.x; y = p.y; }
-  return { x, y };
-}
-function ropeLoad(f, xb) {           // 绳上载荷下沉量
+function ropeLoad(xb) {              // 绳上载荷下沉量
   if (xb <= ROPE.x0 || xb >= ROPE.x1) return 0;
-  return 34 * Math.sin(Math.PI * (xb - ROPE.x0) / (ROPE.x1 - ROPE.x0));
+  return 38 * Math.sin(Math.PI * (xb - ROPE.x0) / (ROPE.x1 - ROPE.x0));
 }
-function ropeY(f, x, xb) {
+function ropeY(x, xb) {
   const L = ROPE.x1 - ROPE.x0, u = (x - ROPE.x0) / L;
   let y = ROPE.y + ROPE.sag * 4 * u * (1 - u);
   if (xb > ROPE.x0 && xb < ROPE.x1) {
-    const D = ropeLoad(f, xb), ub = (xb - ROPE.x0) / L;
+    const D = ropeLoad(xb), ub = (xb - ROPE.x0) / L;
     const k = u < ub ? u / ub : (1 - u) / (1 - ub);
     y += D * (k * k * (3 - 2 * k));
   }
   return y;
 }
-let ROPE_LEAVE = 0;                  // 箱子离开绳的帧（boxPos 的 x 越过 x1，初始化时算出）
+function boxPos(f) {
+  const x0 = TILE.sell.x, x1 = TILE.buy.x;
+  const s = anim(f, 350, 46, EXPO_INOUT);
+  let x = lerp(x0, x1, s), y = BOX_REST;
+  if (x > ROPE.x0 && x < ROPE.x1) y = ropeY(x, x) - 32;                        // 载荷压弯绳子：箱子走下沉弧线
+  else if (x <= ROPE.x0) y = BOX_REST - 10 * Math.sin(Math.PI * clamp((x - x0) / (ROPE.x0 - x0)));
+  y -= 3 * anim(f, 396, 3, EXPO_OUT) * (1 - anim(f, 399, 3, EXPO_IN));        // 落地前先上升 3px（预备动作）
+  const e = anim(f, 404, 15, EXPO_IN);                                          // 继续向右滑出画面（弧线，cut on motion）
+  if (e > 0) { const p = qb({ x: x1, y: BOX_REST }, { x: 1700, y: 480 }, { x: 2100, y: 520 }, e); x = p.x; y = p.y; }
+  return { x, y };
+}
+let ROPE_LEAVE = 0;                  // 箱子离开绳的帧（初始化时算出）
 for (let f = 350; f < 404; f += 0.25) if (boxPos(f).x >= ROPE.x1) { ROPE_LEAVE = f; break; }
 function drawBridge(c, f) {
   if (f < 334) return;
   const prog = anim(f, 334, 18, EXPO_OUT);
-  const xb = f < 404 ? boxPos(f).x : 2000;
+  const xb = f < 404 ? boxPos(f).x : 9999;
   const t = f - ROPE_LEAVE;
   const sway = t > 0 ? -14 * Math.exp(-t / 10) * Math.sin(0.38 * t) : 0;   // 货物过后，绳轻轻荡一下（跟随）
-  c.save(); c.strokeStyle = rgba(COL.gray, 0.8); c.lineWidth = 2; c.lineCap = 'round';
+  c.save(); c.strokeStyle = rgba(COL.gray, 0.75); c.lineWidth = 1.5; c.lineCap = 'round';
   c.beginPath();
-  const N = 60;
+  const N = 80;
   for (let i = 0; i <= N * prog; i++) {
-    const x = lerp(ROPE.x0, ROPE.x1, i / N), u = i / N;
-    const y = ropeY(f, x, xb) + sway * Math.sin(Math.PI * u);
+    const u = i / N, x = lerp(ROPE.x0, ROPE.x1, u);
+    const y = ropeY(x, xb) + sway * Math.sin(Math.PI * u);
     i ? c.lineTo(x, y) : c.moveTo(x, y);
   }
   c.stroke();
   c.fillStyle = rgba(COL.gray, 0.9);
-  for (const x of [ROPE.x0, ROPE.x1]) { if (x === ROPE.x1 && prog < 0.98) continue; c.beginPath(); c.arc(x, ROPE.y, 3.5, 0, TAU); c.fill(); }
+  for (const x of [ROPE.x0, ROPE.x1]) { if (x === ROPE.x1 && prog < 0.98) continue; c.beginPath(); c.arc(x, ROPE.y, 3, 0, TAU); c.fill(); }
   c.restore();
 }
 function coinPos(f) {
-  const s = anim(f, 356, 32, EXPO_INOUT);
+  const s = anim(f, 356, 34, EXPO_INOUT);
   const x = lerp(TILE.buy.x, TILE.sell.x, s);
-  let y = 990 - 150 * Math.sin(Math.PI * s);                                   // 上弧线
+  let y = 590 - 190 * Math.sin(Math.PI * s);                                   // 上弧线
   y -= 3 * anim(f, 352, 4, EXPO_OUT) * (1 - anim(f, 356, 3, EXPO_IN));         // 起跳预备
   y -= 3 * anim(f, 386, 3, EXPO_OUT) * (1 - anim(f, 389, 3, EXPO_IN));         // 落地前微升
   return { x, y };
 }
 function drawTransfer(c, f) {
-  /* 火花飞行 */
-  if (f >= 316 && f < 342) {
+  if (f >= 316 && f < 342) {                 // 火花飞行
     const p = sparkPos(f), q = sparkPos(f - 1);
     const a = 1 - anim(f, 336, 6, EXPO_IN);
     motionBlur(c, p.x - q.x, p.y - q.y, cc => goldDot(cc, p.x, p.y, 4.5, a, 32));
   }
-  /* 货物：火花原地展开成箱子 */
-  if (f >= 334 && f < 420) {
+  if (f >= 334 && f < 420) {                 // 货物：火花原地展开成箱子
     const sIn = anim(f, 334, 14, SNAP);
     const p = boxPos(f), q = boxPos(f - 1);
     let sx = 1, sy = 1;
-    if (f >= 399 && f < 410) { sy = f < 401 ? lerp(1, 0.96, anim(f, 399, 2)) : lerp(0.96, 1, anim(f, 401, 8, SNAP)); sx = 1 / Math.sqrt(sy); }
+    if (f >= 402 && f < 412) { sy = f < 404 ? lerp(1, 0.96, anim(f, 402, 2)) : lerp(0.96, 1, anim(f, 404, 8, SNAP)); sx = 1 / Math.sqrt(sy); }
     motionBlur(c, p.x - q.x, p.y - q.y, cc => {
       cc.save(); cc.translate(p.x, p.y + 30); cc.scale(sIn * sx, sIn * sy); cc.translate(-p.x, -p.y - 30);
       drawBox(cc, p.x, p.y, 30, 1); cc.restore();
     });
   }
-  /* 硬币：从买方沿上弧线到卖方 */
-  if (f >= 330) {
+  if (f >= 330) {                            // 硬币：从买方沿上弧线到卖方
     const sIn = anim(f, 330, 16, SNAP);
     const p = coinPos(f), q = coinPos(f - 1);
     let sx = 1, sy = 1;
@@ -617,16 +648,16 @@ function drawTransfer(c, f) {
 }
 
 /* ======================================================================
-   字幕：按 shot 区间显示；按标点自动断行；永不进入安全区
+   字幕：按 shot 区间显示；按标点自动断行；永不进入安全区（横版：下三分之一）
    ====================================================================== */
 const CAPTIONS = [
   [132, 208, '有人想买，有人想卖'],
   [214, 306, '价格达成一致的那一刻，成交'],
   [318, 416, '一手交钱，一手交货'],
 ];
-const CAP = { size: 48, y: 470, lh: 1.15, maxChars: 11 };
+const CAP = { size: 46, y: 900, lh: 1.15, maxChars: 16, spacing: '0.12em' };
 function wrapCaption(c, s) {
-  c.font = `500 ${CAP.size}px NSC`; c.letterSpacing = '0.02em';
+  c.font = `300 ${CAP.size}px NSC`; c.letterSpacing = CAP.spacing;
   const maxW = W - SAFE.L - SAFE.R;
   const fits = t => c.measureText(t).width <= maxW;
   if (fits(s) && [...s].length <= CAP.maxChars) { c.letterSpacing = '0px'; return [s]; }
@@ -649,11 +680,11 @@ function drawCaptions(c, f) {
   for (const [a, b, s] of CAPTIONS) {
     if (f < a || f > b) continue;
     const lines = wrapCaption(c, s);
-    const lh = CAP.size * CAP.lh * 1.15;
-    let y0 = CAP.y - (lines.length - 1) * lh / 2;
-    y0 = clamp(y0, SAFE.T + CAP.size, H - SAFE.B - (lines.length - 1) * lh - 10);
-    c.save(); c.font = `500 ${CAP.size}px NSC`; c.letterSpacing = '0.02em'; c.textBaseline = 'middle'; c.textAlign = 'left';
-    let idx = 0; const nAll = [...s.replace(/[，、,]/g, '')].length;
+    const lh = CAP.size * CAP.lh * 1.2;
+    let y0 = CAP.y - (lines.length - 1) * lh;
+    y0 = clamp(y0, SAFE.T + CAP.size, H - SAFE.B - (lines.length - 1) * lh - CAP.size / 2);
+    c.save(); c.font = `300 ${CAP.size}px NSC`; c.letterSpacing = CAP.spacing; c.textBaseline = 'middle'; c.textAlign = 'left';
+    let idx = 0; const nAll = lines.reduce((s2, l) => s2 + [...l].length, 0);
     lines.forEach((line, li) => {
       const chars = [...line];
       const ws = chars.map(ch => c.measureText(ch).width);
@@ -676,24 +707,35 @@ function drawCaptions(c, f) {
 }
 
 /* ======================================================================
-   UI：右侧进度刻度条（全片唯一 UI 层）+「示意」角标
+   UI：底部进度刻度（全片唯一 UI 层）+ 章节眉题 +「示意」角标
    ====================================================================== */
 const SECTION_ENDS = [120, 420, 810, 1560, 2130, 2340];
+const CHAPTERS = [[136, 416, '01', '什么是交易']];
 function drawUI(c, f) {
   const a = 0.22 * anim(f, 96, 24, EXPO_OUT);
   if (a > 0.002) {
-    const x = W - 46, y0 = 380, y1 = 1540, p = f / TOTAL_FRAMES;
+    const y = H - 44, x0 = SAFE.L, x1 = W - SAFE.R, p = f / TOTAL_FRAMES;
     c.save();
-    c.fillStyle = rgba(COL.white, a * 0.35); c.fillRect(x - 1.5, y0, 3, y1 - y0);
-    c.fillStyle = rgba(COL.white, a); c.fillRect(x - 1.5, y0, 3, (y1 - y0) * p);
+    c.fillStyle = rgba(COL.white, a * 0.35); c.fillRect(x0, y - 1, x1 - x0, 2);
+    c.fillStyle = rgba(COL.white, a); c.fillRect(x0, y - 1.5, (x1 - x0) * p, 3);
     for (const e of SECTION_ENDS) {
-      const yy = lerp(y0, y1, e / TOTAL_FRAMES), lit = f >= e;
-      c.fillStyle = rgba(COL.white, lit ? a * 1.4 : a * 0.6); c.fillRect(x - 6, yy - 1, 12, 2);
+      const xx = lerp(x0, x1, e / TOTAL_FRAMES), lit = f >= e;
+      c.fillStyle = rgba(COL.white, lit ? a * 1.4 : a * 0.6); c.fillRect(xx - 1, y - 6, 2, 12);
     }
     c.restore();
   }
+  for (const [s, e, no, name] of CHAPTERS) {
+    if (f < s || f > e) continue;
+    const ai = anim(f, s, 20, EXPO_OUT), ao = anim(f, e - 10, 10, EXPO_IN), al = ai * (1 - ao);
+    c.save(); c.globalAlpha = al * 0.9;
+    text(c, no, SAFE.L, SAFE.T + 26 - 8 * (1 - ai), '300 22px InterD', COL.white, 'left', '0.2em');
+    c.fillStyle = rgba(COL.white, 0.25); c.fillRect(SAFE.L + 44, SAFE.T + 18 - 8 * (1 - ai), 36 * ai, 1);
+    c.globalAlpha = anim(f, s + 2.4, 20, EXPO_OUT) * (1 - ao) * 0.9;
+    text(c, name, SAFE.L + 96, SAFE.T + 26 - 8 * (1 - ai), '300 22px NSC', COL.gray, 'left', '0.3em');
+    c.restore();
+  }
   const ta = 0.75 * anim(f, 140, 18, EXPO_OUT);
-  if (ta > 0.002) { c.save(); c.globalAlpha = ta; text(c, '示意', W - SAFE.R, SAFE.T + 40, '300 24px NSC', COL.gray, 'right', '0.2em'); c.restore(); }
+  if (ta > 0.002) { c.save(); c.globalAlpha = ta; text(c, '示意', W - SAFE.R, SAFE.T + 26, '300 22px NSC', COL.gray, 'right', '0.3em'); c.restore(); }
 }
 
 /* ---------------- 颗粒噪点（确定性：mulberry32 种子，按 frame 选片 + 偏移） ---------------- */
@@ -705,22 +747,33 @@ const GRAIN = [1, 2, 3].map(seed => {
   g.putImageData(img, 0, 0); return c;
 });
 
-/* ---------------- 引力透镜（仅帧 70–78）：整屏径向扭曲 2–3%，向外扩散，80ms 恢复 ---------------- */
+/* ---------------- 合成：引力透镜（仅帧 70–78）→ 柔光 → 暗角 ---------------- */
 function composite(f) {
   out.setTransform(1, 0, 0, 1, 0, 0);
   out.drawImage(sceneC, 0, 0);
-  if (f >= 70 && f <= 78) {
+  if (f >= 70 && f <= 78) {                  // 整屏径向扭曲 2–3%，向外扩散，80ms 恢复（全片只此一次）
     const R = 1200 * anim(f, 70, 6, EXPO_OUT);
     const A = 0.028 * (1 - anim(f, 75.6, 2.4, EXPO_OUT));
-    const N = 64, maxR = 1120;
+    const N = 64, maxR = Math.hypot(CX, CY) + 20;
     for (let i = 0; i < N; i++) {
       const r0 = i * maxR / N, r1 = (i + 1) * maxR / N, rm = (r0 + r1) / 2;
-      const w = Math.exp(-(((rm - R) / 190) ** 2));
-      const s = 1 + A * w;
+      const s = 1 + A * Math.exp(-(((rm - R) / 190) ** 2));
       if (s - 1 < 2e-4) continue;
       out.save(); out.beginPath(); out.arc(CX, CY, r1, 0, TAU); out.arc(CX, CY, r0, 0, TAU, true); out.clip();
       out.translate(CX, CY); out.scale(s, s); out.translate(-CX, -CY); out.drawImage(sceneC, 0, 0); out.restore();
     }
+  }
+  if (BLOOM > 0) {                           // 胶片式柔光：1/4 尺寸提取亮部 → 模糊 → screen 叠回
+    bl1.setTransform(1, 0, 0, 1, 0, 0); bl1.clearRect(0, 0, W / 4, H / 4);
+    bl1.filter = 'brightness(0.85) contrast(2.6)'; bl1.drawImage(mainCanvas, 0, 0, W / 4, H / 4); bl1.filter = 'none';
+    bl2.clearRect(0, 0, W / 4, H / 4); bl2.filter = 'blur(6px)'; bl2.drawImage(bl1C, 0, 0); bl2.filter = 'none';
+    out.save(); out.globalCompositeOperation = 'screen'; out.globalAlpha = BLOOM; out.imageSmoothingQuality = 'high';
+    out.drawImage(bl2C, 0, 0, W, H); out.restore();
+  }
+  if (VIGNETTE > 0) {
+    const v = out.createRadialGradient(CX, CY, H * 0.45, CX, CY, Math.hypot(CX, CY));
+    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, `rgba(0,0,0,${VIGNETTE})`);
+    out.fillStyle = v; out.fillRect(0, 0, W, H);
   }
 }
 
@@ -748,7 +801,7 @@ function seek(frame) {
   /* 屏幕空间：标题 / 字幕 */
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   if (f < READY_FRAMES) { drawTitle(ctx, f); drawCaptions(ctx, f); }
-  else text(ctx, `S2 起制作中（预览已完成 0–${READY_FRAMES - 1} 帧）`, CX, CY, '300 36px NSC', COL.gray, 'center');
+  else text(ctx, `S2 起制作中（预览已完成 0–${READY_FRAMES - 1} 帧）`, CX, CY, '300 32px NSC', COL.gray, 'center');
   composite(f);
   /* 颗粒 + UI（不参与透镜扭曲） */
   if (GRAIN_OPACITY > 0) {
@@ -761,6 +814,7 @@ function seek(frame) {
   return f;
 }
 
+window.CANVAS = CANVAS;
 window.TOTAL_FRAMES = TOTAL_FRAMES;
 window.READY_FRAMES = READY_FRAMES;
 window.FPS = FPS;
