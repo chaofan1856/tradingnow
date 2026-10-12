@@ -5,3 +5,9 @@ my-stock-video/frames/
 my-stock-video/stills/
 my-stock-video/成片/*.mp4
 my-stock-video/render.log
+market-museum/frames/
+market-museum/stills/
+market-museum/qa/
+market-museum/mix.wav
+market-museum/mix_raw.wav
+market-museum/render.log
