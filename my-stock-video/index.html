@@ -37,7 +37,8 @@ svg.layer{overflow:visible}
 
 /* floating prints: cold, desaturated, lit from the upper-left star */
 .card{position:absolute;opacity:0;transform-origin:50% 50%}
-.card svg{display:block;width:100%;height:100%;filter:saturate(.55) brightness(.92)}
+.card svg,.card img{display:block;width:100%;height:100%;object-fit:cover;filter:saturate(.55) brightness(.92)}
+.card.oval img{border-radius:50%}
 .card::before{content:'';position:absolute;inset:0;pointer-events:none;mix-blend-mode:multiply;
   background:linear-gradient(135deg,rgba(150,180,215,.18),rgba(40,60,90,.35))}
 .card::after{content:'';position:absolute;inset:0;pointer-events:none;
@@ -449,6 +450,39 @@ $('exchange').innerHTML = exchangeSVG();
 $('hogarth').innerHTML = hogarthSVG();
 $('newton').innerHTML = newtonSVG();
 
+/* Real public-domain / CC0 prints: if a file is present in 素材/, it replaces the drawn stand-in.
+   (Commons file names in 素材/README.md.) The renderer awaits window.ASSETS_READY before frame 0. */
+const ASSETS = [
+  { card: 'cert', file: 'share-certificate.jpg' },
+  { card: 'exchange', file: 'amsterdam-exchange.jpg', cap: 'capExchange', caption: '阿姆斯特丹交易所 · 铜版画（公有领域）' },
+  { card: 'hogarth', file: 'hogarth-south-sea-scheme.jpg', cap: 'capHogarth', caption: '霍加斯《南海计划》（CC0 · 美国国家美术馆）' },
+  { card: 'newton', file: 'newton-kneller.jpg' },
+];
+const probe = src => new Promise(res => { const im = new Image(); im.onload = () => im.decode().then(() => res(im), () => res(null)); im.onerror = () => res(null); im.src = src; });
+window.ASSETS_READY = Promise.all([
+  ...ASSETS.map(async a => {
+    const im = await probe('素材/' + a.file);
+    if (!im) return false;
+    $(a.card).innerHTML = ''; $(a.card).appendChild(im);
+    if (a.cap) $(a.cap).textContent = a.caption;
+    return true;
+  }),
+  probe('素材/voc.svg').then(im => {                 // the real VOC monogram, traced in dark gold via a mask
+    if (!im) return false;
+    const g = $('voc'); while (g.firstChild) g.removeChild(g.firstChild);
+    g.setAttribute('transform', 'translate(1460 136)');
+    const fo = svgEl('foreignObject', { x: 0, y: 0, width: 200, height: 200 }, g);
+    const d = document.createElement('div');
+    d.id = 'vocImg';
+    d.style.cssText = "width:200px;height:200px;background:#C8A96A;-webkit-mask:url('素材/voc.svg') center/contain no-repeat;mask:url('素材/voc.svg') center/contain no-repeat";
+    fo.appendChild(d);
+    return true;
+  }),
+]).then(found => {
+  if (found.some(Boolean)) TEXT_EL.s9[2].el.textContent = '史实来源：大英百科全书 · 中国证券登记结算 · 图像：Wikimedia Commons 公有领域 / CC0';
+  return found;
+});
+
 function placeCard(id, { alpha = 1, x, y, w, h, dy = 0, scale = 1, tilt = true }) {
   const el = $(id);
   el.style.opacity = alpha;
@@ -640,7 +674,9 @@ const R_ = {
     const sh = enter(t, 0.3, 1.0); $('ship').style.opacity = sh; $('ship').setAttribute('transform', `translate(${((1 - sh) * 36).toFixed(2)} 0)`);
     runTexts('s4', t);
     const v = enter(t, 1.9, 1.0); $('voc').style.opacity = v > 0 ? 1 : 0;
-    for (const [id, L] of [['vocV', 300], ['vocO', 146], ['vocC', 120], ['vocRing', 620]]) { const e = $(id); e.setAttribute('stroke-dasharray', `${L} ${L}`); e.setAttribute('stroke-dashoffset', ((1 - v) * L).toFixed(1)); }
+    const img = $('vocImg');
+    if (img) img.style.clipPath = `inset(0 ${((1 - v) * 100).toFixed(2)}% 0 0)`;
+    else for (const [id, L] of [['vocV', 300], ['vocO', 146], ['vocC', 120], ['vocRing', 620]]) { const e = $(id); e.setAttribute('stroke-dasharray', `${L} ${L}`); e.setAttribute('stroke-dashoffset', ((1 - v) * L).toFixed(1)); }
   },
   s5(t) {
     const a = enter(t, 0.0, 1.0);

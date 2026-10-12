@@ -141,7 +141,7 @@ async function main() {
       if (r.exceptionDetails) throw new Error('page error: ' + (r.exceptionDetails.exception?.description || r.exceptionDetails.text));
       return r.result.value;
     };
-    const total = await evalJS(`document.fonts.ready
+    const total = await evalJS(`Promise.resolve(window.ASSETS_READY).then(() => document.fonts.ready)
       .then(() => Promise.all([...document.images].map(i => i.decode().catch(() => null))))
       .then(() => window.TOTAL_FRAMES)`);
 
