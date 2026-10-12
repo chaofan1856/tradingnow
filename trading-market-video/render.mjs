@@ -146,6 +146,9 @@ async function main() {
       .then(() => Promise.all([...document.images].map(i => i.decode().catch(() => null))))
       .then(() => window.TOTAL_FRAMES)`);
 
+    /* 音效提示表（含页面里按"时间膨胀"算出的表盘跳秒）→ cues.json，供 tools/sound.mjs 混音 */
+    fs.writeFileSync(path.join(DIR, 'cues.json'), JSON.stringify(await evalJS('window.CUES'), null, 0));
+
     /* ⑥ frames */
     const list = STILLS ?? Array.from({ length: Math.min(TO ?? total, total) }, (_, i) => i);
     const outDir = path.join(DIR, STILLS ? 'stills' : 'frames');

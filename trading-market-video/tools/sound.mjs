@@ -1,4 +1,4 @@
-// 声音合成：零依赖（Node 22），确定性（种子 PRNG）。
+// 声音合成：零依赖（Node 22），确定性（种子 PRNG）。配乐为原创合成，无任何第三方音源。
 //   node tools/sound.mjs                 → sfx/*.wav + bgm.wav（全片 78s）+ 混音.wav（全片）
 //   node tools/sound.mjs --frames 420    → 混音.wav 只到第 420 帧（预览用）
 // 音效提示表直接从 index.html 里的 /*CUES*/[...]/*END*/ 读取，画面与声音单一来源。
@@ -11,7 +11,9 @@ const SR = 48000, FPS = 30, TOTAL_FRAMES = 2340;
 const argv = process.argv.slice(2);
 const FRAMES = argv.includes('--frames') ? parseInt(argv[argv.indexOf('--frames') + 1], 10) : TOTAL_FRAMES;
 const html = fs.readFileSync(path.join(DIR, 'index.html'), 'utf8');
-const CUES = JSON.parse(html.match(/\/\*CUES\*\/([\s\S]*?)\/\*END\*\//)[1]);
+const cuesFile = path.join(DIR, 'cues.json');            // render.mjs 导出的完整提示表（含表盘跳秒）
+const CUES = fs.existsSync(cuesFile) ? JSON.parse(fs.readFileSync(cuesFile, 'utf8'))
+  : JSON.parse(html.match(/\/\*CUES\*\/([\s\S]*?)\/\*END\*\//)[1]);
 
 const TAU = Math.PI * 2;
 const dB = d => Math.pow(10, d / 20);
@@ -119,52 +121,152 @@ const SFX = {
   },
 };
 
-/* ---------- 配乐：管风琴低频铺底（55 / 110Hz），段落逐步加层 ---------- */
+/* ---------- 配乐：原创电影感配乐（A 小调）——管风琴母题 + 钢琴琶音 + 暖垫 + 心跳低频 + 钟声 ----------
+   段落：S0 管风琴音头与撞击 → S1 钢琴动机 → S2 八分音符琶音（像秒针）→ 黑场 → S3 十六分琶音 + 心跳 + 钟声
+         → 黑场 → S4 和声垫 + 高音对位旋律 → 黑场 → S5 只留管风琴与钢琴长尾 */
+const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+const SAW = (() => { const n = 4096, t = new Float32Array(n); for (let i = 0; i < n; i++) { let v = 0; for (let k = 1; k <= 24; k++) v += Math.sin(TAU * k * i / n) / k; t[i] = v * 0.55; } return t; })();
+const CHORDS = {
+  Am: { b: 45, v: [57, 60, 64, 71] }, F: { b: 41, v: [53, 57, 60, 67] }, C: { b: 48, v: [52, 55, 60, 64] },
+  G: { b: 43, v: [50, 55, 59, 62] }, E: { b: 40, v: [52, 56, 59, 64] }, Dm: { b: 38, v: [50, 53, 57, 64] },
+};
 function bgm() {
-  const dur = TOTAL_FRAMES / FPS + 4, n = Math.ceil(dur * SR);
+  const END = TOTAL_FRAMES / FPS, n = Math.ceil((END + 4) * SR);
   const L = new Float32Array(n), R = new Float32Array(n);
-  const sec = s => s;                                  // 段落时间点（秒）
-  const S2 = 420 / FPS, S3 = 810 / FPS, S4 = 1560 / FPS, S5 = 2130 / FPS, END = TOTAL_FRAMES / FPS;
+  const add = (i, l, r) => { if (i >= 0 && i < n) { L[i] += l; R[i] += r; } };
   const smooth = (t, a, b) => { const u = Math.min(1, Math.max(0, (t - a) / (b - a))); return u * u * (3 - 2 * u); };
-  const organ = (f, t, ph) => {                         // 管风琴音栓：基音 + 八度 + 十二度 + 十五度
-    return Math.sin(TAU * f * t + ph) + 0.5 * Math.sin(TAU * 2 * f * t + ph * 2) + 0.28 * Math.sin(TAU * 3 * f * t)
-      + 0.16 * Math.sin(TAU * 4 * f * t) + 0.06 * Math.sin(TAU * 6 * f * t);
-  };
-  for (let i = 0; i < n; i++) {
-    const t = i / SR;
-    /* 0–0.6s：只有一个极低的音头，随即退到几乎无声 */
-    const head = Math.min(1, t / 0.08) * Math.exp(-t / 0.35) * (t < 1.2 ? 1 : 0);
-    /* 主体：0.6s 起缓慢加压，2.33s 撞击处鼓起，S0–S2 只有管风琴单音（A 的八度叠加） */
-    let body = smooth(t, 0.6, 2.4) * 0.45 + 0.25 * smooth(t, 2.33, 2.9) * Math.exp(-Math.max(0, t - 2.9) / 6) + 0.3 * smooth(t, 3, S3);
-    body *= 1 - 0.85 * (1 - smooth(Math.abs(t - S3), 0, 0.25)) * (t > S3 - 1 && t < S3 + 1 ? 1 : 0);   // 0:27 黑场呼吸
-    body *= 1 - 0.85 * (1 - smooth(Math.abs(t - S5), 0, 0.25)) * (t > S5 - 1 && t < S5 + 1 ? 1 : 0);   // 1:11 黑场呼吸
-    const tail = t > S5 ? Math.exp(-(t - S5) / 3.5) : 1;                                               // S5 收干净
-    const trem = 1 - 0.22 * (0.5 + 0.5 * Math.sin(TAU * 0.17 * t));                                    // 极慢呼吸
-    let l = 0, r = 0;
-    const a1 = organ(55, t, 0) * 0.5 + organ(110, t, 0.3) * 0.35, a2 = organ(55.12, t, 1) * 0.5 + organ(110.2, t, 1.2) * 0.35;
-    l += (head * 0.9 + body * trem * tail) * a1; r += (head * 0.9 + body * trem * tail) * a2;
-    /* S3：节奏性高频点缀（刻度般清脆，每拍一下，72bpm） */
-    if (t > S3 && t < S5) {
-      const beat = 60 / 72, ph = (t - S3) % beat, k = Math.floor((t - S3) / beat);
-      const fr = [1760, 2637, 2217, 2637][k % 4];
-      const v = 0.07 * Math.sin(TAU * fr * ph) * Math.exp(-ph / 0.05) * smooth(t, S3, S3 + 2) * (t > S4 ? 0.7 : 1);
-      l += v * (k % 2 ? 0.6 : 1); r += v * (k % 2 ? 1 : 0.6);
+  /* 钢琴式音色：泛音略带非谐、高次泛音衰减更快 */
+  function piano(t0, m, vel, dur = 3, pan = 0) {
+    const f0 = mtof(m), s0 = Math.round(t0 * SR), len = Math.round(dur * SR);
+    const parts = [1, 2, 3, 4, 5, 6].map(k => ({ f: f0 * k * (1 + 0.0004 * k * k), a: vel / Math.pow(k, 1.35), d: 0.55 + 0.5 * k }));
+    for (let i = 0; i < len; i++) {
+      const t = i / SR, att = Math.min(1, t / 0.004); let v = 0;
+      for (const p of parts) v += p.a * Math.sin(TAU * p.f * t) * Math.exp(-t * p.d);
+      v *= att * (i > len - 2400 ? (len - i) / 2400 : 1);
+      add(s0 + i, v * (1 - pan) * 0.5 + v * 0.5, v * (1 + pan) * 0.5 + v * 0.5);
     }
-    /* S4：和声层（A 大三和弦 C#/E），缓入 */
-    if (t > S4 - 1) {
-      const hg = 0.18 * smooth(t, S4, S4 + 3) * tail;
-      const hv = Math.sin(TAU * 138.6 * t) + 0.6 * Math.sin(TAU * 164.8 * t) + 0.3 * Math.sin(TAU * 220 * t);
-      l += hg * hv * trem; r += hg * hv * (2 - trem) * 0.9;
-    }
-    /* S0 撞击（2.33s）：低频鼓起 */
-    const hit = t > 2.33 ? Math.exp(-(t - 2.33) / 1.2) * 0.5 * Math.sin(TAU * 41 * (t - 2.33)) : 0;
-    l += hit; r += hit;
-    const fade = smooth(END + 3.5 - t, 0, 3.5);
-    L[i] = l * fade; R[i] = r * fade;
   }
-  const outL = reverb(onePoleLP(L, 1800), { room: 0.92, damp: 0.35, wet: 0.45 });
-  const outR = reverb(onePoleLP(R, 1800), { room: 0.92, damp: 0.35, wet: 0.45, spread: 23 });
-  const m = Math.max(...[outL, outR].map(a => a.reduce((s, v) => Math.max(s, Math.abs(v)), 0)));
+  /* 暖垫：三声部失谐锯齿波 + 缓开的低通 */
+  function pad(t0, t1, notes, gain, bright = 900) {
+    const s0 = Math.round(t0 * SR), s1 = Math.round(t1 * SR), fade = 1.2 * SR;
+    const voices = []; notes.forEach((m, j) => [-0.08, 0, 0.09].forEach((dt, k) => voices.push({ inc: mtof(m + dt) * SAW.length / SR, ph: (j * 977 + k * 331) % SAW.length, pan: (k - 1) * 0.6 })));
+    let lpL = 0, lpR = 0, l2L = 0, l2R = 0;
+    for (let i = s0 - fade; i < s1 + fade * 1.5; i++) {
+      if (i < 0 || i >= n) continue;
+      const env = Math.min(1, (i - (s0 - fade)) / (2 * fade)) * Math.min(1, Math.max(0, (s1 + fade * 1.5 - i) / (2.5 * fade)));
+      let l = 0, r = 0;
+      for (const v of voices) { v.ph = (v.ph + v.inc) % SAW.length; const x = SAW[v.ph | 0]; l += x * (1 - v.pan); r += x * (1 + v.pan); }
+      const fc = bright * (0.7 + 0.3 * Math.sin(TAU * 0.07 * i / SR)), a = Math.exp(-TAU * fc / SR);
+      lpL = (1 - a) * l + a * lpL; lpR = (1 - a) * r + a * lpR;          // 两级低通：更暗、更柔
+      l2L = (1 - a) * lpL + a * l2L; l2R = (1 - a) * lpR + a * l2R;
+      add(i, l2L * gain * 0.6 * env / voices.length * 2, l2R * gain * 0.6 * env / voices.length * 2);
+    }
+  }
+  const organ = (f, t) => Math.sin(TAU * f * t) + 0.5 * Math.sin(TAU * 2 * f * t) + 0.28 * Math.sin(TAU * 3 * f * t) + 0.16 * Math.sin(TAU * 4 * f * t) + 0.06 * Math.sin(TAU * 6 * f * t);
+  function organChord(t0, t1, notes, gain) {
+    const s0 = Math.round(t0 * SR), s1 = Math.round(t1 * SR), fa = 0.6 * SR;
+    for (let i = s0; i < s1 + fa * 2; i++) {
+      const t = i / SR, env = Math.min(1, (i - s0) / fa) * Math.min(1, Math.max(0, (s1 + fa * 2 - i) / (fa * 2)));
+      const trem = 1 - 0.18 * (0.5 + 0.5 * Math.sin(TAU * 0.17 * t));
+      let v = 0; for (const m of notes) v += organ(mtof(m), t);
+      v *= gain * env * trem / notes.length;
+      add(i, v, v * 0.96);
+    }
+  }
+  function bell(t0, m, vel) {
+    const f0 = mtof(m), s0 = Math.round(t0 * SR);
+    for (let i = 0; i < 3.5 * SR; i++) {
+      const t = i / SR; let v = 0;
+      for (const [k, a, d] of [[1, 1, 1.6], [2.76, 0.45, 0.9], [5.4, 0.25, 0.5], [8.93, 0.12, 0.3]]) v += a * Math.sin(TAU * f0 * k * t) * Math.exp(-t / d);
+      v *= vel * Math.min(1, t / 0.002); add(s0 + i, v * 0.8, v);
+    }
+  }
+  function heart(t0, vel) {                                  // 心跳式低频：两下（lub-dub）
+    for (const [dt, g] of [[0, 1], [0.24, 0.6]]) {
+      const s0 = Math.round((t0 + dt) * SR);
+      for (let i = 0; i < 0.5 * SR; i++) { const t = i / SR, f = 46 + 22 * Math.exp(-t / 0.04); const v = vel * g * Math.sin(TAU * f * t) * Math.exp(-t / 0.16); add(s0 + i, v, v); }
+    }
+  }
+  function boom(t0, vel) {
+    const s0 = Math.round(t0 * SR), rnd = mulberry32(Math.round(t0 * 1000)); let lp = 0, ph = 0;
+    for (let i = 0; i < 3 * SR; i++) {
+      const t = i / SR, f = 32 + 48 * Math.exp(-t / 0.18); ph += TAU * f / SR;
+      lp = 0.97 * lp + 0.03 * (rnd() * 2 - 1);
+      const v = vel * (Math.sin(ph) * Math.exp(-t / 1.1) + 2.2 * lp * Math.exp(-t / 0.5));
+      add(s0 + i, v, v);
+    }
+  }
+  function riser(t0, t1, vel) {                              // 反向空气声：进黑场前吸气，然后戛然而止
+    const s0 = Math.round(t0 * SR), s1 = Math.round(t1 * SR), rnd = mulberry32(s0); let lp = 0, hp = 0, px = 0;
+    for (let i = s0; i < s1; i++) {
+      const u = (i - s0) / (s1 - s0), fc = 400 + 5000 * u * u, a = Math.exp(-TAU * fc / SR);
+      const x = rnd() * 2 - 1; lp = (1 - a) * x + a * lp; hp = 0.995 * (hp + lp - px); px = lp;
+      const v = vel * hp * u * u * u; add(i, v * (1 - 0.3 * Math.sin(u * 9)), v * (1 + 0.3 * Math.sin(u * 9)));
+    }
+  }
+
+  /* ---- S0：管风琴极低音头（0–0.6s 几乎无声）→ 加压 → 2.33s 撞击 ---- */
+  for (let i = 0; i < 4.6 * SR; i++) {
+    const t = i / SR;
+    const head = Math.min(1, t / 0.08) * Math.exp(-t / 0.35);
+    const body = smooth(t, 0.6, 2.33) * 0.5 * (1 - smooth(t, 3.6, 4.6) * 0.5);
+    const v = (head * 0.9 + body) * (organ(55, t) * 0.5 + organ(110, t) * 0.3) * 0.5;
+    add(i, v, v * 0.97);
+  }
+  boom(2.33, 0.55); bell(2.36, 88, 0.12); bell(2.9, 93, 0.06);
+  /* ---- S1：A 小调暖垫 + 钢琴动机 ---- */
+  pad(4.0, 14.0, CHORDS.Am.v, 0.16, 700);
+  organChord(4.0, 14.0, [33, 45], 0.10);
+  [[4.6, 69], [5.4, 76], [6.2, 72], [7.0, 71], [9.0, 69], [9.8, 76], [10.6, 74], [11.4, 72], [12.6, 64]].forEach(([t, m]) => piano(t, m, 0.22, 3.2, 0.1));
+  /* ---- S2：八分音符琶音，像秒针在走 ---- */
+  const S2c = ['Am', 'F', 'C', 'G'], S2d = 13 / 4;
+  S2c.forEach((k, ci) => {
+    const t0 = 14 + ci * S2d, v = CHORDS[k].v;
+    pad(t0, t0 + S2d, v, 0.15, 800); organChord(t0, t0 + S2d, [CHORDS[k].b - 12, CHORDS[k].b], 0.1);
+    const pat = [v[0], v[2], v[3], v[1] + 12, v[2] + 12, v[3], v[2], v[1] + 12];
+    pat.forEach((m, j) => piano(t0 + j * S2d / 8, m, 0.13 * (j % 2 ? 0.75 : 1), 1.8, j % 2 ? 0.25 : -0.25));
+    heart(t0, 0.18);
+  });
+  riser(25.4, 26.93, 0.35);
+  /* ---- S3：十六分琶音 + 心跳 + 管风琴和弦 + 钟声标记每个市场 ---- */
+  boom(27.07, 0.5);
+  const S3c = ['Am', 'F', 'C', 'G', 'Am', 'F', 'G', 'E'], S3d = 25 / 8;
+  S3c.forEach((k, ci) => {
+    const t0 = 27 + ci * S3d, v = CHORDS[k].v, end = Math.min(t0 + S3d, 50.6);
+    pad(t0, end, v, 0.17, 1100); organChord(t0, end, [CHORDS[k].b - 12, ...v.slice(0, 3)], 0.12);
+    piano(t0, CHORDS[k].b, 0.22, 3.0);
+    for (let j = 0; j < 16; j++) { const t = t0 + j * S3d / 16; if (t > 50.4) break; piano(t, v[j % 4] + 12 + (j % 8 >= 4 ? 12 : 0), 0.075 * (j % 4 === 0 ? 1.3 : 1), 1.2, ((j % 4) - 1.5) * 0.3); }
+    heart(t0, 0.3); if (t0 + S3d / 2 < 50.4) heart(t0 + S3d / 2, 0.2);
+  });
+  [[33.33, 81], [39.0, 84], [45.0, 79], [50.75, 76]].forEach(([t, m]) => bell(t, m, 0.13));
+  riser(50.3, 51.93, 0.4); boom(50.75, 0.35);
+  /* ---- S4：和声垫 + 高音对位旋律（更宽、更暖） ---- */
+  boom(52.07, 0.45);
+  const S4c = ['Dm', 'F', 'Am', 'G', 'Dm', 'F', 'E', 'E'], S4d = 19 / 8;
+  const mel = [81, 84, 76, 79, 81, 77, 80, 76];
+  S4c.forEach((k, ci) => {
+    const t0 = 52 + ci * S4d, v = CHORDS[k].v, end = Math.min(t0 + S4d, 70.6);
+    pad(t0, end, v.concat([v[0] + 12]), 0.2, 1400); organChord(t0, end, [CHORDS[k].b - 12, CHORDS[k].b], 0.1);
+    piano(t0 + 0.05, mel[ci], 0.17, 3.2, 0.2);
+    for (let j = 0; j < 8; j++) { const t = t0 + j * S4d / 8; if (t > 70.4) break; piano(t, v[(j * 3) % 4] + 12, 0.07, 1.4, j % 2 ? 0.3 : -0.3); }
+    heart(t0, 0.22);
+  });
+  riser(69.4, 70.93, 0.35);
+  /* ---- S5：收干净，只留管风琴与钢琴长尾 ---- */
+  boom(71.07, 0.35);
+  organChord(71.0, 76.0, [33, 45, 57, 64], 0.2);
+  pad(71.0, 75.5, CHORDS.Am.v, 0.13, 600);
+  [[71.4, 57], [71.8, 64], [72.2, 69], [72.6, 72], [73.4, 76]].forEach(([t, m]) => piano(t, m, 0.18, 4.5));
+  bell(75.0, 93, 0.07); bell(76.7, 81, 0.06);
+  /* 黑场：三处真正的静默（与画面黑场同步） */
+  for (const b of [27.0, 52.0, 71.0]) for (let i = Math.round((b - 0.12) * SR); i < Math.round((b + 0.07) * SR); i++) {
+    const u = Math.abs(i / SR - b + 0.025) / 0.1; const g = Math.min(1, u * u); if (i >= 0 && i < n) { L[i] *= g; R[i] *= g; }
+  }
+  const fadeTail = Math.round((END - 0.6) * SR);
+  for (let i = fadeTail; i < n; i++) { const g = Math.max(0, 1 - (i - fadeTail) / (0.6 * SR)); L[i] *= g; R[i] *= g; }
+  const outL = reverb(onePoleLP(L, 6000), { room: 0.9, damp: 0.4, wet: 0.32 });
+  const outR = reverb(onePoleLP(R, 6000), { room: 0.9, damp: 0.4, wet: 0.32, spread: 23 });
+  let m = 0; for (let i = 0; i < n; i++) m = Math.max(m, Math.abs(outL[i]), Math.abs(outR[i]));
   for (let i = 0; i < n; i++) { outL[i] /= m; outR[i] /= m; }
   return [outL.subarray(0, Math.ceil(END * SR)), outR.subarray(0, Math.ceil(END * SR))];
 }
@@ -199,8 +301,10 @@ for (let i = 0; i < N; i++) {
   const gb = dB(-20) * dB(-4 * e);
   mixL[i] = (bL[i] ?? 0) * gb + fxL[i]; mixR[i] = (bR[i] ?? 0) * gb + fxR[i];
 }
-/* 总线：整体增益到 -1dBFS 峰值（相对电平不变） */
-let pk = 0; for (let i = 0; i < N; i++) pk = Math.max(pk, Math.abs(mixL[i]), Math.abs(mixR[i]));
-const mg = dB(-1) / pk; for (let i = 0; i < N; i++) { mixL[i] *= mg; mixR[i] *= mg; }
+/* 总线：整体响度对齐到约 -18 dBFS RMS（相对电平不变），峰值用软限幅收在 -1 dBFS 以内 */
+let ss = 0; for (let i = 0; i < N; i++) ss += mixL[i] * mixL[i] + mixR[i] * mixR[i];
+const rms = Math.sqrt(ss / (2 * N)) || 1, mg = dB(-18) / rms, ceil = dB(-1);
+const lim = x => { const a = Math.abs(x); return a < 0.7 * ceil ? x : Math.sign(x) * (0.7 * ceil + 0.3 * ceil * Math.tanh((a - 0.7 * ceil) / (0.3 * ceil))); };
+for (let i = 0; i < N; i++) { mixL[i] = lim(mixL[i] * mg); mixR[i] = lim(mixR[i] * mg); }
 writeWav(path.join(DIR, '混音.wav'), mixL, mixR);
 console.log(`sfx ×${Object.keys(sfx).length}, bgm.wav ${(bL.length / SR).toFixed(2)}s, 混音.wav ${(N / SR).toFixed(2)}s (${FRAMES} frames)`);
