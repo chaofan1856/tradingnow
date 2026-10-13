@@ -2,7 +2,7 @@
 
     python3 tools/mix.py                       # synthesised bgm.wav
     MUSIC=path/to/track.mp4 python3 tools/mix.py   # any audio/video file's audio as the bed
-    MUSIC_START=12 SFX_DB=-22 …                # where to cut the track, sound-effect level
+    MUSIC_START=12 SFX_DB=-30 YEARS_DB=-27   # where to cut the track, effect level, year-chime level
 """
 import os, subprocess, glob
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,15 +13,18 @@ CUES = [('tap', 232), ('rice', 390), ('rice', 506), ('scale', 640), ('paper', 88
         ('ding', 1582), ('tap', 1660), ('tap', 1672), ('tap', 1684), ('tap', 1846), ('paper', 1920), ('paper', 2134)]
 song = os.environ.get('MUSIC') or next(iter(sorted(glob.glob('music/*.*'))), None)
 if song and song.endswith('.md'): song = None
-start, sfx_db = float(os.environ.get('MUSIC_START', 0)), float(os.environ.get('SFX_DB', -22))
+start, sfx_db = float(os.environ.get('MUSIC_START', 0)), float(os.environ.get('SFX_DB', -30))
+years_db = float(os.environ.get('YEARS_DB', -27))          # harpsichord chime at each year block
+stem = os.environ.get('STEM')                              # 'bed' or 'fx': write only that layer (for level checks)
+if stem == 'bed': sfx_db = years_db = -120
 
-duck = ','.join(f"volume=-3dB:enable='between(t,{(s + 8) / FPS:.3f},{(s + 8) / FPS + 0.45:.3f})'" for s in YEARS)
+# no ducking: every chime and sound effect sits under the music (levels checked per cue)
 inputs = ['-i', 'out/video-only.mp4']
 if song:
     print('music:', song, f'(from {start}s)')
     inputs += ['-i', song, '-i', 'sfx/years.wav']
     bed = (f"[1:a]atrim=start={start}:duration={DUR},asetpts=PTS-STARTPTS,aresample=48000,aformat=channel_layouts=stereo,"
-           f"loudnorm=I=-27:TP=-3:LRA=11,afade=t=in:st=1.2:d=3,afade=t=out:st={DUR - 2}:d=2,{duck}[bed];[2:a]volume=-14dB[yr];[bed][yr]amix=inputs=2:normalize=0[bgm]")
+           f"loudnorm=I=-27:TP=-3:LRA=11,afade=t=in:st=1.2:d=3,afade=t=out:st={DUR - 2}:d=2{',volume=0' if stem == 'fx' else ''}[bed];[2:a]volume={years_db}dB[yr];[bed][yr]amix=inputs=2:normalize=0[bgm]")
 else:
     print('music: bgm.wav (synthesised)')
     inputs += ['-i', 'bgm.wav', '-i', 'bgm.wav']
@@ -33,5 +36,5 @@ for k, (name, f) in enumerate(CUES):
     parts.append(f'[{3 + k}:a]adelay={ms}:all=1,volume={sfx_db}dB[s{k}]'); labels.append(f'[s{k}]')
 parts.append(''.join(labels) + f'amix=inputs={len(labels)}:normalize=0:duration=first,volume=8dB,alimiter=limit=0.9:level=disabled,apad,atrim=duration={DUR}[aout]')
 subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', *inputs, '-filter_complex', ';'.join(parts), '-map', '0:v', '-map', '[aout]',
-                '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-t', str(DUR), '-movflags', '+faststart', 'out/金融的起源.mp4'], check=True)
-print('wrote out/金融的起源.mp4')
+                '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000', '-t', str(DUR), '-movflags', '+faststart', os.environ.get('OUT', 'out/金融的起源.mp4')], check=True)
+print('wrote', os.environ.get('OUT', 'out/金融的起源.mp4'))
