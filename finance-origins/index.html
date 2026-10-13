@@ -1337,7 +1337,7 @@ function seek(f) {
   drawYearBlocks(g, f);
   drawSubtitles(g, f);
   g.save(); g.globalAlpha = GRAIN_OPACITY; const tile = GRAIN[f % 4], ox = Math.floor(rnd(f, 991) * 960), oy = Math.floor(rnd(f, 992) * 540);
-  g.translate(-ox, -oy); for (let y = 0; y < 2; y++) for (let x = 0; x < 3; x++) g.drawImage(tile, x * 960, y * 540); g.restore();
+  g.translate(-ox, -oy); for (let y = 0; y < 3; y++) for (let x = 0; x < 3; x++) g.drawImage(tile, x * 960, y * 540); g.restore();   // 3×3 so any offset still covers the frame (2 rows left a strip ungrained → flicker)
   if (f < 30) { g.fillStyle = `rgba(0,0,0,${(0.55 * (1 - f / 30)).toFixed(3)})`; g.fillRect(0, 0, 1920, 1080); }
   if (f >= 2880) { g.fillStyle = `rgba(0,0,0,${Math.pow(p(f, 2880, 2939), 1.4).toFixed(3)})`; g.fillRect(0, 0, 1920, 1080); }
   if (f >= 2846) text(g, '本片仅为知识科普，不构成任何投资建议', 960, 934, `400 30px ${F_SONG}`, C.gray, 'center', p(f, 2846, 2858), 2);
