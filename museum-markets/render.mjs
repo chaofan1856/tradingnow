@@ -2,7 +2,7 @@
 // (Node 22 built-in WebSocket, zero npm deps). Every frame = window.seek(n) →
 // Page.captureScreenshot. No screen recording anywhere.
 //
-//   node render.mjs                     all frames → piped into ffmpeg → out/video-only.mp4
+//   node render.mjs                     all frames → frames/f00000.jpg … (resumable)
 //   node render.mjs --stills 90,300     spot-check  → stills/s00090.png …
 //   node render.mjs --workers 4         parallel tabs (default: min(4, cpus))
 import { spawn, execFileSync } from 'node:child_process';
@@ -109,34 +109,21 @@ async function main() {
     const pages = [];
     for (let i = 0; i < WORKERS; i++) { pages.push(await openPage(cdp)); console.log(`tab ${i + 1}/${WORKERS} ready`); }
     const total = pages[0].total, last = Math.min(TO ?? total, total);
-    fs.mkdirSync(path.join(DIR, 'out'), { recursive: true });
-    const outFile = path.join(DIR, 'out', 'video-only.mp4');
-    const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FPS), '-i', '-',
-      '-c:v', 'libx264', '-preset', 'slow', '-crf', '16', '-pix_fmt', 'yuv420p', '-r', String(FPS), '-movflags', '+faststart', outFile], { stdio: ['pipe', 'inherit', 'inherit'] });
-    const ffDone = new Promise((res, rej) => ff.on('close', c => c === 0 ? res() : rej(new Error('ffmpeg exit ' + c))));
-
-    // workers render interleaved frames; the writer emits them strictly in order
-    const done = new Map(); let next = FROM, written = FROM, t0 = performance.now();
-    let wake = null;
-    const writer = (async () => {
-      while (written < last) {
-        if (!done.has(written)) { await new Promise(r => (wake = r)); continue; }
-        const buf = done.get(written); done.delete(written);
-        if (!ff.stdin.write(buf)) await new Promise(r => ff.stdin.once('drain', r));
-        written++;
-        if (written % 90 === 0 || written === last) console.log(`${written}/${last}  ${((performance.now() - t0) / (written - FROM)).toFixed(0)} ms/frame`);
-      }
-      ff.stdin.end();
-    })();
+    // frames → frames/f00000.jpg … (resumable: existing frames are skipped); build.sh encodes them
+    const fdir = path.join(DIR, 'frames'); fs.mkdirSync(fdir, { recursive: true });
+    const fname = f => path.join(fdir, `f${String(f).padStart(5, '0')}.jpg`);
+    const todo = []; for (let f = FROM; f < last; f++) if (!fs.existsSync(fname(f))) todo.push(f);
+    console.log(`${last - FROM - todo.length} frames already on disk, rendering ${todo.length}`);
+    let next = 0, n = 0; const t0 = performance.now();
     await Promise.all(pages.map(async pg => {
-      while (next < last) {
-        const f = next++;
-        while (done.size > WORKERS * 6) await sleep(5);
-        done.set(f, await pg.shot(f, 'jpeg'));
-        wake?.(); wake = null;
+      while (next < todo.length) {
+        const f = todo[next++];
+        const buf = await pg.shot(f, 'jpeg');
+        fs.writeFileSync(fname(f) + '.tmp', buf); fs.renameSync(fname(f) + '.tmp', fname(f));
+        if (++n % 90 === 0 || n === todo.length) console.log(`${n}/${todo.length}  ${((performance.now() - t0) / n).toFixed(0)} ms/frame`);
       }
     }));
-    await writer; await ffDone;
+    const outFile = fdir;
     console.log('done →', path.relative(DIR, outFile));
   } finally {
     try { await Promise.race([cdp?.send('Browser.close'), sleep(1500)]); } catch {}

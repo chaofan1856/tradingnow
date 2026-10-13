@@ -12,3 +12,5 @@ museum-markets/out/*
 !museum-markets/out/poster.png
 museum-markets/music/*
 !museum-markets/music/README.md
+museum-markets/frames/
+museum-markets/render.log
