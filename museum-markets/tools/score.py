@@ -98,6 +98,10 @@ for y, f0 in zip(YEAR_AT, NOTES):
 bgm = (bed * 1.0 + harp * 0.32) * open_env * close_env
 write(os.path.join(ROOT, 'bgm.wav'), bgm)
 
+# harpsichord-only layer: laid over a user-supplied track (music/) so the year blocks keep their chime
+os.makedirs(os.path.join(ROOT, 'sfx'), exist_ok=True)
+write(os.path.join(ROOT, 'sfx', 'years.wav'), harp * close_env)
+
 # ------------------------------------------------------------------ sfx
 SFX = os.path.join(ROOT, 'sfx'); os.makedirs(SFX, exist_ok=True)
 
