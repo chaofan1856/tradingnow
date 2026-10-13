@@ -15,3 +15,11 @@ museum-markets/music/*
 museum-markets/frames/
 museum-markets/render.log
 !museum-markets/out/认识交易市场-HQ.mp4
+finance-origins/frames/
+finance-origins/stills/
+finance-origins/tools/fonts-src/
+finance-origins/render.log
+finance-origins/music/*
+finance-origins/out/*
+!finance-origins/out/金融的起源-HQ.mp4
+!finance-origins/out/poster.png
