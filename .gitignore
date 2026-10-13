@@ -5,3 +5,8 @@ my-stock-video/frames/
 my-stock-video/stills/
 my-stock-video/成片/*.mp4
 my-stock-video/render.log
+museum-markets/stills/
+museum-markets/tools/fonts-src/
+museum-markets/out/*
+!museum-markets/out/认识交易市场.mp4
+!museum-markets/out/poster.png
