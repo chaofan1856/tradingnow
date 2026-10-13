@@ -1408,7 +1408,7 @@ function seek(f) {
 window.TOTAL_FRAMES = TOTAL_FRAMES;
 window.seek = seek;
 window.READY = (async () => {
-  LOGO = new Image(); LOGO.src = 'assets/tradingnow-logo.png'; await LOGO.decode();
+  LOGO = new Image(); await new Promise((res, rej) => { LOGO.onload = res; LOGO.onerror = rej; LOGO.src = 'assets/tradingnow-logo.png'; });   // onload, not decode(): decode() stalls in background tabs
   await Promise.all([...document.fonts].map(ff => ff.load()));   // every unicode-range slice, not just the first glyphs
   await document.fonts.ready;
   buildStatic(); buildPen();

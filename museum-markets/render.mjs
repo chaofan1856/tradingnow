@@ -106,7 +106,8 @@ async function main() {
       return;
     }
 
-    const pages = await Promise.all(Array.from({ length: WORKERS }, () => openPage(cdp)));
+    const pages = [];
+    for (let i = 0; i < WORKERS; i++) { pages.push(await openPage(cdp)); console.log(`tab ${i + 1}/${WORKERS} ready`); }
     const total = pages[0].total, last = Math.min(TO ?? total, total);
     fs.mkdirSync(path.join(DIR, 'out'), { recursive: true });
     const outFile = path.join(DIR, 'out', 'video-only.mp4');
