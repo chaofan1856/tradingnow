@@ -115,10 +115,13 @@ async function main() {
     const todo = []; for (let f = FROM; f < last; f++) if (!fs.existsSync(fname(f))) todo.push(f);
     console.log(`${last - FROM - todo.length} frames already on disk, rendering ${todo.length}`);
     let next = 0, n = 0; const t0 = performance.now();
+    const retry = [];
     await Promise.all(pages.map(async pg => {
-      while (next < todo.length) {
-        const f = todo[next++];
-        const buf = await pg.shot(f, 'jpeg');
+      while (next < todo.length || retry.length) {
+        const f = retry.length ? retry.pop() : todo[next++];
+        // a tab that stops answering (seen near the end of long runs) hands its frame back and retires
+        const buf = await Promise.race([pg.shot(f, 'jpeg'), sleep(30000).then(() => null)]);
+        if (!buf) { console.log(`frame ${f}: tab timed out, re-queued`); retry.push(f); return; }
         fs.writeFileSync(fname(f) + '.tmp', buf); fs.renameSync(fname(f) + '.tmp', fname(f));
         if (++n % 90 === 0 || n === todo.length) console.log(`${n}/${todo.length}  ${((performance.now() - t0) / n).toFixed(0)} ms/frame`);
       }

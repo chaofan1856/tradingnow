@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 cue() { python3 -c "print(round($1/30*1000))"; }
 SONG="${MUSIC:-$(ls music/*.{mp3,m4a,wav,flac,aac,ogg} 2>/dev/null | head -1 || true)}"
 START="${MUSIC_START:-0}"
-SFX_DB="${SFX_DB:--16}"                          # sound-effect level in the mix (spec said −8; −16 keeps them under the music)
+SFX_DB="${SFX_DB:--22}"                          # sound-effect level in the mix (spec said −8; −22 keeps them well under the music)
 
 # year blocks appear at scene start + 8 frames → duck the bed 3 dB for one beat
 DUCK=""; for s in 210 450 810 1170 1470 1770 2160; do
