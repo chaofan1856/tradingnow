@@ -59,4 +59,4 @@ LINES = [
     dict(scene='summary', sub='高手在算水下的冰山。', hold=1.4),
 ]
 
-FINALE = '新手看价格，老手看供求，高手看价值。'
+FINALE = '新手看【价格】，老手看【供求】，高手看【价值】。'

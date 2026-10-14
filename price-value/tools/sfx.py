@@ -1,11 +1,13 @@
 """Sound design: synthesise every cue the page exports (build/cues.json) and mix it with the score.
+Kept deliberately sparse and noise-free: only tonal accents (low impacts, a wooden tock, thuds, a heartbeat).
 
     python3 tools/sfx.py          -> build/sfx.wav, build/mix.wav
 
-All sounds are synthesised here (no samples): soft swells and low impacts for titles, a wooden
-"tock" for trade prints, thuds, a heartbeat, risers/drops for optimism/fear, sea ambience and
-waves for the iceberg. No bells (short decays only), every sound has a click-free envelope,
-noise sources are band-limited and gentle, and the bus gets one shared small-room reverb.
+All sounds are synthesised here (no samples). The cues in src/scenes.js use only the pure-tone
+generators: impact (titles, chapter cards, finale), tock (trade prints), thud (barter), heart.
+The bus is silent between cues: no ambience bed, no reverb, no noise. The noise-based generators
+(swell, whoosh, riser, drop, sea, wave, …) are kept for reference but no cue calls them.
+No bells (short decays only); every sound has a click-free envelope.
 """
 import json, os, subprocess
 import numpy as np, soundfile as sf
@@ -48,8 +50,7 @@ def impact():
     t = tt(3.2); f = 36 + 26 * np.exp(-t * 2.2)
     x = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t / 1.0)
     x += 0.35 * np.sin(2 * np.pi * np.cumsum(2 * f) / SR) * np.exp(-t / 0.35)
-    body = lp(R.standard_normal(len(t)), 220, 4) * np.exp(-t / 0.08) * 0.6
-    return fade(x + body, 0.006, 0.4) * 0.42
+    return fade(x, 0.008, 0.4) * 0.42
 def swell(d=1.8):
     t = tt(d); n = lp(R.standard_normal(len(t)), 6000)
     x = sweep_band(n, 250, 2600, d) * (t / d) ** 2.2
@@ -62,14 +63,12 @@ def whoosh(d=1.0):
     return fade(x * np.sin(np.pi * t / d) ** 1.5, 0.005, 0.05) * 0.6
 def thud():
     t = tt(0.6); x = sweep_sine(96, 58, 0.6, 0.4) * np.exp(-t / 0.16)
-    x += lp(R.standard_normal(len(t)), 900, 4) * np.exp(-t / 0.018) * 0.4
-    return fade(x, 0.002, 0.05)
+    return fade(x, 0.003, 0.05)
 def tock():
     t = tt(0.25)
     x = np.sin(2 * np.pi * 612 * t) * np.exp(-t / 0.045) + 0.45 * np.sin(2 * np.pi * 1574 * t) * np.exp(-t / 0.018)
     x += 0.3 * np.sin(2 * np.pi * 180 * t) * np.exp(-t / 0.05)
-    x += lp(R.standard_normal(len(t)), 3000, 2) * np.exp(-t / 0.003) * 0.3
-    return fade(x, 0.001, 0.03) * 0.8
+    return fade(x, 0.002, 0.03) * 0.8
 def tick():
     t = tt(0.12); x = np.sin(2 * np.pi * 1180 * t) * np.exp(-t / 0.012) + lp(R.standard_normal(len(t)), 4000) * np.exp(-t / 0.002) * 0.2
     return fade(x, 0.001, 0.02) * 0.5
@@ -125,11 +124,7 @@ for c in cues:
     if s < 0: y, s = y[-s:], 0
     e = min(len(bus), s + len(y)); bus[s:e] += y[:e - s]
 
-# one shared small room so the sounds sit in the same space as the score
-ir_t = tt(1.6); ir = R.standard_normal((len(ir_t), 2)) * np.exp(-ir_t / 0.35)[:, None]
-ir = np.stack([lp(ir[:, 0], 5000), lp(ir[:, 1], 5000)], 1); ir /= np.sqrt((ir ** 2).sum(0))
-wet = np.stack([fftconvolve(bus[:, k], ir[:, k])[:len(bus)] for k in range(2)], 1)
-bus = bus + 0.22 * wet
+# no convolution reverb (its noise impulse response added hiss); every sound here is a clean tone
 bus = bus[:int(total * SR)]
 peak = np.abs(bus).max()
 if peak > 0.9: bus *= 0.9 / peak

@@ -50,7 +50,7 @@ json.dump(dict(total=total, fps=60, lines=lines, scenes=scenes, finale=FINALE, v
 def ts(x):
     ms = int(round(x * 1000)); return f'{ms // 3600000:02d}:{ms // 60000 % 60:02d}:{ms // 1000 % 60:02d},{ms % 1000:03d}'
 srt = [f'{n + 1}\n{ts(L["start"])} --> {ts(L["end"])}\n{plain(L["sub"])}\n' for n, L in enumerate(lines)]
-srt.append(f'{len(lines) + 1}\n{ts(end + 3.0)} --> {ts(total - 2.0)}\n{FINALE}\n')
+srt.append(f'{len(lines) + 1}\n{ts(end + 3.0)} --> {ts(total - 2.0)}\n{plain(FINALE)}\n')
 open(os.path.join(ROOT, 'build', 'subtitles.srt'), 'w', encoding='utf-8').write('\n'.join(srt))
 print(f'natural {natural:.1f}s  music {total:.1f}s  +{extra:.2f}s/line  text ends {end:.1f}s  finale {total - end:.1f}s')
 for s in scenes: print(f"  {s['id']:8s} {s['start']:6.1f} – {s['end']:6.1f}")

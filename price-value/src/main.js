@@ -187,15 +187,16 @@ function runChapter(t) {
 /* ---------- finale ---------- */
 const FIN = charSpans($('finale'), TL.finale);
 function runFinale(t) {
-  const a = WIN.finale[0] + 1.6, on = t > a - 0.2;
+  // the closing line stays razor-sharp: opacity + a small rise only, never blurred
+  const a = WIN.finale[0] + 0.8, on = t > a - 0.2;
   $('finale').style.visibility = on ? 'visible' : 'hidden';
   if (!on) return;
-  const out = ease(t, TL.total - 5.6, 3.2, SOFT);
+  const out = ease(t, TL.total - 2.6, 2.0, SOFT);
   FIN.forEach((s, i) => {
-    const p = ease(t, a + i * 0.13, 2.2, SOFT);
+    const p = ease(t, a + i * 0.05, 0.9, SOFT);
     s.style.opacity = (p * (1 - out)).toFixed(3);
-    s.style.transform = `translate3d(0,${((1 - p) * 10).toFixed(2)}px,0)`;
-    s.style.filter = `blur(${((1 - p) * 10 + out * 9).toFixed(2)}px)`;
+    s.style.transform = `translate3d(0,${((1 - p) * 14).toFixed(2)}px,0)`;
+    s.style.filter = 'none';
   });
 }
 

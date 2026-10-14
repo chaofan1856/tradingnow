@@ -582,29 +582,17 @@ function sceneSummary(g, t) {
    SOUND CUES — exported for tools/sfx.py (times in seconds, gains in dB)
    ===================================================================== */
 function buildCues() {
+  // sparse and purely tonal: a few accents on the beats that matter, nothing continuous, no noise
   const L = i => LN(i), C_ = [];
   const cue = (type, at, gain = 0, extra = {}) => C_.push({ type, at: +at.toFixed(3), gain, ...extra });
-  cue('tock', LN(1).end - 0.4, -6);
-  cue('swell', WIN.title[0] - 1.6, -4); cue('impact', WIN.title[0] + 0.35, 0);
-  for (const id of ['ch1', 'ch2', 'ch3', 'ch4']) { cue('swell', WIN[id][0] - 1.2, -8); cue('impact', WIN[id][0] + 0.25, -5); }
-  [WIN.barter[0] + 1.2, WIN.barter[0] + 1.9, WIN.barter[0] + 2.6].map(x => Math.min(x, L(2).start + 1.6)).forEach((x, i) => cue('thud', x, -8 + i));
-  cue('whoosh', L(3).start + 0.6, -12);
-  cue('whoosh', WIN.barter[1] - 1.0, -12);
-  cue('heart', L(4).start, -10, { dur: 1.8 });
-  cue('tock', L(6).start + 0.1, -3); cue('slide', L(6).start + 0.3, -14);
-  cue('whoosh', L(8).start - 0.2, -13); cue('thud', L(8).start + 0.7, -12); cue('thud', L(8).start + 1.2, -12);
-  for (let k = 0; k < 6; k++) cue('tick', L(10).start + k * 0.45, -18 + (k % 2) * 2);
-  cue('tock', L(12).start + 1.3, -3);
-  cue('riser', L(14).start - 0.2, -12, { dur: 2.0 }); cue('drop', L(15).start + 0.1, -10, { dur: 1.8 });
-  cue('sea', WIN.ocean[0] - 0.5, -11, { dur: WIN.value[1] - WIN.ocean[0] + 1.0 });
-  cue('sea', WIN.trend[0] - 0.5, -12, { dur: WIN.summary[1] - WIN.trend[0] + 0.5 });
-  cue('wave', L(21).start + 0.1, -8); cue('wave', L(23).start + 0.3, -4); cue('wave', L(29).start + 0.2, -7);
-  cue('whoosh', L(22).start - 0.2, -14);
-  cue('impact', L(25).start + 0.6, -12);
-  cue('deep', L(28).start - 0.3, -12, { dur: 6 });
-  cue('tock', L(30).start + 0.6, -4);
-  cue('riser', L(34).start + 0.2, -10, { dur: 2.4 });
-  cue('swell', L(35).start - 0.6, -14); cue('swell', L(36).start - 0.6, -14); cue('swell', L(37).start - 0.6, -12);
-  cue('impact', WIN.finale[0] + 1.5, -6);
+  cue('impact', WIN.title[0] + 0.35, -4);                                   // title
+  for (const id of ['ch1', 'ch2', 'ch3', 'ch4']) cue('impact', WIN[id][0] + 0.25, -11);
+  cue('tock', LN(1).end - 0.4, -10);                                        // the price freezes
+  [WIN.barter[0] + 1.2, WIN.barter[0] + 1.9, WIN.barter[0] + 2.6].map(x => Math.min(x, L(2).start + 1.6)).forEach(x => cue('thud', x, -14));
+  cue('heart', L(4).start, -16, { dur: 1.8 });                              // the "lifeline"
+  cue('tock', L(6).start + 0.1, -7);                                        // buyer meets seller
+  cue('tock', L(12).start + 1.3, -8);                                       // orders match
+  cue('tock', L(30).start + 0.6, -7);                                       // the value investor buys
+  cue('impact', WIN.finale[0] + 0.9, -9);                                   // closing line
   return C_;
 }
