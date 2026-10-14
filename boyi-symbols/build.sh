@@ -20,7 +20,7 @@ ffmpeg -v error -y -i build/music.wav -i build/narration.wav -filter_complex \
 # frames + the reference's top-left watermark (alpha matte, same position, fades in like the original)
 ffmpeg -v error -y -framerate 30 -i build/frames/f%05d.jpg -loop 1 -framerate 30 -i watermark.png -i build/mix.wav \
   -filter_complex "[1:v]format=rgba,fade=in:st=0.6:d=1.0:alpha=1[wm];[0:v][wm]overlay=80:0:shortest=1,format=yuv420p[v]" \
-  -map "[v]" -map 2:a -c:v libx264 -preset slow -crf 17 -profile:v high -tune film -movflags +faststart \
-  -c:a aac -b:a 256k -shortest out/博弈的符号.mp4
+  -map "[v]" -map 2:a -c:v libx264 -preset medium -crf 19 -maxrate 12M -bufsize 24M -profile:v high -tune film -movflags +faststart \
+  -c:a aac -b:a 256k -shortest out/博弈的符号_1080p.mp4
 cp build/subtitles.srt out/博弈的符号.srt
-echo "wrote out/博弈的符号.mp4"
+echo "wrote out/博弈的符号_1080p.mp4"
