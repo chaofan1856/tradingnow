@@ -51,6 +51,9 @@ const C = {
 const rgba = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${n >> 8 & 255},${n & 255},${a})`; };
 
 /* ---------- canvas helpers ---------- */
+/* render scale: 2 → native 3840×2160 drawing in the same 1920×1080 coordinate space */
+const DPR = +(new URLSearchParams(location.search).get('dpr') || window.devicePixelRatio || 1);
+for (const id of ['cv', 'post']) { $(id).width = 1920 * DPR; $(id).height = 1080 * DPR; $(id).style.width = '1920px'; $(id).style.height = '1080px'; }
 const cv = $('cv'), ctx = cv.getContext('2d');
 function offscreen(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
 
@@ -73,7 +76,7 @@ function strokePart(g, pts, p, close = false) {
 function goldStroke(g, pts, p = 1, { w = 1.6, a = 1, color = C.gold, glow = 0.35, close = false } = {}) {
   if (a <= 0.002 || p <= 0) return pts[0];
   g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
-  if (glow > 0) { g.globalAlpha = a * glow; g.strokeStyle = color; g.lineWidth = w * 4.5; g.filter = 'blur(3px)'; strokePart(g, pts, p, close); g.filter = 'none'; }
+  if (glow > 0) { g.globalAlpha = a * glow; g.strokeStyle = color; g.lineWidth = w * 4.5; g.filter = `blur(${3 * DPR}px)`; strokePart(g, pts, p, close); g.filter = 'none'; }
   g.globalAlpha = a; g.strokeStyle = color; g.lineWidth = w;
   const head = strokePart(g, pts, p, close);
   g.restore();
@@ -94,7 +97,7 @@ function text(g, s, x, y, { size = 26, font = 'serif', weight = 400, color = C.i
   const fam = font === 'latin' ? "'CormorantSub','Cormorant Garamond',serif" : "'NotoSerifSub','Noto Serif SC',serif";
   if (size < 70) size = Math.round(size * 1.22);                  // larger type across all labels
   g.save(); g.globalAlpha = a; g.fillStyle = color; g.font = `${italic ? 'italic ' : ''}${weight} ${size}px ${fam}`; g.textBaseline = 'middle';
-  if (blur > 0.05) g.filter = `blur(${blur}px)`;
+  if (blur > 0.05) g.filter = `blur(${blur * DPR}px)`;
   const chars = [...s], sp = size * track;
   if (vertical) {
     const step = size * 1.18;
@@ -174,20 +177,26 @@ function drawBackground(g, t, { spot = 1, width = 1, floor = 1, haze = 1 } = {})
   }
   g.globalAlpha = 1;
 }
+const DITHER = (() => {
+  const n = 512, c = offscreen(n, n), x = c.getContext('2d'), img = x.createImageData(n, n), R = rng(1234);
+  for (let i = 0; i < img.data.length; i += 4) { const v = 128 + (R() + R() - 1) * 90; img.data[i] = img.data[i + 1] = img.data[i + 2] = v; img.data[i + 3] = 255; }
+  x.putImageData(img, 0, 0); return c;
+})();
+let postDrawn = false;
 function drawPost(t) {
+  if (postDrawn) return;                       // static: vignette + fine dither against banding, identical every frame
   const p = $('post').getContext('2d');
-  p.clearRect(0, 0, W, H);
+  p.setTransform(DPR, 0, 0, DPR, 0, 0); p.clearRect(0, 0, W, H);
   p.drawImage(BG.vig, 0, 0);
-  p.globalCompositeOperation = 'overlay'; p.globalAlpha = 0.09;
-  const fr = Math.floor(t * 24);                  // grain keeps a film cadence, independent of the render rate
-  p.fillStyle = p.createPattern(BG.grain[fr % 6], 'repeat');
-  const R = rng(fr * 13 + 5); p.save(); p.translate(-Math.floor(R() * 256), -Math.floor(R() * 256)); p.fillRect(0, 0, W + 256, H + 256); p.restore();
+  p.setTransform(1, 0, 0, 1, 0, 0);
+  p.globalCompositeOperation = 'overlay'; p.globalAlpha = 0.045;
+  p.fillStyle = p.createPattern(DITHER, 'repeat'); p.fillRect(0, 0, W * DPR, H * DPR);
   p.globalCompositeOperation = 'source-over'; p.globalAlpha = 1;
+  postDrawn = true;
 }
-
 /* camera: scale s about focus (fx,fy), then translate (dx,dy) */
-function camera(g, s = 1, fx = 960, fy = 540, dx = 0, dy = 0) { g.setTransform(s, 0, 0, s, fx - fx * s + dx, fy - fy * s + dy); }
-function resetCam(g) { g.setTransform(1, 0, 0, 1, 0, 0); }
+function camera(g, s = 1, fx = 960, fy = 540, dx = 0, dy = 0) { g.setTransform(s * DPR, 0, 0, s * DPR, (fx - fx * s + dx) * DPR, (fy - fy * s + dy) * DPR); }
+function resetCam(g) { g.setTransform(DPR, 0, 0, DPR, 0, 0); }
 
 /* candles: deterministic random walk */
 function makeCandles(seed, n, { drift = 0.15, vol = 1, start = 100 } = {}) {

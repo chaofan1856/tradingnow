@@ -37,7 +37,7 @@ LINES = [
     dict(scene='berg', sub='唯一能被肉眼|看见的表象，|永远在波动。', hold=0.6, pos='L', y=230, size=54),
     dict(scene='berg', sub='水面下的主体，是【内在价值】：资产九成的实体，', hold=0.6),
     dict(scene='berg', sub='由基本面、盈利能力与行业护城河决定，厚重而稳定。', hold=1.2),
-    dict(scene='bubble', sub='当市场狂热，|风浪把冰山推高——', hold=0.6, pos='L', y=240, size=52),
+    dict(scene='bubble', sub='当市场狂热，风浪把冰山推高——', hold=0.6),
     dict(scene='bubble', sub='水面上的尖角被无限放大，远超它真实的体量：【泡沫】。', hold=1.2),
     dict(scene='panic', sub='当集体恐慌，|巨浪盖过冰山——', hold=0.8, pos='L', y=250),
     dict(scene='panic', sub='尖角几乎消失，水下的冰山主体却【完好无损】。', hold=1.2),

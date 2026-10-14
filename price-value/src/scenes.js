@@ -412,7 +412,7 @@ function drawSea(g, t, st, a, { berg = true, cx = 960, scale = 1, labels = null,
     g.globalAlpha = a; g.beginPath(); poly.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath();
     const bg = g.createLinearGradient(0, st.wy, 0, st.wy + 440 * scale); bg.addColorStop(0, 'rgba(160,200,200,.22)'); bg.addColorStop(1, 'rgba(90,130,135,.08)');
     g.fillStyle = bg; g.fill(); g.strokeStyle = 'rgba(199,216,214,.55)'; g.lineWidth = 1.3; g.stroke();
-    if (glowBody > 0) { g.globalAlpha = a * glowBody; g.shadowColor = 'rgba(240,217,168,.9)'; g.shadowBlur = 24; g.strokeStyle = C.goldHi; g.lineWidth = 2; g.stroke(); g.shadowBlur = 0; }
+    if (glowBody > 0) { g.globalAlpha = a * glowBody; g.shadowColor = 'rgba(240,217,168,.9)'; g.shadowBlur = 24 * DPR; g.strokeStyle = C.goldHi; g.lineWidth = 2; g.stroke(); g.shadowBlur = 0; }
     g.globalAlpha = a * 0.25; g.strokeStyle = '#C7D8D6'; g.lineWidth = 0.8;
     for (const f of FACETS) { g.beginPath(); f.forEach(([x, y], i) => { const q = [cx + x * scale, st.wy + y * scale + st.off]; i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]); }); g.stroke(); }
     g.restore();
@@ -421,7 +421,7 @@ function drawSea(g, t, st, a, { berg = true, cx = 960, scale = 1, labels = null,
     g.globalAlpha = a; g.beginPath(); poly.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath();
     const top = Math.min(...poly.map(p => p[1]));
     const ig = g.createLinearGradient(cx - 120, top, cx + 120, st.wy); ig.addColorStop(0, '#F4F2EA'); ig.addColorStop(0.55, '#C9D5D2'); ig.addColorStop(1, '#8EA3A6');
-    g.fillStyle = ig; g.shadowColor = 'rgba(240,230,200,.35)'; g.shadowBlur = 30; g.fill(); g.shadowBlur = 0;
+    g.fillStyle = ig; g.shadowColor = 'rgba(240,230,200,.35)'; g.shadowBlur = 30 * DPR; g.fill(); g.shadowBlur = 0;
     g.strokeStyle = C.goldHi; g.lineWidth = 1.4; g.stroke();
     g.restore();
   }

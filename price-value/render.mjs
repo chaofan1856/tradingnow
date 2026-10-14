@@ -12,11 +12,12 @@ let pw; try { pw = require('playwright'); } catch { pw = require('/opt/node22/li
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2), arg = n => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
 const WORKERS = Number(process.env.WORKERS || 4);
-const url = pathToFileURL(path.join(DIR, 'index.html')).href;
+const DPR = Number(process.env.DPR || 2);
+const url = pathToFileURL(path.join(DIR, 'index.html')).href + `?dpr=${DPR}`;
 
 const browser = await pw.chromium.launch({ args: ['--force-color-profile=srgb', '--disable-background-timer-throttling', '--disable-renderer-backgrounding'] });
 const newPage = async () => {
-  const p = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
+  const p = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: DPR });
   p.on('pageerror', e => { console.error('page error:', e.message); process.exitCode = 1; });
   await p.goto(url); const total = await p.evaluate(() => window.ready); return { p, total };
 };
@@ -42,7 +43,7 @@ const chunk = Math.ceil(frames.length / pages.length);
 await Promise.all(pages.map(async (p, w) => {
   for (const f of frames.slice(w * chunk, (w + 1) * chunk)) {
     await p.evaluate(f => window.seek(f), f);
-    fs.writeFileSync(path.join(outDir, name(f)), await p.screenshot({ type: 'jpeg', quality: 94 }));
+    fs.writeFileSync(path.join(outDir, name(f)), await p.screenshot({ type: 'jpeg', quality: Number(process.env.JPEGQ || 95) }));
     if (++done % 150 === 0) console.log(`${done}/${frames.length}  ${((Date.now() - t0) / done).toFixed(0)} ms/frame avg`);
   }
 }));
