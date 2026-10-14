@@ -5,7 +5,10 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 FROM=$1; TO=$2; NAME=$3; FADEIN=${4:-0}
-COLOR="scale=out_color_matrix=bt709:out_range=tv:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p,eq=brightness=0.02:gamma=1.16:saturation=1.08"
+# grade: eq lifts luma (brightness +0.02, gamma 1.16); saturation x1.08 is an exact chroma LUT, because
+# eq's own fixed-point saturation maps neutral 128 -> 127 (dark greys drift olive) and overshoots 16-240
+SAT="clip(128+(val-128)*1.08+0.5,16,240)"
+COLOR="scale=out_color_matrix=bt709:out_range=tv:flags=lanczos+accurate_rnd+full_chroma_int,format=yuv420p,eq=brightness=0.02:gamma=1.16,lutyuv=u='$SAT':v='$SAT'"
 X264="-c:v libx264 -preset medium -crf 13 -maxrate 38M -bufsize 76M -profile:v high -level 5.2 -g 120 -keyint_min 120 -sc_threshold 0 -x264-params aq-mode=3:aq-strength=0.9 -colorspace bt709 -color_primaries bt709 -color_trc bt709 -color_range tv"
 FR="build/frames_$NAME"
 rm -rf "$FR" && mkdir -p "$FR"
