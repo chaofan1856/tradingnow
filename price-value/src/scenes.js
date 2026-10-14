@@ -384,8 +384,26 @@ function drawSea(g, t, st, a, { berg = true, cx = 960, scale = 1, labels = null,
   // water body
   g.save(); g.globalAlpha = a;
   g.beginPath(); g.moveTo(surf[0][0], surf[0][1]); for (const p of surf) g.lineTo(p[0], p[1]); g.lineTo(W + 20, H); g.lineTo(-20, H); g.closePath();
-  const gr = g.createLinearGradient(0, st.wy, 0, H); gr.addColorStop(0, 'rgba(22,36,33,.82)'); gr.addColorStop(0.45, 'rgba(10,17,16,.9)'); gr.addColorStop(1, 'rgba(6,8,8,.96)');
+  const gr = g.createLinearGradient(0, st.wy, 0, H); gr.addColorStop(0, 'rgba(36,58,52,.8)'); gr.addColorStop(0.45, 'rgba(16,28,26,.88)'); gr.addColorStop(1, 'rgba(8,12,11,.94)');
   g.fillStyle = gr; g.fill();
+  g.clip();
+  // light shafts fanning down from the surface
+  g.globalCompositeOperation = 'lighter';
+  for (let k = 0; k < 9; k++) {
+    const x0 = 120 + k * 220 + Math.sin(t * 0.25 + k * 1.7) * 60, w0 = 40 + (k % 3) * 30, len = 520 + (k % 4) * 90, lean = 140 + (k % 2) * 80;
+    const sh = g.createLinearGradient(0, st.wy, 0, st.wy + len);
+    const al = a * (0.05 + 0.03 * Math.sin(t * 0.6 + k * 2.1));
+    sh.addColorStop(0, `rgba(210,230,215,${al})`); sh.addColorStop(1, 'rgba(210,230,215,0)');
+    g.fillStyle = sh; g.beginPath(); g.moveTo(x0, st.wy); g.lineTo(x0 + w0, st.wy); g.lineTo(x0 + w0 * 2.6 + lean, st.wy + len); g.lineTo(x0 + lean, st.wy + len); g.closePath(); g.fill();
+  }
+  g.globalCompositeOperation = 'source-over';
+  // bubbles rising
+  for (let i = 0; i < 38; i++) {
+    const r = rng(i + 77), bx = r() * W, sp = 30 + r() * 50, ph = r() * 400, y = st.wy + 40 + ((H - st.wy) - ((t * sp + ph) % (H - st.wy)));
+    const x = bx + Math.sin(t * 1.5 + i) * 6, rad = 1.5 + r() * 3;
+    g.globalAlpha = a * 0.35; g.strokeStyle = '#CFE0DC'; g.lineWidth = 0.8; g.beginPath(); g.arc(x, y, rad, 0, 6.2832); g.stroke();
+  }
+  g.globalAlpha = 1;
   g.restore();
   const poly = berg ? bergPoly(st, cx, scale) : null;
   if (poly) {
@@ -442,11 +460,11 @@ function sceneOcean(g, t) {
     const real = bergPoly({ ...st, infl: 1 }, 960);
     g.save(); g.setLineDash([5, 7]); g.beginPath(); real.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath();
     g.save(); g.beginPath(); g.rect(0, 0, W, st.wy); g.clip(); g.globalAlpha = bub; g.strokeStyle = C.ivory; g.lineWidth = 1.2; g.beginPath(); real.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath(); g.stroke(); g.restore(); g.restore();
-    text(g, '价格泡沫 · 高估', 1440, st.wy - 170, { size: 30, weight: 700, color: '#E08A7E', a: bub, align: 'left', track: 0.14 });
-    text(g, '虚线 · 真实体量', 1440, st.wy - 128, { size: 20, color: C.ivory, a: bub * 0.7, align: 'left', track: 0.14 });
+    text(g, '价格泡沫 · 高估', 1440, st.wy - 112, { size: 30, weight: 700, color: '#E08A7E', a: bub, align: 'left', track: 0.14 });
+    text(g, '虚线 · 真实体量', 1440, st.wy - 66, { size: 20, color: C.ivory, a: bub * 0.7, align: 'left', track: 0.14 });
   }
   const pn = life(t, L(23).start + 0.6, L(25).start - 0.2, 1.0, 0.8);
-  text(g, '恐慌低估', 640, st.wy - 120, { size: 30, weight: 700, color: '#8FC0A6', a: pn, track: 0.2 });
+  text(g, '恐慌低估', 1420, st.wy - 120, { size: 30, weight: 700, color: '#8FC0A6', a: pn, track: 0.2 });
   text(g, '完好无损', 960, st.wy + 330 + st.off, { size: 26, weight: 600, color: C.goldHi, a: life(t, L(24).start + 0.6, L(25).start, 0.8, 0.6), track: 0.3 });
   // reversion: weight arrow + damped price around value
   const rv = life(t, L(25).start + 0.2, B + 0.3, 1.0, 0.8);
@@ -502,8 +520,8 @@ function sceneValue(g, t) {
     }
   }
   const bf = ease(t, L(31).start, 1.0) * a;
-  text(g, 'Warren Buffett', 1460, 384, { font: 'latin', italic: true, size: 34, color: C.goldHi, a: bf });
-  text(g, '“Price is what you pay; value is what you get.”', 1460, 424, { font: 'latin', italic: true, size: 22, color: C.ivory, a: bf * 0.8 });
+  text(g, 'Warren Buffett', 1460, 352, { font: 'latin', italic: true, size: 34, color: C.goldHi, a: bf });
+  text(g, '“Price is what you pay; value is what you get.”', 1460, 390, { font: 'latin', italic: true, size: 22, color: C.ivory, a: bf * 0.8 });
 }
 
 /* =====================================================================

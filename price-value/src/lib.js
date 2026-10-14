@@ -44,7 +44,7 @@ const qbez = (a, c, b, u) => [(1 - u) * (1 - u) * a[0] + 2 * (1 - u) * u * c[0] 
 
 /* ---------- palette ---------- */
 const C = {
-  bg: '#0A0806', gold: '#C9A66B', goldHi: '#F0D9A8', ivory: '#EFE8DC',
+  bg: '#110D09', gold: '#C9A66B', goldHi: '#F0D9A8', ivory: '#EFE8DC',
   up: '#C0574C', down: '#5E9479',          // A-share convention: red up, green down (muted)
   ink: '#2A2219', paper: '#D8CBAE',
 };
@@ -92,6 +92,7 @@ function glowDot(g, x, y, r, a, color = C.goldHi) {
 function text(g, s, x, y, { size = 26, font = 'serif', weight = 400, color = C.ivory, a = 1, align = 'center', track = 0.08, italic = false, vertical = false, blur = 0 } = {}) {
   if (a <= 0.002) return;
   const fam = font === 'latin' ? "'CormorantSub','Cormorant Garamond',serif" : "'NotoSerifSub','Noto Serif SC',serif";
+  if (size < 70) size = Math.round(size * 1.22);                  // larger type across all labels
   g.save(); g.globalAlpha = a; g.fillStyle = color; g.font = `${italic ? 'italic ' : ''}${weight} ${size}px ${fam}`; g.textBaseline = 'middle';
   if (blur > 0.05) g.filter = `blur(${blur}px)`;
   const chars = [...s], sp = size * track;
@@ -120,35 +121,44 @@ const BG = (() => {
   const cone = offscreen(W, H), cg = cone.getContext('2d');
   cg.filter = 'blur(26px)';
   const gr = cg.createLinearGradient(0, 0, 0, 780);
-  gr.addColorStop(0, 'rgba(255,228,178,.105)'); gr.addColorStop(0.55, 'rgba(255,226,170,.06)'); gr.addColorStop(1, 'rgba(255,222,165,.045)');
+  gr.addColorStop(0, 'rgba(255,228,178,.17)'); gr.addColorStop(0.55, 'rgba(255,226,170,.10)'); gr.addColorStop(1, 'rgba(255,222,165,.075)');
   cg.fillStyle = gr; cg.beginPath(); cg.moveTo(778, -40); cg.lineTo(1142, -40); cg.lineTo(1720, 772); cg.lineTo(200, 772); cg.closePath(); cg.fill();
   cg.filter = 'none';
   const floor = offscreen(W, H), fg = floor.getContext('2d');
   let f = fg.createRadialGradient(960, 770, 0, 960, 770, 820);
-  f.addColorStop(0, 'rgba(255,224,170,.10)'); f.addColorStop(0.5, 'rgba(255,224,170,.035)'); f.addColorStop(1, 'rgba(255,224,170,0)');
+  f.addColorStop(0, 'rgba(255,224,170,.16)'); f.addColorStop(0.5, 'rgba(255,224,170,.06)'); f.addColorStop(1, 'rgba(255,224,170,0)');
   fg.save(); fg.translate(960, 770); fg.scale(1, 0.16); fg.translate(-960, -770); fg.fillStyle = f; fg.fillRect(0, 0, W, H * 8); fg.restore();
   const lf = fg.createLinearGradient(0, 760, 0, 1080); lf.addColorStop(0, 'rgba(40,30,20,.32)'); lf.addColorStop(1, 'rgba(0,0,0,0)');
   fg.fillStyle = lf; fg.fillRect(0, 768, W, 312);
   const vig = offscreen(W, H), vg = vig.getContext('2d');
   const v = vg.createRadialGradient(960, 520, 300, 960, 540, 1200);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(0.55, 'rgba(0,0,0,.25)'); v.addColorStop(1, 'rgba(0,0,0,.82)');
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(0.6, 'rgba(0,0,0,.12)'); v.addColorStop(1, 'rgba(0,0,0,.55)');
   vg.fillStyle = v; vg.fillRect(0, 0, W, H);
   const warm = offscreen(W, H), wg = warm.getContext('2d');      // faint warm haze so blacks are brown, not grey
-  const wv = wg.createRadialGradient(960, 420, 0, 960, 480, 1100); wv.addColorStop(0, 'rgba(46,34,22,.55)'); wv.addColorStop(1, 'rgba(10,8,6,0)');
+  const wv = wg.createRadialGradient(960, 420, 0, 960, 480, 1100); wv.addColorStop(0, 'rgba(70,52,32,.8)'); wv.addColorStop(0.6, 'rgba(36,27,18,.45)'); wv.addColorStop(1, 'rgba(16,12,8,0)');
   wg.fillStyle = wv; wg.fillRect(0, 0, W, H);
-  const R = rng(77), dust = Array.from({ length: 170 }, () => ({ x: R(), y: R(), z: R(), ph: R() * 6.28, sp: 0.2 + R() * 0.8 }));
+  const R = rng(77), dust = Array.from({ length: 260 }, () => ({ x: R(), y: R(), z: R(), ph: R() * 6.28, sp: 0.2 + R() * 0.8 }));
   const grain = Array.from({ length: 6 }, (_, n) => {
     const c = offscreen(256, 256), x = c.getContext('2d'), img = x.createImageData(256, 256), Rg = rng(900 + n);
     for (let i = 0; i < img.data.length; i += 4) { const g = 128 + (Rg() - 0.5) * 255; img.data[i] = img.data[i + 1] = img.data[i + 2] = g; img.data[i + 3] = 255; }
     x.putImageData(img, 0, 0); return c;
   });
-  return { cone, floor, vig, warm, dust, grain };
+  const bok = offscreen(256, 256), bg2 = bok.getContext('2d'), rb = bg2.createRadialGradient(128, 128, 0, 128, 128, 128);
+  rb.addColorStop(0, 'rgba(255,226,170,.9)'); rb.addColorStop(0.55, 'rgba(255,214,150,.35)'); rb.addColorStop(0.85, 'rgba(255,214,150,.08)'); rb.addColorStop(1, 'rgba(255,214,150,0)');
+  bg2.fillStyle = rb; bg2.fillRect(0, 0, 256, 256);
+  const Rb = rng(404), bokeh = Array.from({ length: 26 }, () => ({ x: Rb(), y: Rb(), r: 24 + Rb() ** 2 * 90, a: 0.025 + Rb() * 0.06, sp: 0.2 + Rb() * 0.8, ph: Rb() * 6.28 }));
+  return { cone, floor, vig, warm, dust, grain, bok, bokeh };
 })();
 
 function drawBackground(g, t, { spot = 1, width = 1, floor = 1, haze = 1 } = {}) {
   g.fillStyle = C.bg; g.fillRect(0, 0, W, H);
   if (haze > 0) { g.globalAlpha = haze; g.drawImage(BG.warm, 0, 0); }
   if (spot > 0.002) {
+    for (const k of BG.bokeh) {
+      const x = ((k.x * (W + 300) + t * 6 * k.sp) % (W + 300)) - 150, y = k.y * H * 0.85 + Math.sin(t * 0.2 * k.sp + k.ph) * 30;
+      g.globalAlpha = k.a * spot * (0.7 + 0.3 * Math.sin(t * 0.5 + k.ph)); g.drawImage(BG.bok, x - k.r, y - k.r, k.r * 2, k.r * 2);
+    }
+    g.globalAlpha = 1;
     g.save(); g.globalAlpha = spot;
     g.translate(960, 0); g.scale(width, 1); g.translate(-960, 0);
     g.drawImage(BG.cone, 0, 0); g.restore();

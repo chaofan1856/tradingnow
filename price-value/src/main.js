@@ -11,6 +11,7 @@ function charSpans(el, str, { keyClass = 'k' } = {}) {
   for (const ch of str) {
     if (ch === '【') { key = true; continue; }
     if (ch === '】') { key = false; continue; }
+    if (ch === '|') { el.appendChild(document.createElement('br')); continue; }
     const s = document.createElement('span'); s.className = 'c' + (key ? ' ' + keyClass : ''); s.textContent = ch === ' ' ? '\u00a0' : ch;
     el.appendChild(s); out.push(s);
   }
@@ -25,23 +26,35 @@ function charIn(s, p, { dy = 18, blur = 12, sc = 0 } = {}) {
 }
 
 /* ---------- subtitles ---------- */
+/* placement presets: text sits where the composition has room, not always at the bottom */
+const POS = {
+  B: { cls: 'pB', base: 'translateX(-50%)' },
+  T: { cls: 'pT', base: 'translateX(-50%)' },
+  C: { cls: 'pC', base: 'translate(-50%,-50%)' },
+  L: { cls: 'pL', base: 'none' },
+  R: { cls: 'pR', base: 'none' },
+};
 const SUBS = TL.lines.map((L, n) => {
-  const el = document.createElement('div'); el.className = 'sub'; $('subs').appendChild(el);
+  const P = POS[L.pos || 'B'];
+  const el = document.createElement('div'); el.className = 'sub ' + P.cls; $('subs').appendChild(el);
+  if (L.y != null) el.style.top = L.y + 'px';
+  if (L.size) el.style.fontSize = L.size + 'px';
   const chars = charSpans(el, L.sub);
   const next = TL.lines[n + 1];
   const outAt = next ? Math.min(L.end + 0.35, next.start - 0.32) : L.end + 1.4;
-  return { L, el, chars, outAt };
+  return { L, el, chars, outAt, base: P.base };
 });
 function runSubs(t) {
   for (const S of SUBS) {
-    const { L, el, chars, outAt } = S;
+    const { L, el, chars, outAt, base } = S;
     if (t < L.start - 0.2 || t > outAt + 0.5) { el.style.opacity = 0; continue; }
     el.style.opacity = 1;
-    const span = Math.min(0.9, (L.end - L.start) * 0.45), step = span / Math.max(1, chars.length - 1);
+    const span = Math.min(1.1, (L.end - L.start) * 0.45), step = span / Math.max(1, chars.length - 1);
     const o = ease(t, outAt, 0.42, SOFT);
     chars.forEach((s, i) => charIn(s, ease(t, L.start - 0.08 + i * step, 0.62, EXPO)));
-    if (o > 0) { el.style.opacity = (1 - o).toFixed(3); el.style.filter = `blur(${(o * 8).toFixed(2)}px)`; el.style.transform = `translateX(-50%) translateY(${(-o * 10).toFixed(2)}px)`; }
-    else { el.style.filter = 'none'; el.style.transform = 'translateX(-50%)'; }
+    const b0 = base === 'none' ? '' : base + ' ';
+    if (o > 0) { el.style.opacity = (1 - o).toFixed(3); el.style.filter = `blur(${(o * 8).toFixed(2)}px)`; el.style.transform = `${b0}translateY(${(-o * 10).toFixed(2)}px)`; }
+    else { el.style.filter = 'none'; el.style.transform = base; }
   }
 }
 
@@ -95,7 +108,11 @@ function runHeader(t) {
   const { cur, prev, k, u } = headerState(t);
   let vis = 1;
   for (const [a, b] of HIDE) vis = Math.min(vis, 1 - Math.min(ease(t, a, 0.8, SOFT), 1 - ease(t, b - 0.2, 1.0, SOFT)));
-  for (const id of ['era', 'place', 'cite']) $(id).style.opacity = vis.toFixed(3);
+  // the left header steps aside while a text block occupies the upper-left corner
+  let busyL = 0;
+  for (const S of SUBS) if (S.L.pos === 'L' && (S.L.y ?? 300) < 460) busyL = Math.max(busyL, Math.min(ease(t, S.L.start - 0.5, 0.5, SOFT), 1 - ease(t, S.outAt, 0.5, SOFT)));
+  $('era').style.opacity = (vis * (1 - busyL)).toFixed(3); $('cite').style.opacity = vis.toFixed(3);
+  $('place').style.visibility = busyL > 0.98 ? 'hidden' : 'visible';
   if (vis <= 0.001) return;
   // odometer: each wheel spins from the previous digit to the new one, staggered right-to-left
   const from = String(prev.num).padStart(4, ' '), to = String(cur.num).padStart(4, ' ');
@@ -113,7 +130,7 @@ function runHeader(t) {
     D.d.style.opacity = lerp(showA ? 1 : 0, showB ? 1 : 0, q).toFixed(3);
   });
   // text fields cross-blur
-  const swap = (id, a, b, k2 = id === 'place' ? vis : 1) => {
+  const swap = (id, a, b, k2 = id === 'place' ? vis * (1 - busyL) : 1) => {
     const el = $(id), q = k === 0 ? 1 : u;
     const txt = q < 0.5 ? a : b, o = q < 0.5 ? 1 - SOFT(q * 2) : SOFT(q * 2 - 1);
     if (el.textContent !== txt) el.textContent = txt;

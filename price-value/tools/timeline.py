@@ -18,7 +18,7 @@ SCENE_PRE = dict(open=1.8, barter=11.0, print=1.4, past=1.4, book=5.4, mood=1.6,
                  panic=1.4, revert=1.4, value=5.6, trend=1.6, summary=2.2)
 GAP = 0.55
 TAIL_MIN = 11.0          # finale card + fade
-plain = lambda s: s.replace('【', '').replace('】', '')
+plain = lambda s: s.replace('【', '').replace('】', '').replace('|', '')
 nchar = lambda s: len(re.sub(r'[，。、；：！？「」——…\s]', '', plain(s)))
 
 
@@ -31,7 +31,7 @@ def build(extra_per_line=0.0):
             scenes.append(dict(id=L['scene'], start=round(t, 3)))
             scene = L['scene']
         d = 1.3 + 0.17 * nchar(L['sub']) + L.get('hold', 0) + extra_per_line
-        lines.append(dict(i=i, scene=scene, sub=L['sub'], start=round(t, 3), end=round(t + d, 3)))
+        lines.append(dict(i=i, scene=scene, sub=L['sub'], start=round(t, 3), end=round(t + d, 3), **{k: L[k] for k in ('pos', 'y', 'size') if k in L}))
         t += d + GAP
     scenes[-1]['end'] = round(t, 3)
     return t, lines, scenes

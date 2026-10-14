@@ -12,37 +12,41 @@
   --latin:'CormorantSub','Cormorant Garamond','Times New Roman',serif;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{width:1920px;height:1080px;overflow:hidden;background:#0A0806}
-#stage{position:absolute;inset:0;overflow:hidden;background:#0A0806}
+html,body{width:1920px;height:1080px;overflow:hidden;background:#110D09}
+#stage{position:absolute;inset:0;overflow:hidden;background:#110D09;filter:brightness(1.1) saturate(1.06)}
 canvas{position:absolute;left:0;top:0}
 .abs{position:absolute;white-space:nowrap}
 
 /* ---------- header: era (top-left) ---------- */
 #era{left:122px;top:92px;display:flex;align-items:baseline;gap:18px;color:var(--gold)}
-#eraPre{font-family:var(--serif);font-weight:400;font-size:54px;letter-spacing:.04em;color:var(--gold);opacity:.92}
+#eraPre{font-family:var(--serif);font-weight:400;font-size:58px;letter-spacing:.04em;color:var(--gold);opacity:.92}
 #eraNum{display:flex;font-feature-settings:'lnum' 1;font-variant-numeric:lining-nums;font-family:var(--latin);font-weight:500;font-size:96px;line-height:1;letter-spacing:.02em}
 .dg{display:inline-block;height:96px;overflow:hidden;position:relative}
 .dg>span{display:block;will-change:transform}
 .dg>span>i{font-feature-settings:'lnum' 1;font-variant-numeric:lining-nums;display:block;height:96px;line-height:96px;font-style:normal;text-align:center;
   background:linear-gradient(180deg,#F1DCAC 10%,#C9A66B 60%,#9C7B45 95%);-webkit-background-clip:text;background-clip:text;color:transparent}
 #eraSuf{font-family:var(--serif);font-size:40px;color:var(--gold);opacity:.85}
-#place{left:126px;top:198px;font-family:var(--serif);font-weight:400;font-size:32px;letter-spacing:.12em;color:var(--dim)}
+#place{left:126px;top:200px;font-family:var(--serif);font-weight:400;font-size:38px;letter-spacing:.12em;color:var(--dim)}
 
 /* ---------- header: citation (top-right) ---------- */
 #cite{right:150px;top:94px;text-align:right}
-#citeLat{font-family:var(--latin);font-style:italic;font-weight:400;font-size:32px;letter-spacing:.02em;color:var(--dim)}
-#citeZh{font-family:var(--serif);font-weight:500;font-size:36px;letter-spacing:.06em;color:var(--gold);margin-top:4px}
-#citeNote{font-family:var(--serif);font-size:20px;letter-spacing:.12em;color:var(--faint);margin-top:8px}
+#citeLat{font-family:var(--latin);font-style:italic;font-weight:400;font-size:34px;letter-spacing:.02em;color:var(--dim)}
+#citeZh{font-family:var(--serif);font-weight:500;font-size:42px;letter-spacing:.06em;color:var(--gold);margin-top:4px}
+#citeNote{font-family:var(--serif);font-size:24px;letter-spacing:.12em;color:var(--faint);margin-top:8px}
 #seal{position:absolute;right:-42px;top:58px;width:22px;height:22px;background:#9E2B25;border-radius:2px;
   box-shadow:inset 0 0 0 1.5px rgba(255,210,190,.25);opacity:.9}
 #seal::after{content:'';position:absolute;inset:4px;border:1px solid rgba(255,220,200,.45)}
 
 /* ---------- subtitles ---------- */
 #subs{position:absolute;left:0;right:0;top:0;bottom:0;pointer-events:none}
-.sub{position:absolute;left:50%;top:868px;transform:translateX(-50%);white-space:nowrap;
-  font-family:var(--serif);font-weight:500;font-size:56px;letter-spacing:.06em;color:var(--ivory);
+.sub{position:absolute;left:50%;top:858px;transform:translateX(-50%);white-space:nowrap;
+  font-family:var(--serif);font-weight:500;font-size:64px;letter-spacing:.05em;color:var(--ivory);
   text-shadow:0 2px 24px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.6);line-height:1.2;opacity:0}
 .sub .c{display:inline-block;will-change:transform,opacity,filter}
+.sub.pT{top:250px;font-size:62px}
+.sub.pC{top:540px;font-size:80px}
+.sub.pL{left:150px;top:300px;transform:none;text-align:left;font-size:60px;line-height:1.42}
+.sub.pR{left:auto;right:150px;top:300px;transform:none;text-align:right;font-size:60px;line-height:1.42}
 .sub .k{font-weight:700;font-size:1.14em;
   background:linear-gradient(180deg,#F6E2B4 0%,#D8B676 52%,#A9864B 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
   text-shadow:none;filter:drop-shadow(0 0 14px rgba(214,178,110,.28))}
@@ -50,18 +54,18 @@ canvas{position:absolute;left:0;top:0}
 /* ---------- title & chapter cards ---------- */
 .card{position:absolute;left:0;right:0;text-align:center;white-space:nowrap}
 .card .c{display:inline-block}
-#tLatin{top:370px;font-family:var(--latin);font-weight:500;font-style:italic;font-size:26px;letter-spacing:.28em;color:var(--gold-dim);text-indent:.28em}
+#tLatin{top:370px;font-family:var(--latin);font-weight:500;font-style:italic;font-size:30px;letter-spacing:.22em;color:var(--gold-dim);text-indent:.22em}
 #tMain{top:420px;font-family:var(--serif);font-weight:700;font-size:118px;letter-spacing:.14em;text-indent:.14em;line-height:1.2}
 #tMain .c{background:linear-gradient(180deg,#F8E7C0 0%,#D9B878 50%,#9A7840 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 0 30px rgba(214,178,110,.25))}
-#tSub{top:628px;font-family:var(--serif);font-weight:400;font-size:30px;letter-spacing:.32em;text-indent:.32em;color:var(--dim)}
+#tSub{top:628px;font-family:var(--serif);font-weight:400;font-size:36px;letter-spacing:.32em;text-indent:.32em;color:var(--dim)}
 
 #chNum{top:330px;font-family:var(--serif);font-weight:700;font-size:66px;color:var(--gold);letter-spacing:.1em;text-indent:.1em}
-#chLat{top:426px;font-family:var(--latin);font-weight:500;font-size:22px;letter-spacing:.6em;text-indent:.6em;color:var(--gold-dim)}
-#chTitle{top:476px;font-family:var(--serif);font-weight:600;font-size:76px;letter-spacing:.16em;text-indent:.16em;color:var(--ivory)}
-#chSub{top:604px;font-family:var(--serif);font-weight:400;font-size:30px;letter-spacing:.3em;text-indent:.3em;color:var(--dim)}
+#chLat{top:426px;font-family:var(--latin);font-weight:500;font-size:26px;letter-spacing:.6em;text-indent:.6em;color:var(--gold-dim)}
+#chTitle{top:470px;font-family:var(--serif);font-weight:600;font-size:88px;letter-spacing:.16em;text-indent:.16em;color:var(--ivory)}
+#chSub{top:606px;font-family:var(--serif);font-weight:400;font-size:36px;letter-spacing:.3em;text-indent:.3em;color:var(--dim)}
 
-#finale{top:500px;font-family:var(--serif);font-weight:500;font-size:58px;letter-spacing:.16em;text-indent:.16em;color:var(--ivory)}
+#finale{top:494px;font-family:var(--serif);font-weight:500;font-size:68px;letter-spacing:.16em;text-indent:.16em;color:var(--ivory)}
 #finale .k2{color:var(--gold-hi)}
 </style>
 </head>
