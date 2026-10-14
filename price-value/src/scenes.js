@@ -62,7 +62,7 @@ function sceneOpen(g, t) {
   const lift = ease(t, B - 1.0, 1.6, SWIFT);
   const a = ease(t, 0.2, 1.2, SOFT) * (1 - lift);
   const v = freeze > 0 ? 32.50 : openPrice(t), k = Math.floor(t / 0.14), flash = freeze > 0 ? 0 : 1 - ((t / 0.14) % 1);
-  text(g, price2(v), 960, 470 - lift * 120, { font: 'latin', size: 210, weight: 500, color: C.goldHi, a, track: 0.02, blur: flash * 1.6 * a });
+  text(g, price2(v), 960, 470 - lift * 120, { font: 'latin', size: 210, weight: 500, color: C.goldHi, a: a * (1 - flash * 0.18), track: 0.02 });
   const up = NZ(k * 0.37) >= NZ((k - 1) * 0.37);
   if (freeze <= 0) text(g, up ? '▲' : '▼', 1210, 410, { size: 30, color: up ? C.up : C.down, a: a * 0.8 });
   // the tape of prints scrolling past

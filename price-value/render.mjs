@@ -19,7 +19,9 @@ const browser = await pw.chromium.launch({ args: ['--force-color-profile=srgb', 
 const newPage = async () => {
   const p = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: DPR });
   p.on('pageerror', e => { console.error('page error:', e.message); process.exitCode = 1; });
-  await p.goto(url); const total = await p.evaluate(() => window.ready); return { p, total };
+  await p.goto(url); const total = await p.evaluate(() => window.ready);
+  p._cdp = await p.context().newCDPSession(p);           // direct CDP capture: ~2× faster than page.screenshot at 4K
+  return { p, total };
 };
 const first = await newPage();
 const total = first.total;
@@ -31,7 +33,7 @@ if (arg('--stills')) {
 } else {
   const from = +(arg('--from') ?? 0), to = Math.min(total, +(arg('--to') ?? total));
   frames = Array.from({ length: to - from }, (_, i) => from + i);
-  outDir = path.join(DIR, 'build', 'frames'); name = f => `f${String(f).padStart(5, '0')}.jpg`;
+  outDir = process.env.FRAMES_DIR ? path.resolve(DIR, process.env.FRAMES_DIR) : path.join(DIR, 'build', 'frames'); name = f => `f${String(f).padStart(5, '0')}.jpg`;
 }
 fs.mkdirSync(outDir, { recursive: true });
 if (process.env.SKIP_EXISTING) frames = frames.filter(f => !fs.existsSync(path.join(outDir, name(f))));
@@ -43,7 +45,8 @@ const chunk = Math.ceil(frames.length / pages.length);
 await Promise.all(pages.map(async (p, w) => {
   for (const f of frames.slice(w * chunk, (w + 1) * chunk)) {
     await p.evaluate(f => window.seek(f), f);
-    fs.writeFileSync(path.join(outDir, name(f)), await p.screenshot({ type: 'jpeg', quality: Number(process.env.JPEGQ || 95) }));
+    const { data } = await p._cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: Number(process.env.JPEGQ || 95), optimizeForSpeed: true, clip: { x: 0, y: 0, width: 1920, height: 1080, scale: DPR }, captureBeyondViewport: false, fromSurface: true });
+    fs.writeFileSync(path.join(outDir, name(f)), Buffer.from(data, 'base64'));
     if (++done % 150 === 0) console.log(`${done}/${frames.length}  ${((Date.now() - t0) / done).toFixed(0)} ms/frame avg`);
   }
 }));

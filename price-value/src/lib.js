@@ -76,7 +76,10 @@ function strokePart(g, pts, p, close = false) {
 function goldStroke(g, pts, p = 1, { w = 1.6, a = 1, color = C.gold, glow = 0.35, close = false } = {}) {
   if (a <= 0.002 || p <= 0) return pts[0];
   g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
-  if (glow > 0) { g.globalAlpha = a * glow; g.strokeStyle = color; g.lineWidth = w * 4.5; g.filter = `blur(${3 * DPR}px)`; strokePart(g, pts, p, close); g.filter = 'none'; }
+  if (glow > 0) {                               // soft halo from stacked translucent strokes (no raster blur: cheap at 4K)
+    g.strokeStyle = color;
+    for (const [k, al] of [[7, 0.10], [4.5, 0.16], [2.6, 0.22]]) { g.globalAlpha = a * glow * al * 1.6; g.lineWidth = w * k; strokePart(g, pts, p, close); }
+  }
   g.globalAlpha = a; g.strokeStyle = color; g.lineWidth = w;
   const head = strokePart(g, pts, p, close);
   g.restore();
