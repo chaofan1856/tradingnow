@@ -11,11 +11,13 @@ python3 tools/prep.py $FONTS              # build/timeline.js (+ fonts.css)
 node tools/cues.mjs                       # sound cues from the page → build/cues.json
 python3 tools/sfx.py                      # synthesised sound design + mix → build/mix.wav
 node render.mjs                           # 60 fps frames
-VF="[1:v]format=rgba,fade=in:st=0.6:d=1.0:alpha=1[wm];[0:v][wm]overlay=80:0:shortest=1,format=yuv420p[v]"
-ffmpeg -v error -y -framerate 60 -i build/frames/f%05d.jpg -loop 1 -framerate 60 -i watermark.png -filter_complex "$VF" \
-  -map "[v]" -c:v libx264 -preset medium -b:v 6000k -maxrate 10M -bufsize 20M -profile:v high -tune film -g 120 -pass 1 -passlogfile build/x2 -an -f null /dev/null
-ffmpeg -v error -y -framerate 60 -i build/frames/f%05d.jpg -loop 1 -framerate 60 -i watermark.png -i build/mix.wav -filter_complex "$VF" \
-  -map "[v]" -map 2:a -c:v libx264 -preset medium -b:v 6000k -maxrate 10M -bufsize 20M -profile:v high -tune film -g 120 -pass 2 -passlogfile build/x2 \
-  -c:a aac -b:a 192k -shortest -movflags +faststart out/重新理解价格与价值.mp4
+# delivery: HEVC Main10 (no banding in the dark gradients), 2-pass sized for a ~250 MB file
+VF="[1:v]format=rgba,fade=in:st=0.6:d=1.0:alpha=1[wm];[0:v][wm]overlay=80:0:shortest=1,format=yuv420p10le[v]"
+XP="keyint=120:min-keyint=60:vbv-maxrate=14000:vbv-bufsize=28000:aq-mode=3:psy-rd=2.0:psy-rdoq=1.5:no-sao=1:deblock=-1,-1:log-level=error"
+ffmpeg -v error -y -framerate 60 -i build/frames/f%05d.jpg -loop 1 -framerate 60 -i watermark.png -filter_complex "$VF" -map "[v]" \
+  -c:v libx265 -preset medium -b:v 7500k -x265-params "pass=1:stats=build/hevc.stats:$XP" -an -f null /dev/null
+ffmpeg -v error -y -framerate 60 -i build/frames/f%05d.jpg -loop 1 -framerate 60 -i watermark.png -i build/mix.wav -filter_complex "$VF" -map "[v]" -map 2:a \
+  -c:v libx265 -preset medium -b:v 7500k -x265-params "pass=2:stats=build/hevc.stats:$XP" -tag:v hvc1 \
+  -c:a aac -b:a 256k -shortest -movflags +faststart out/重新理解价格与价值.mp4
 cp build/subtitles.srt out/重新理解价格与价值.srt
 echo "wrote out/重新理解价格与价值.mp4"
