@@ -26,7 +26,7 @@ function drawScenes(g, t) {
   if (inWin(t, 'past', 0.4, 0.3)) scenePast(g, t);
   if (inWin(t, 'book', 0.3, 0.5)) sceneBook(g, t);
   if (inWin(t, 'mood', 0.4, 0.3)) sceneMood(g, t);
-  if (inWin(t, 'ocean', 0.3, 0.3)) sceneOcean(g, t);
+  if (inWin(t, 'ocean', 0.3, 0.9)) sceneOcean(g, t);
   if (inWin(t, 'value', 0.3, 0.6)) sceneValue(g, t);
   if (inWin(t, 'trend', 0.5, 0.6)) sceneTrend(g, t);
   if (inWin(t, 'summary', 0.5, 0.3)) sceneSummary(g, t);
@@ -356,17 +356,18 @@ function waveY(x, t, amp, crest = null) {
 function oceanState(t) {
   const L = i => LN(i), W_ = WIN.ocean;
   const st = { wy: 430, amp: 1, off: 0, infl: 1, crest: null, cx: 960 };
-  if (t < W_[0] || t > W_[1] + 0.3) return st;
-  const bub = ease(t, L(21).start + 0.2, 2.2, SWIFT) * (1 - ease(t, L(23).start - 0.6, 1.8, SWIFT));
-  const pan = ease(t, L(23).start - 0.2, 1.8, SWIFT) * (1 - ease(t, L(25).start - 0.4, 1.0, SWIFT));
+  if (t < W_[0] || t > W_[1] + 0.9) return st;
+  // each phase follows its own subtitle: bubble L22–23, panic L24–25, reversion L26–27
+  const bub = ease(t, L(22).start + 0.2, 2.2, SWIFT) * (1 - ease(t, L(24).start - 0.6, 1.8, SWIFT));
+  const pan = ease(t, L(24).start - 0.2, 1.8, SWIFT) * (1 - ease(t, L(26).start - 0.4, 1.0, SWIFT));
   st.amp = 1 + bub * 2.2 + pan * 3;
   st.off = -150 * bub + 120 * pan;
   st.infl = 1 + 0.75 * bub;
   // reversion: a damped bob back to equilibrium
-  const r0 = L(25).start - 0.4;
+  const r0 = L(26).start - 0.4;
   if (t > r0) { const k = t - r0; st.off += 120 * Math.exp(-k * 0.9) * Math.cos(k * 2.4) * (1 - pan) * 0.6; }
   // the big wave that buries the tip
-  const cw = seg(t, L(23).start + 0.2, L(24).start + 1.4);
+  const cw = seg(t, L(24).start + 0.2, L(25).start + 1.4);
   if (cw > 0 && cw < 1) st.crest = { x: lerp(2100, -300, SOFT(cw)), w: 380, h: 190 * Math.sin(Math.PI * cw) };
   return st;
 }
@@ -438,8 +439,8 @@ function sceneOcean(g, t) {
   const st = oceanState(t);
   const rise = ease(t, A - 0.2, 2.0, SWIFT);
   st.wy = lerp(1100, 430, rise);
-  const a = ease(t, A - 0.2, 1.0, SOFT);
-  const bodyGlow = life(t, L(24).start + 0.4, L(25).start + 0.6, 0.8, 0.8) * (0.6 + 0.4 * Math.sin(t * 4));
+  const a = ease(t, A - 0.2, 1.0, SOFT) * (1 - ease(t, B - 0.3, 1.1, SOFT));   // dissolves under the next chapter card
+  const bodyGlow = life(t, L(25).start + 0.4, L(26).start + 0.6, 0.8, 0.8) * (0.6 + 0.4 * Math.sin(t * 4));
   const poly = drawSea(g, t, st, a, { glowBody: bodyGlow });
   const tipY = Math.min(...poly.map(p => p[1]));
   // labels: price (tip) and value (body)
@@ -455,7 +456,7 @@ function sceneOcean(g, t) {
     text(g, s, 960 + (k - 1) * 190, st.wy + 230 + st.off + (k % 2) * 40, { size: 30, weight: 600, color: C.goldHi, a: q, track: 0.16 });
   });
   // bubble: inflated tip vs its true size
-  const bub = life(t, L(22).start - 0.2, L(23).start - 0.2, 1.0, 0.8);
+  const bub = life(t, L(23).start - 0.2, L(24).start - 0.2, 1.0, 0.8);
   if (bub > 0) {
     const real = bergPoly({ ...st, infl: 1 }, 960);
     g.save(); g.setLineDash([5, 7]); g.beginPath(); real.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.closePath();
@@ -463,11 +464,11 @@ function sceneOcean(g, t) {
     text(g, '价格泡沫 · 高估', 1440, st.wy - 112, { size: 30, weight: 700, color: '#E08A7E', a: bub, align: 'left', track: 0.14 });
     text(g, '虚线 · 真实体量', 1440, st.wy - 66, { size: 20, color: C.ivory, a: bub * 0.7, align: 'left', track: 0.14 });
   }
-  const pn = life(t, L(23).start + 0.6, L(25).start - 0.2, 1.0, 0.8);
+  const pn = life(t, L(24).start + 0.6, L(26).start - 0.2, 1.0, 0.8);
   text(g, '恐慌低估', 1420, st.wy - 120, { size: 30, weight: 700, color: '#8FC0A6', a: pn, track: 0.2 });
-  text(g, '完好无损', 960, st.wy + 330 + st.off, { size: 26, weight: 600, color: C.goldHi, a: life(t, L(24).start + 0.6, L(25).start, 0.8, 0.6), track: 0.3 });
+  text(g, '完好无损', 960, st.wy + 210 + st.off, { size: 26, weight: 600, color: C.goldHi, a: life(t, L(25).start + 0.6, L(26).start, 0.8, 0.6), track: 0.3 });
   // reversion: weight arrow + damped price around value
-  const rv = life(t, L(25).start + 0.2, B + 0.3, 1.0, 0.8);
+  const rv = life(t, L(26).start + 0.2, B + 0.3, 1.0, 0.8);
   if (rv > 0) {
     g.save(); g.setLineDash([4, 8]); goldStroke(g, [[960, tipY + 10], [960, st.wy + 210 + st.off]], rv, { w: 1.2, a: rv * 0.8, glow: 0, color: C.goldHi }); g.restore();
     goldStroke(g, [[948, st.wy + 196 + st.off], [960, st.wy + 214 + st.off], [972, st.wy + 196 + st.off]], rv, { w: 1.4, a: rv, glow: 0 });
@@ -475,7 +476,7 @@ function sceneOcean(g, t) {
     goldStroke(g, [[X0, Y], [X1, Y]], rv, { w: 1.2, a: rv * 0.8, glow: 0, color: C.gold });
     text(g, '价值', X1 + 14, Y, { size: 20, color: C.goldHi, a: rv, align: 'left' });
     const pts = []; for (let i = 0; i <= 120; i++) { const u = i / 120; pts.push([lerp(X0, X1, u), Y - 90 * Math.exp(-u * 3.2) * Math.sin(u * 22)]); }
-    goldStroke(g, pts, ease(t, L(25).start + 0.4, 2.4, SOFT), { w: 1.8, a: rv, glow: 0.4, color: C.ivory });
+    goldStroke(g, pts, ease(t, L(26).start + 0.4, 2.4, SOFT), { w: 1.8, a: rv, glow: 0.4, color: C.ivory });
     text(g, '价格', X0 - 14, Y - 40, { size: 20, color: C.ivory, a: rv, align: 'right' });
     text(g, 'MEAN REVERSION · 价值回归', (X0 + X1) / 2, Y + 70, { font: 'latin', size: 18, color: C.gold, a: rv * 0.8, track: 0.3 });
   }
@@ -487,7 +488,7 @@ function sceneOcean(g, t) {
 function sceneValue(g, t) {
   const [A, B] = WIN.value, L = i => LN(i);
   const st = { wy: 300, amp: 1.2, off: 0, infl: 1, crest: null };
-  const pull = ease(t, A - 0.4, 2.0, SWIFT), a = ease(t, A - 0.4, 0.8, SOFT) * (1 - ease(t, B - 0.6, 1.0, SOFT) * 0);
+  const pull = ease(t, A - 0.4, 2.0, SWIFT), a = ease(t, A - 0.4, 0.8, SOFT) * (1 - ease(t, B - 0.6, 1.0, SOFT));   // cross-dissolves with the trend sea
   st.wy = lerp(430, 300, pull);
   const cx = lerp(960, 640, pull), sc = lerp(1, 1.15, pull);
   const pan = life(t, L(29).start - 0.2, L(30).end, 1.2, 1.4);
@@ -531,7 +532,7 @@ function sceneTrend(g, t) {
   const [A, B] = WIN.trend, L = i => LN(i);
   const fromV = ease(t, A - 0.5, 2.0, SWIFT);
   const st = { wy: lerp(300, 620, fromV), amp: 1.4, off: 120, infl: 1, crest: null };
-  const a = ease(t, A - 0.6, 0.6, SOFT);
+  const a = ease(t, A - 0.6, 0.6, SOFT) * (1 - ease(t, B - 0.5, 1.0, SOFT));   // cross-dissolves with the summary sea
   const grow = ease(t, L(33).start, (L(34).end - L(33).start), SOFT);
   // the price IS the wave crest: a base, then a breakout that the wave carries
   st.crest = { x: lerp(-200, 1450, grow), w: 360, h: 40 + 200 * ease(t, L(34).start, 2.4, SOFT) };

@@ -118,11 +118,12 @@ function runHeader(t) {
   const from = String(prev.num).padStart(4, ' '), to = String(cur.num).padStart(4, ' ');
   DIGITS.forEach((D, j) => {
     const a = from[j] === ' ' ? 0 : +from[j], b = to[j] === ' ' ? 0 : +to[j];
+    const still = k === 0 || from[j] === to[j];            // an unchanged digit stays put (no spin, no blur)
     const stagger = (3 - j) * 0.09, q = k === 0 ? 1 : SWIFT(clamp((u - stagger) / (1 - 0.27)));
-    const spins = k === 0 ? 0 : 1 + (j % 2);
+    const spins = still ? 0 : 1 + (j % 2);
     const pos = lerp(a, b + 10 * spins + (b < a ? 0 : 0), q);
     D.strip.style.transform = `translateY(${(-pos * 96).toFixed(2)}px)`;
-    const speed = k === 0 ? 0 : Math.abs(Math.sin(Math.PI * q));
+    const speed = still ? 0 : Math.abs(Math.sin(Math.PI * q));
     D.strip.style.filter = speed > 0.05 ? `blur(${(speed * 2.2).toFixed(2)}px)` : 'none';
     const showA = from[j] !== ' ', showB = to[j] !== ' ';
     const wA = showA ? digitW(a) : 0, wB = showB ? digitW(b) : 0, ww = lerp(wA, wB, q);
