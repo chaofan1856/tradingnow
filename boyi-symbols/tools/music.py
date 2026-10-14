@@ -17,7 +17,10 @@ SR = 48000
 
 src = os.path.join(BUILD, 'ref_audio.wav')
 subprocess.run(['ffmpeg', '-v', 'error', '-y', '-i', sys.argv[1], '-vn', '-ac', '2', '-ar', str(SR), src], check=True)
-y, _ = sf.read(src, dtype='float32')
+# take the recurring bell / chime hits out of the score first (tools/debell.py)
+clean = os.path.join(BUILD, 'ref_debell.wav')
+subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'debell.py'), src, clean], check=True)
+y, _ = sf.read(clean, dtype='float32')
 
 mono = librosa.resample(y.mean(1), orig_sr=SR, target_sr=22050)
 _, beats = librosa.beat.beat_track(y=mono, sr=22050, hop_length=256, start_bpm=112, tightness=400)

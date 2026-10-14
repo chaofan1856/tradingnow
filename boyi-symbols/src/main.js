@@ -1,7 +1,8 @@
 'use strict';
 /* Timeline, DOM typography (subtitles, header, cards) and the frame entry point window.seek(frame). */
-const FPS = TL.fps;
+const FPS = 60;                                   // rendered at 60 fps for smooth motion
 window.TOTAL_FRAMES = Math.round(TL.total * FPS);
+window.FPS_OUT = FPS;
 
 /* ---------- typography: split into per-character spans ---------- */
 function charSpans(el, str, { keyClass = 'k' } = {}) {

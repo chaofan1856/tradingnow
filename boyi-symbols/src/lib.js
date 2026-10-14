@@ -169,7 +169,7 @@ function drawPost(t) {
   p.clearRect(0, 0, W, H);
   p.drawImage(BG.vig, 0, 0);
   p.globalCompositeOperation = 'overlay'; p.globalAlpha = 0.09;
-  const fr = Math.floor(t * 30);
+  const fr = Math.floor(t * 24);                  // grain keeps a film cadence, independent of the render rate
   p.fillStyle = p.createPattern(BG.grain[fr % 6], 'repeat');
   const R = rng(fr * 13 + 5); p.save(); p.translate(-Math.floor(R() * 256), -Math.floor(R() * 256)); p.fillRect(0, 0, W + 256, H + 256); p.restore();
   p.globalCompositeOperation = 'source-over'; p.globalAlpha = 1;

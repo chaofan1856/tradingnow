@@ -24,8 +24,9 @@ const first = await newPage();
 const total = first.total;
 let frames, outDir, name;
 if (arg('--stills')) {
-  frames = arg('--stills').split(',').map(s => Math.round(parseFloat(s) * 30));
-  outDir = path.join(DIR, 'build', 'stills'); name = f => `t${(f / 30).toFixed(2).padStart(7, '0')}.jpg`;
+  const fps = await first.p.evaluate(() => window.FPS_OUT);
+  frames = arg('--stills').split(',').map(s => Math.round(parseFloat(s) * fps));
+  outDir = path.join(DIR, 'build', 'stills'); name = f => `f${String(f).padStart(5, '0')}.jpg`;
 } else {
   const from = +(arg('--from') ?? 0), to = Math.min(total, +(arg('--to') ?? total));
   frames = Array.from({ length: to - from }, (_, i) => from + i);
