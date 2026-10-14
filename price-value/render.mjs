@@ -33,6 +33,8 @@ if (arg('--stills')) {
   outDir = path.join(DIR, 'build', 'frames'); name = f => `f${String(f).padStart(5, '0')}.jpg`;
 }
 fs.mkdirSync(outDir, { recursive: true });
+if (process.env.SKIP_EXISTING) frames = frames.filter(f => !fs.existsSync(path.join(outDir, name(f))));
+console.log(frames.length, 'frames to render');
 const pages = [first.p];
 for (let i = 1; i < Math.min(WORKERS, frames.length); i++) pages.push((await newPage()).p);
 const t0 = Date.now(); let done = 0;

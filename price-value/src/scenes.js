@@ -379,7 +379,7 @@ function bergPoly(st, cx, scale = 1) {
   });
 }
 function drawSea(g, t, st, a, { berg = true, cx = 960, scale = 1, labels = null, glowBody = 0 } = {}) {
-  if (a <= 0) return;
+  if (a <= 0) return bergPoly(st, cx, scale);
   const surf = []; for (let x = -20; x <= W + 20; x += 12) surf.push([x, st.wy + waveY(x, t, st.amp, st.crest)]);
   // water body
   g.save(); g.globalAlpha = a;
