@@ -5,8 +5,8 @@
 The track's second half (from ~88 s) replays the arrangement of its opening (~3 s) 160 beats earlier: over
 8 beats either side of beat 170 -> beat 10, beat-synchronous MFCC / mel / chroma similarity is ~0.86 and every
 band is within 2 dB, so one jump back there replays intro -> build -> main section once (+85.1 s) with a
-single seam. If more length is ever needed, the main section also repeats every 32 beats (8 bars, similarity
-0.99) and an 8-bar repeat is added there. The music ends at ~185.4 s; the platform sting after 5 s of
+single seam. The main section also repeats every 32 beats (8 bars, similarity 0.99), so shorter films use one or
+two 8-bar repeats there, or the track as it is. The music ends at ~185.4 s; the platform sting after 5 s of
 silence (~190.8 s) is cut. A short equal-power crossfade sits just before each beat's attack.
 Writes build/music.wav (48 kHz stereo) and build/music.json {"length": s}.
 """
@@ -37,9 +37,11 @@ MAIN, CHORUS = (beat(90.85), beat(5.75)), (beat(68.51), beat(51.50))
 assert MAIN[0] - MAIN[1] == 160 and CHORUS[0] - CHORUS[1] == 32, (MAIN, CHORUS)
 target = float(sys.argv[2])
 gain = lambda jumps: sum(bt[j] - bt[i] for j, i in jumps)
-# fewest seams that reach the target; the closing tail may give up to 1 s
-for JUMPS in ([MAIN], [CHORUS, MAIN], [CHORUS, CHORUS, MAIN], [CHORUS, CHORUS, CHORUS, MAIN]):
-    if len(y) / SR + gain(JUMPS) >= target - 1.0: break
+# the shortest arrangement that reaches the target (the closing tail may give up to 1 s): the track as it is,
+# then 8-bar chorus repeats, then the long section repeat
+OPTIONS = sorted(([], [CHORUS], [CHORUS, CHORUS], [MAIN], [CHORUS, MAIN], [CHORUS, CHORUS, MAIN], [CHORUS, CHORUS, CHORUS, MAIN]),
+                 key=lambda j: (len(y) / SR + gain(j), len(j)))
+JUMPS = next((j for j in OPTIONS if len(y) / SR + gain(j) >= target - 1.0), OPTIONS[-1])
 
 XF = int(0.06 * SR)         # crossfade length
 PRE = int(0.025 * SR)       # cut slightly before the attack
