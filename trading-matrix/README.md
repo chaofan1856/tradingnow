@@ -13,7 +13,7 @@
 | 片尾 | 纯黑上的白色细体金句与英文 |
 
 ## 构成
-- `script.py` 字幕；`tools/timeline.py` 按阅读速度排时（长句自动折行）；`tools/music.py` + `tools/debell.py` 配乐；`tools/mix.py` 响度归一
+- `script.py` 字幕；`tools/timeline.py` 按阅读速度排时（长句自动折行）；`tools/music.py` 配乐（用户提供的曲目，一处整段回跳延长到片长）；`tools/mix.py` 响度归一
 - `src/scenes.js` 光点矩阵与各节图解；`src/main.js` 字幕（五种入场：翻转、聚合、字距收拢、光幕擦出、中心放大；关键词下划线与扫光）、页眉、章节标题飞入页眉
 - `render.mjs` 逐帧渲染（DPR 2，原生 4K）；`tools/segment.sh` 渲染一段并在 ffmpeg 中加胶片颗粒、调色、x264 编码；`tools/master4k.sh` 分段渲染并无损拼接
 - 一步出片：`python3 tools/timeline.py 参考片.mp4 && python3 tools/prep.py 字体包目录 && python3 tools/mix.py && tools/master4k.sh`

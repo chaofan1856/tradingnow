@@ -24,11 +24,18 @@ function charSpans(el, str, { keyClass = 'k' } = {}) {
   out.kws = kws;
   return out;
 }
+// Chromium's software blur is a box blur whose window is rounded to whole pixels: below ~0.4 css px (DPR 2) it
+// renders as no blur at all, so a blur that eases to 0 at the very end snaps the glyph into focus in one frame
+// (a visible flicker). Entrances let the blur reach 0 by q = end, while the character is still moving and fading;
+// exits start blurring only once the fade is under way.
+const blurPx = (inPx, q, end = 0.8, outPx = 0, o = 0, start = 0.2) =>
+  inPx * Math.pow(clamp(1 - q / end), 1.5) + outPx * Math.pow(clamp((o - start) / (1 - start)), 1.5);
+const blurCss = (...a) => { const b = blurPx(...a); return b > 0.05 ? `blur(${b.toFixed(2)}px)` : 'none'; };
 function charIn(s, p, { dy = 18, blur = 12, sc = 0 } = {}) {
   const q = clamp(p);
   s.style.opacity = q.toFixed(3);
   s.style.transform = `translate3d(0,${((1 - q) * dy).toFixed(2)}px,0)${sc ? ` scale(${(1 + (1 - q) * sc).toFixed(4)})` : ''}`;
-  s.style.filter = q < 0.995 ? `blur(${((1 - q) * blur).toFixed(2)}px)` : 'none';
+  s.style.filter = blurCss(blur, q);
 }
 
 /* ---------- subtitles ---------- */
@@ -74,17 +81,17 @@ function enter(S, t) {
       const q = ease(t, L.start - 0.08 + i * step, 0.75, EXPO);
       s.style.opacity = clamp(q * 1.4).toFixed(3);
       s.style.transform = `perspective(500px) rotateX(${((1 - q) * 84).toFixed(2)}deg)`;
-      s.style.filter = q < 0.995 ? `blur(${((1 - q) * 5).toFixed(2)}px)` : 'none';
+      s.style.filter = blurCss(5, q, 0.6);
     } else if (style === 'gather') {               // characters drift in from scattered positions
       const q = ease(t, L.start - 0.1 + i * step * 0.6, 0.95, EXPO), [a, b, c] = jit[i];
       s.style.opacity = q.toFixed(3);
       s.style.transform = `translate3d(${((1 - q) * a * 46).toFixed(2)}px,${((1 - q) * b * 34).toFixed(2)}px,0) rotate(${((1 - q) * c * 14).toFixed(2)}deg)`;
-      s.style.filter = q < 0.995 ? `blur(${((1 - q) * 10).toFixed(2)}px)` : 'none';
+      s.style.filter = blurCss(10, q);
     } else if (style === 'zoom') {                 // centre-out: the middle characters land first
       const d = Math.abs(i - (n - 1) / 2), q = ease(t, L.start - 0.1 + d * step * 0.9, 0.9, EXPO);
       s.style.opacity = q.toFixed(3);
       s.style.transform = `scale(${(1 + (1 - q) * 0.55).toFixed(4)})`;
-      s.style.filter = q < 0.995 ? `blur(${((1 - q) * 14).toFixed(2)}px)` : 'none';
+      s.style.filter = blurCss(14, q);
     } else charIn(s, ease(t, L.start - 0.08 + i * step, 0.62, EXPO));
   });
 }
@@ -105,7 +112,7 @@ function runSubs(t) {
       });
     });
     const o = ease(t, outAt, 0.42, SOFT), b0 = base === 'none' ? '' : base + ' ';
-    if (o > 0) { el.style.opacity = (1 - o).toFixed(3); el.style.filter = `blur(${(o * 8).toFixed(2)}px)`; el.style.transform = `${b0}translateY(${(-o * 10).toFixed(2)}px)`; }
+    if (o > 0) { el.style.opacity = (1 - o).toFixed(3); el.style.filter = blurCss(0, 1, 0.8, 8, o); el.style.transform = `${b0}translateY(${(-o * 10).toFixed(2)}px)`; }
     else { el.style.filter = 'none'; el.style.transform = base; }
   }
 }
@@ -194,7 +201,7 @@ function runHeader(t) {
     const txt = q < 0.5 ? a : b, o = q < 0.5 ? 1 - SOFT(q * 2) : SOFT(q * 2 - 1);
     if (el.textContent !== txt) el.textContent = txt;
     el.style.opacity = ((a === b ? 1 : o) * k2).toFixed(3);
-    el.style.filter = a === b || o > 0.99 ? 'none' : `blur(${((1 - o) * 7).toFixed(2)}px)`;
+    el.style.filter = a === b ? 'none' : blurCss(7, o);
   };
   swap('eraPre', prev.pre, cur.pre); swap('place', prev.place, cur.place);
   swap('citeLat', prev.lat, cur.lat); swap('citeZh', prev.zh, cur.zh); swap('citeNote', prev.note, cur.note);
@@ -214,7 +221,7 @@ function runTitle(t) {
     const p = ease(t, a + 0.35 + i * 0.12, 1.5, EXPO), q = ease(t, b - 1.15 + i * 0.05, 0.9, SOFT);
     s.style.opacity = (p * (1 - q)).toFixed(3);
     s.style.transform = `translate3d(0,${((1 - p) * 26 - q * 30).toFixed(2)}px,0) scale(${(1 + (1 - p) * 0.12).toFixed(4)})`;
-    s.style.filter = `blur(${((1 - p) * 16 + q * 14).toFixed(2)}px)`;
+    s.style.filter = blurCss(16, p, 0.8, 14, q);
   });
   T_LAT.forEach((s, i) => charIn(s, ease(t, a + 1.2 + i * 0.03, 1.0) * (1 - out), { dy: 8, blur: 8 }));
   T_SUB.forEach((s, i) => charIn(s, ease(t, a + 2.0 + i * 0.05, 1.0) * (1 - out), { dy: 10, blur: 8 }));
@@ -235,7 +242,7 @@ function runPart(t) {
     const p = ease(t, a + at + i * st, 1.1);
     s.style.opacity = (p * (1 - out)).toFixed(3);
     s.style.transform = `translate3d(0,${((1 - p) * 16 - out * 14).toFixed(2)}px,0)`;
-    s.style.filter = `blur(${((1 - p) * o + out * 10).toFixed(2)}px)`;
+    s.style.filter = blurCss(o, p, 0.8, 10, out);
   });
   fx(chSpans.num, 0.1, 0, 14); fx(chSpans.lat, 0.4, 0.02, 8); fx(chSpans.title, 0.5, 0.08, 14); fx(chSpans.sub, 1.0, 0.04, 8);
 }

@@ -44,7 +44,9 @@ const t0 = Date.now(); let done = 0;
 const chunk = Math.ceil(frames.length / pages.length);
 await Promise.all(pages.map(async (p, w) => {
   for (const f of frames.slice(w * chunk, (w + 1) * chunk)) {
-    await p.evaluate(f => window.seek(f), f);
+    // capture only after the compositor has committed this frame: capturing straight after seek() raced it and
+    // left single frames with characters missing or stale (two renders of the same range differed)
+    await p.evaluate(f => new Promise(r => { window.seek(f); requestAnimationFrame(() => requestAnimationFrame(r)); }), f);
     const { data } = await p._cdp.send('Page.captureScreenshot', { format: 'jpeg', quality: Number(process.env.JPEGQ || 95), optimizeForSpeed: true, clip: { x: 0, y: 0, width: 1920, height: 1080, scale: DPR }, captureBeyondViewport: false, fromSurface: true });
     fs.writeFileSync(path.join(outDir, name(f)), Buffer.from(data, 'base64'));
     if (++done % 150 === 0) console.log(`${done}/${frames.length}  ${((Date.now() - t0) / done).toFixed(0)} ms/frame avg`);

@@ -1,10 +1,10 @@
 """Timeline for a film without narration: reading time sets each line, the score sets the total.
 
-    python3 tools/timeline.py REFERENCE.mp4
+    python3 tools/timeline.py TRACK.mp4
 
 1. natural timing: each line stays 1.3 s + 0.17 s per character (+ its `hold`),
    scenes open with breathing room for cards and visual beats;
-2. tools/music.py extends the reference score (bells removed) to at least that long;
+2. tools/music.py extends the owner's track to about that long (one seam; the closing tail may give up to 1 s);
 3. the surplus is spread over the lines (more reading time), capped, the rest goes to the finale.
 Writes timeline.json and build/subtitles.srt.
 """

@@ -23,9 +23,15 @@ FADE=""; [[ "$FADEIN" == 1 ]] && FADE=",fade=in:st=0.6:d=1.0:alpha=1"
 #   overlay-blended mid-grey noise textures mid-tones/highlights, screen-blended dark noise adds specks to pure black
 GRAIN="color=c=0x808080:s=1920x1080:r=60,format=gray,noise=c0s=60:c0f=t:all_seed=$((7 + FROM)),scale=3840:2160:flags=bicubic,format=gbrp[go];\
 color=c=black:s=1920x1080:r=60,format=gray,noise=c0s=16:c0f=t:all_seed=$((91 + FROM)),scale=3840:2160:flags=bicubic,format=gbrp[gs]"
+# grain stays off the type: a soft luma key from the un-grained frame (dilated 1 px, feathered) lets anything
+# brighter than near-black come through clean, so letters no longer shimmer while the black keeps its grain
+LUMA="colorchannelmixer=rr=0.2126:rg=0.7152:rb=0.0722:gr=0.2126:gg=0.7152:gb=0.0722:br=0.2126:bg=0.7152:bb=0.0722"
+RAMP="st(0,clip((val-6)/30,0,1));255*ld(0)*ld(0)*(3-2*ld(0))"
+KEY="$LUMA,dilation,gblur=sigma=1,lutrgb=r='$RAMP':g='$RAMP':b='$RAMP'"
 ffmpeg -v error -y -framerate 60 -start_number "$FROM" -i "$FR/f%05d.jpg" -loop 1 -framerate 60 -i watermark.png \
-  -filter_complex "[1:v]scale=640:200:flags=lanczos,format=rgba$FADE[wm];[0:v][wm]overlay=160:0:shortest=1,format=gbrp[base];$GRAIN;\
-[base][go]blend=all_mode=overlay:all_opacity=0.42:shortest=1[b1];[b1][gs]blend=all_mode=screen:shortest=1,$COLOR[v]" \
+  -filter_complex "[1:v]scale=640:200:flags=lanczos,format=rgba$FADE[wm];[0:v][wm]overlay=160:0:shortest=1,format=gbrp,split=3[base][bc][bk];$GRAIN;\
+[base][go]blend=all_mode=overlay:all_opacity=0.42:shortest=1[b1];[b1][gs]blend=all_mode=screen:shortest=1[gr];\
+[bk]$KEY[km];[gr][bc][km]maskedmerge,$COLOR[v]" \
   -map "[v]" $X264 -an "build/seg_$NAME.mp4"
 rm -rf "$FR"
 echo "SEGMENT_DONE $NAME $(stat -c %s build/seg_$NAME.mp4)"
