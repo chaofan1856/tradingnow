@@ -13,7 +13,7 @@ fi
 : > build/segs.txt; for k in $(seq 0 $((NSEG - 1))); do echo "file 'seg_$k.mp4'" >> build/segs.txt; done
 mkdir -p out
 ffmpeg -v error -y -f concat -safe 0 -i build/segs.txt -i build/mix.wav -map 0:v -map 1:a -c:v copy -c:a aac -b:a 320k -ar 48000 \
-  -movflags +faststart "out/交易的矩阵_4K60.mp4"
-ffprobe -v error -count_packets -select_streams v -show_entries stream=nb_read_packets,width,height,r_frame_rate -of compact "out/交易的矩阵_4K60.mp4"
+  -movflags +faststart "out/K线图的前世今生_4K60.mp4"
+ffprobe -v error -count_packets -select_streams v -show_entries stream=nb_read_packets,width,height,r_frame_rate -of compact "out/K线图的前世今生_4K60.mp4"
 echo "expected frames: $TOTAL"
 echo MASTER_DONE
