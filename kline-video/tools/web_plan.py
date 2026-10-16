@@ -10,7 +10,7 @@ import hashlib, json, os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 tl = json.load(open(os.path.join(ROOT, 'timeline.json')))
 SRC = os.path.join(ROOT, '成片', f"{tl['title']}_4K60.mp4")
-A, F, ASSETS, FILES = 19 << 20, 15 << 20, 40, 15
+A, F, ASSETS, FILES = 19 << 20, 15 << 20, 40, 17          # 17 × 15 MiB = 255 MiB of published files per page (limit 256)
 out = os.path.join(ROOT, 'web', 'pieces'); os.makedirs(out, exist_ok=True)
 for f in os.listdir(out): os.remove(os.path.join(out, f))
 size, full, pages = os.path.getsize(SRC), hashlib.sha256(), []
