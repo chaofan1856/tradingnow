@@ -18,6 +18,7 @@ canvas{display:block;width:1920px;height:1080px}
 </head>
 <body>
 <canvas id="c" width="3840" height="2160"></canvas>
+<img id="logo" src="assets/logo.png" alt="" hidden>
 
 <!-- ============================================================
      ENGINE — TradingNow knowledge-film style.
@@ -649,7 +650,7 @@ window.seek = function seek(frame) {
   return f;
 };
 
-window.ASSETS_READY = document.fonts.ready.then(() => Promise.all(['SerifSC', 'LatinSerif', 'MonoL', 'BrandSans'].flatMap(fam => [
+window.ASSETS_READY = Promise.all([...document.images].map(i => i.decode().catch(() => null))).then(() => document.fonts.ready).then(() => Promise.all(['SerifSC', 'LatinSerif', 'MonoL', 'BrandSans'].flatMap(fam => [
   document.fonts.load(`500 20px ${fam}`, 'K线Ab1'), document.fonts.load(`700 20px ${fam}`, 'K线Ab1'), document.fonts.load(`900 20px ${fam}`, 'K线Ab1'), document.fonts.load(`600 20px ${fam}`, 'Ab'), document.fonts.load(`300 20px ${fam}`, '1'),
 ]))).then(() => window.seek(0));
 
