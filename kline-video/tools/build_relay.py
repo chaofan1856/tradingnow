@@ -7,6 +7,7 @@ man = json.load(open(W('pieces.json'))); urls = json.load(open(W('asset_urls.jso
 urls_b = json.load(open(W('asset_urls_b.json'))) if os.path.exists(W('asset_urls_b.json')) else {}
 links = json.load(open(W('links.json'))) if os.path.exists(W('links.json')) else {}
 P = man['pieces']; A, B = P[:SPLIT], P[SPLIT:]
+TAIL = json.load(open(W('b_tail.json'))) if os.path.exists(W('b_tail.json')) else {'replace': [], 'with': []}   # pieces served as published files (≤16 MB each)
 own = lambda ps, u: [{'url': u[p['name']], 'size': p['size'], 'sha': p['sha']} for p in ps] if all(p['name'] in u for p in ps) else []
 tl = json.load(open(os.path.join(ROOT, 'timeline.json'))); s = {x['id']: x['start'] for x in tl['scenes']}
 mm = lambda t: f'{int(t) // 60:02d}:{int(t) % 60:02d}'
@@ -42,11 +43,12 @@ for mode in 'AB':
         a_body = f'<p><a href="{la}" target="_blank" rel="noopener">还没保存？打开网页 A →</a></p>'
         b_body = ('<label class="file">选择「前半部分」文件<input type="file" id="pick" accept="video/mp4,.mp4"></label>'
                   + ctrl.format(dis=' disabled', label='合成并保存完整原片', msg='先选择第 1 步保存的文件。'))
+    own_list = own(A, urls) if mode == 'A' else own([p for p in B if p['name'] not in TAIL['replace']], urls_b) + TAIL['with']
     rep = {'__TITLE__': 'K线原片 · 网页' + mode, '__SUB__': '4K 60fps 原片 · ' + ('第 1 步：保存前半部分' if mode == 'A' else '第 2 步：合成完整原片'),
            '__A_HERE__': 'here' if mode == 'A' else '', '__B_HERE__': 'here' if mode == 'B' else '', '__A_BODY__': a_body, '__B_BODY__': b_body,
            '__FULL_MB__': f"{man['size'] / 1048576:.1f}", '__EXTRA__': extra if mode == 'B' else '', '__MODE__': mode,
-           '__OWN__': json.dumps(own(A, urls) if mode == 'A' else own(B, urls_b)),
+           '__OWN__': json.dumps(own_list),
            '__PRIOR__': json.dumps([{'size': p['size'], 'sha': p['sha']} for p in A]) if mode == 'B' else '[]', '__FULL__': str(man['size'])}
     for k, v in rep.items(): page = page.replace(k, v)
     open(W(f'page_{mode.lower()}.html'), 'w', encoding='utf-8').write(page)
-print('A pieces:', len(own(A, urls)), 'B pieces:', len(own(B, urls_b)), '/', len(B))
+print('A pieces:', len(own(A, urls)), 'B entries:', len(own([p for p in B if p['name'] not in TAIL['replace']], urls_b)) + len(TAIL['with']))
