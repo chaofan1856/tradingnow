@@ -1,0 +1,183 @@
+{
+ "fps": 30,
+ "frames": 8597,
+ "seconds": 286.56666666666666,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 5.88,
+   "f0": 0,
+   "f1": 176
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 5.88,
+   "dur": 5.2,
+   "f0": 176,
+   "f1": 332
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 11.08,
+   "dur": 19.61,
+   "f0": 332,
+   "f1": 921
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 30.69,
+   "dur": 4.2,
+   "f0": 921,
+   "f1": 1047
+  },
+  {
+   "id": "anatomy",
+   "type": "scene",
+   "start": 34.89,
+   "dur": 32.3,
+   "f0": 1047,
+   "f1": 2016
+  },
+  {
+   "id": "wicks",
+   "type": "scene",
+   "start": 67.19,
+   "dur": 15.41,
+   "f0": 2016,
+   "f1": 2478
+  },
+  {
+   "id": "doji",
+   "type": "scene",
+   "start": 82.6,
+   "dur": 17.75,
+   "f0": 2478,
+   "f1": 3011
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 100.35,
+   "dur": 4.2,
+   "f0": 3011,
+   "f1": 3137
+  },
+  {
+   "id": "runs",
+   "type": "scene",
+   "start": 104.55,
+   "dur": 10.73,
+   "f0": 3137,
+   "f1": 3458
+  },
+  {
+   "id": "up",
+   "type": "scene",
+   "start": 115.28,
+   "dur": 17.14,
+   "f0": 3458,
+   "f1": 3973
+  },
+  {
+   "id": "down",
+   "type": "scene",
+   "start": 132.42,
+   "dur": 15.89,
+   "f0": 3973,
+   "f1": 4449
+  },
+  {
+   "id": "range",
+   "type": "scene",
+   "start": 148.31,
+   "dur": 13.63,
+   "f0": 4449,
+   "f1": 4858
+  },
+  {
+   "id": "trio",
+   "type": "scene",
+   "start": 161.94,
+   "dur": 9.3,
+   "f0": 4858,
+   "f1": 5137
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 171.24,
+   "dur": 4.2,
+   "f0": 5137,
+   "f1": 5263
+  },
+  {
+   "id": "temp",
+   "type": "scene",
+   "start": 175.44,
+   "dur": 9.61,
+   "f0": 5263,
+   "f1": 5552
+  },
+  {
+   "id": "tight",
+   "type": "scene",
+   "start": 185.05,
+   "dur": 17.58,
+   "f0": 5552,
+   "f1": 6079
+  },
+  {
+   "id": "grow",
+   "type": "scene",
+   "start": 202.63,
+   "dur": 17.62,
+   "f0": 6079,
+   "f1": 6608
+  },
+  {
+   "id": "wide",
+   "type": "scene",
+   "start": 220.25,
+   "dur": 16.15,
+   "f0": 6608,
+   "f1": 7092
+  },
+  {
+   "id": "shrink",
+   "type": "scene",
+   "start": 236.4,
+   "dur": 15.71,
+   "f0": 7092,
+   "f1": 7563
+  },
+  {
+   "id": "color",
+   "type": "scene",
+   "start": 252.11,
+   "dur": 16.45,
+   "f0": 7563,
+   "f1": 8057
+  },
+  {
+   "id": "recap",
+   "type": "scene",
+   "start": 268.56,
+   "dur": 12.51,
+   "f0": 8057,
+   "f1": 8432
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 281.07,
+   "dur": 5.5,
+   "f0": 8432,
+   "f1": 8597
+  }
+ ]
+}

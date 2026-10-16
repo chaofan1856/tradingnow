@@ -5,3 +5,12 @@ my-stock-video/frames/
 my-stock-video/stills/
 my-stock-video/成片/*.mp4
 my-stock-video/render.log
+kline-video/segs/
+kline-video/segs-preview/
+kline-video/stills/
+kline-video/video.mp4
+kline-video/video-preview.mp4
+kline-video/成片/*.mp4
+kline-video/web/dist/
+kline-video/render.log
+kline-video/bgm.wav
