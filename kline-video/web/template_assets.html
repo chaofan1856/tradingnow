@@ -1,0 +1,182 @@
+<title>K线与动能博弈 4K</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: a single dark "screening room" column — poster, one save action, then specs and the reusable prompt. */
+:root{
+  --bg:#0A0A0C; --panel:#121216; --line:#2A2620; --fg:#ECE6D9; --muted:#958D7F;
+  --gold:#C9A25A; --gold-hi:#F1D597; --red:#E5484D; --green:#1FA36A;
+  --serif:'Noto Serif SC','Songti SC',serif; --latin:'Cormorant Garamond',Georgia,serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.7}
+.wrap{max-width:1040px;margin:0 auto;padding-block:32px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:40px}
+.brand{font-family:var(--latin);letter-spacing:.32em;text-transform:uppercase;font-size:.8rem;color:var(--gold)}
+h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:900;line-height:1.15;margin:.2em 0 .1em;text-wrap:balance;
+  background:linear-gradient(180deg,#FBEBC0,#E2BE73 45%,#B8893C 75%,#7A5A24);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:0}
+.screen{position:relative;border:1px solid var(--line);background:#000;aspect-ratio:16/9;max-width:100%;overflow:hidden}
+.screen img,.screen video{width:100%;height:100%;object-fit:contain;display:block}
+.badge{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:.75rem;color:var(--gold-hi);border:1px solid rgba(201,162,90,.6);padding:2px 8px;background:rgba(0,0,0,.55)}
+.save{display:grid;gap:14px}
+button{font:inherit;cursor:pointer;border-radius:3px}
+.primary{justify-self:start;background:linear-gradient(180deg,#E9C47A,#B88A3E);color:#1A1408;border:0;padding:14px 28px;font-weight:900;font-size:1.1rem;letter-spacing:.06em}
+.primary:disabled{opacity:.55;cursor:progress}
+.primary:focus-visible,.ghost:focus-visible{outline:2px solid var(--gold-hi);outline-offset:3px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 16px}
+.ghost:hover{border-color:var(--gold)}
+.bar{height:6px;background:var(--panel);border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-hi));transition:width .2s}
+.status{font-family:var(--mono);font-size:.85rem;color:var(--muted);min-height:1.4em;margin:0;font-variant-numeric:tabular-nums}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.specs div{background:var(--panel);padding:14px 16px;min-width:0}
+.specs dt{font-size:.75rem;color:var(--muted);letter-spacing:.08em}
+.specs dd{margin:0;font-family:var(--mono);font-size:.95rem;color:var(--fg);overflow-wrap:anywhere}
+h2{font-size:1.35rem;font-weight:900;margin:0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 small{font-family:var(--latin);font-weight:500;color:var(--muted);letter-spacing:.2em;font-size:.8rem;text-transform:uppercase}
+section{display:grid;gap:14px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+pre{margin:0;max-height:420px;overflow:auto;background:var(--panel);border:1px solid var(--line);padding:16px;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:#D8D0C0}
+.hint{color:var(--muted);font-size:.9rem;margin:0}
+.yt{display:grid;gap:10px}
+.yt label{font-size:.8rem;color:var(--muted)}
+.chip{display:inline-block;width:8px;height:8px;background:#C8343A;margin-left:6px;vertical-align:middle}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">TradingNow · Knowledge Film</div>
+    <h1>K线与动能博弈</h1>
+    <p class="sub">三大模块 · 读懂多空博弈的语言<span class="chip" aria-hidden="true"></span></p>
+  </header>
+
+  <div class="screen" id="screen">
+    <img id="poster" src="poster.jpg" alt="《K线与动能博弈》画面：金色标题与上升K线">
+    <span class="badge">3840 × 2160</span>
+  </div>
+
+  <section class="save" aria-labelledby="save-h">
+    <h2 id="save-h">保存原视频 <small>Original master</small></h2>
+    <p class="hint">保存的就是渲染输出的原片，逐字节一致，没有二次压缩。原片分成 __NPARTS__ 块传输，每块下载后都会核对 SHA-256，全部通过后在浏览器里拼回完整的 MP4，再弹出保存窗口。建议用电脑浏览器操作，整个文件约 1.9 GB。</p>
+    <button class="primary" id="go">下载 4K 原画质 MP4</button>
+    <div class="bar" aria-hidden="true"><i id="fill"></i></div>
+    <p class="status" id="status" role="status">共 __SIZE_MB__ MB，分 __NPARTS__ 段传输。</p>
+  </section>
+
+  <dl class="specs">
+    <div><dt>分辨率</dt><dd>3840 × 2160 (4K UHD)</dd></div>
+    <div><dt>帧率</dt><dd>60 fps</dd></div>
+    <div><dt>时长</dt><dd>__DURATION__</dd></div>
+    <div><dt>视频</dt><dd>H.264 High@5.2 · CRF 16</dd></div>
+    <div><dt>音频</dt><dd>AAC 384 kbps · 48 kHz</dd></div>
+    <div><dt>大小</dt><dd>__SIZE_MB__ MB</dd></div>
+    <div><dt>SHA-256</dt><dd>__SHA_SHORT__…</dd></div>
+  </dl>
+
+  <section aria-labelledby="yt-h">
+    <h2 id="yt-h">YouTube 发布信息 <small>Upload kit</small></h2>
+    <div class="yt">
+      <label for="yt-title">标题</label>
+      <pre id="yt-title">K线与动能博弈｜看懂红绿K线、三大趋势与动能衰竭信号（4K）</pre>
+      <label for="yt-desc">简介</label>
+      <pre id="yt-desc">每一根 K 线，都是多空双方用真金白银博弈后留下的情绪切片与信用脚印。
+
+00:00 导言：博弈符号的本质
+00:30 模块一：多空符号的解构（实体 · 影线 · 十字星）
+01:40 模块二：秩序的轨迹（上涨 · 下跌 · 震荡）
+02:51 模块三：博弈的温度（动能增强与衰竭）
+04:28 回顾
+
+内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。
+
+#K线 #技术分析 #趋势交易 #动能 #TradingNow</pre>
+      <div class="row"><button class="ghost" data-copy="yt-title">复制标题</button><button class="ghost" data-copy="yt-desc">复制简介</button></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="pr-h">
+    <h2 id="pr-h">同风格视频提示词 <small>Reusable prompt</small></h2>
+    <p class="hint">把整段提示词发给 Claude，只改最后的「视频标题」「目标时长」「知识点」三处，就能生成同样风格的视频。</p>
+    <pre id="prompt">__PROMPT__</pre>
+    <div class="row"><button class="ghost" data-copy="prompt">复制提示词</button><button class="ghost" id="save-md">保存为 .md 文件</button></div>
+  </section>
+</div>
+
+<script>
+const PIECES = __PIECES__;            // [{url, size, sha}]
+const TOTAL = __TOTAL__, NAME = 'K线与动能博弈_4K60.mp4';
+const $ = id => document.getElementById(id);
+const st = (msg, cls = '') => { $('status').textContent = msg; $('status').className = 'status ' + cls; };
+const mb = n => (n / 1048576).toFixed(1);
+const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+let blob = null;
+
+async function fetchPiece(p, i, base) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const r = await fetch(p.url);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const reader = r.body.getReader(), parts = []; let got = 0;
+      for (;;) {
+        const { done, value } = await reader.read(); if (done) break;
+        parts.push(value); got += value.length;
+        $('fill').style.width = ((base + got) / TOTAL * 100).toFixed(2) + '%';
+        st(`正在下载 ${mb(base + got)} / ${mb(TOTAL)} MB（第 ${i + 1}/${PIECES.length} 块）`);
+      }
+      const b = new Blob(parts);
+      if (b.size !== p.size) throw new Error('大小不符');
+      if (hex(await crypto.subtle.digest('SHA-256', await b.arrayBuffer())) !== p.sha) throw new Error('校验不符');
+      return b;
+    } catch (e) { if (attempt === 3) throw new Error(`第 ${i + 1} 块下载失败（${e.message}），请再点一次按钮继续。`); }
+  }
+}
+
+const done = [];
+async function assemble() {
+  let base = done.reduce((s, b) => s + b.size, 0);
+  for (let i = done.length; i < PIECES.length; i++) { const b = await fetchPiece(PIECES[i], i, base); done.push(b); base += b.size; }
+  return new Blob(done, { type: 'video/mp4' });
+}
+
+async function save() {
+  const dl = await window.claude?.use?.('downloads');
+  if (!dl) { st('当前视图不支持保存文件，请在 claude.ai 网页中打开此页面。', 'err'); return; }
+  try { await dl.save({ filename: NAME, data: blob }); st(`已保存 ${NAME}（${mb(TOTAL)} MB，${PIECES.length} 块全部校验通过）`, 'ok'); }
+  catch (e) {
+    if (e?.code === 'declined') st('已取消保存。再点一次按钮即可保存，不用重新下载。');
+    else if (e?.code === 'rate_limited') st('已经有一个保存窗口打开了，请先处理它。');
+    else if (e?.code === 'too_large') st('这个应用一次最多保存 200 MB，请改用电脑浏览器打开本页面。', 'err');
+    else st('保存失败：' + (e?.message || e?.code || e), 'err');
+  }
+}
+
+$('go').addEventListener('click', async () => {
+  if (!PIECES.length) { st('原片还在上传，请稍后刷新页面。'); return; }
+  $('go').disabled = true;
+  try {
+    if (!blob) {
+      blob = await assemble();
+      const v = document.createElement('video'); v.controls = true; v.playsInline = true; v.src = URL.createObjectURL(blob); v.poster = 'poster.jpg';
+      $('poster').replaceWith(v);
+      $('go').textContent = '保存到本地';
+    }
+    st('全部校验通过，正在打开保存窗口…', 'ok');
+    await save();
+  } catch (e) { st(e.message || String(e), 'err'); }
+  $('go').disabled = false;
+});
+
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  const el = $(b.dataset.copy), old = b.textContent;
+  try { await navigator.clipboard.writeText(el.textContent); b.textContent = '已复制'; }
+  catch { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = '已选中，请按 Ctrl/⌘+C'; }
+  setTimeout(() => b.textContent = old, 1800);
+}));
+
+$('save-md').addEventListener('click', async () => {
+  const dl = await window.claude?.use?.('downloads');
+  if (!dl) { $('save-md').textContent = '当前视图不支持保存'; return; }
+  try { await dl.save({ filename: 'TradingNow_视频提示词.md', data: $('prompt').textContent }); } catch {}
+});
+</script>

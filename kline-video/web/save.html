@@ -1,0 +1,185 @@
+<title>K线原片 · 网页A</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one dark "screening room" column — what this page does, the step(s), then specs and the upload kit. */
+:root{
+  --bg:#0A0A0C; --panel:#121216; --line:#2A2620; --fg:#ECE6D9; --muted:#958D7F;
+  --gold:#C9A25A; --gold-hi:#F1D597; --red:#E5484D; --green:#1FA36A;
+  --serif:'Noto Serif SC','Songti SC','STSong',serif; --latin:'Cormorant Garamond',Georgia,serif; --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.7}
+.wrap{max-width:980px;margin:0 auto;padding-block:32px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+.brand{font-family:var(--latin);letter-spacing:.32em;text-transform:uppercase;font-size:.8rem;color:var(--gold)}
+h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:900;line-height:1.15;margin:.2em 0 .1em;text-wrap:balance;
+  background:linear-gradient(180deg,#FBEBC0,#E2BE73 45%,#B8893C 75%,#7A5A24);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:0}
+.screen{position:relative;border:1px solid var(--line);background:#000;aspect-ratio:16/9;max-width:100%;overflow:hidden}
+.screen img{width:100%;height:100%;object-fit:contain;display:block}
+.badge{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:.75rem;color:var(--gold-hi);border:1px solid rgba(201,162,90,.6);padding:2px 8px;background:rgba(0,0,0,.55)}
+.steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.step{border:1px solid var(--line);background:var(--panel);padding:18px;display:grid;gap:12px;align-content:start;min-width:0}
+.step.here{border-color:var(--gold)}
+.step .n{font-family:var(--latin);color:var(--gold);letter-spacing:.2em;font-size:.8rem}
+.step h3{margin:0;font-size:1.15rem}
+.step p{margin:0;color:var(--muted);font-size:.92rem}
+.step a{color:var(--gold-hi)}
+button,.file{font:inherit;cursor:pointer;border-radius:3px}
+.primary{justify-self:start;background:linear-gradient(180deg,#E9C47A,#B88A3E);color:#1A1408;border:0;padding:12px 24px;font-weight:900;font-size:1.05rem;letter-spacing:.05em}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.primary:focus-visible,.ghost:focus-visible,.file:focus-within{outline:2px solid var(--gold-hi);outline-offset:3px}
+.file{display:inline-flex;justify-self:start;border:1px solid var(--gold);color:var(--gold-hi);padding:10px 18px}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 16px}
+.ghost:hover{border-color:var(--gold)}
+.bar{height:6px;background:#000;border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-hi));transition:width .2s}
+.status{font-family:var(--mono);font-size:.85rem;color:var(--muted);min-height:1.4em;margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.specs div{background:var(--panel);padding:14px 16px;min-width:0}
+.specs dt{font-size:.75rem;color:var(--muted);letter-spacing:.08em}
+.specs dd{margin:0;font-family:var(--mono);font-size:.92rem;overflow-wrap:anywhere}
+h2{font-size:1.3rem;font-weight:900;margin:0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 small{font-family:var(--latin);font-weight:500;color:var(--muted);letter-spacing:.2em;font-size:.8rem;text-transform:uppercase}
+section{display:grid;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+pre{margin:0;max-height:380px;overflow:auto;background:var(--panel);border:1px solid var(--line);padding:16px;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:#D8D0C0}
+.hint{color:var(--muted);font-size:.9rem;margin:0}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">TradingNow · 4K 60fps Master</div>
+    <h1>K线与动能博弈</h1>
+    <p class="sub">4K 60fps 原片 · 第 1 步：保存前半部分</p>
+  </header>
+
+  <div class="screen"><img src="poster.jpg" alt="《K线与动能博弈》标题画面"><span class="badge">3840 × 2160 · 60fps</span></div>
+
+  <div class="steps">
+    <div class="step here">
+      <span class="n">STEP 1 · 网页 A</span>
+      <h3>保存前半部分</h3>
+      <p>约 1007 MB。保存后先不用打开，第 2 步要用到它。</p>
+      <button class="primary" id="go">保存前半部分</button><div class="bar" aria-hidden="true"><i id="fill"></i></div><p class="status" id="status" role="status">点按钮开始下载，全部校验通过后弹出保存窗口。</p>
+    </div>
+    <div class="step ">
+      <span class="n">STEP 2 · 网页 B</span>
+      <h3>合成完整原片</h3>
+      <p>选中第 1 步保存的文件，本页会下载后半部分，逐块校验后拼成一个完整的 MP4 并保存。</p>
+      <p><a href="https://claude.ai/artifact/8a3zHwdJRJ3SRaJgkQGsGE" target="_blank" rel="noopener">打开网页 B →</a></p>
+    </div>
+  </div>
+
+  <dl class="specs">
+    <div><dt>分辨率</dt><dd>3840 × 2160</dd></div>
+    <div><dt>帧率</dt><dd>60 fps</dd></div>
+    <div><dt>时长</dt><dd>4 分 46 秒</dd></div>
+    <div><dt>视频</dt><dd>H.264 High · CRF 12 · 56 Mbps</dd></div>
+    <div><dt>音频</dt><dd>AAC 384 kbps</dd></div>
+    <div><dt>完整文件</dt><dd>1931.6 MB</dd></div>
+  </dl>
+  
+</div>
+
+<script>
+const MODE = 'A';
+const OWN = [{"url": "/_blob/c4761a92b43027477cf2248bcd0880ae", "size": 19922944, "sha": "88816c3ba7f775b9927b24da4e4f6f43e004f4857105b57bb4a8c75212df0b4c"}, {"url": "/_blob/1a4587adf2b983e47d609ab3f9ce10ca", "size": 19922944, "sha": "84b906c69e3d3372d6b4d2fd9c70ac0eaaeceeaef41f1ecc73d27c402c07777b"}, {"url": "/_blob/aabcf3ed6067ddc3fec3d6bd275e558b", "size": 19922944, "sha": "50f8904cc705760f926ff7e8e2bd1588e7f3d00f93ed1c1bbb4cc906f63b57ad"}, {"url": "/_blob/20535dafdfff98da2e2fb7cc99655170", "size": 19922944, "sha": "37fb1084f644400ccb505f7e75b34650993bfa3bc55fbd2830acac0e020ecc79"}, {"url": "/_blob/edaef8e8268d300563f72ab220d98a37", "size": 19922944, "sha": "9846ed9d3a055934b028f2863f5bce46cc996f11d89ecec320b34386c67cc8dc"}, {"url": "/_blob/93a5adaf48d66bcb54885a446b7af868", "size": 19922944, "sha": "ab2da17002df07190b5969b1c84d61a079c96997d8cff143ec05a055c4135e7e"}, {"url": "/_blob/32e0f4de0e3b8642f4cca238abb92cbd", "size": 19922944, "sha": "93c887736d3a0731b8ab0ffed311c9ebcac65c0b05ac9476fbcc8e755d72d408"}, {"url": "/_blob/4f7b52ada9987bdb48266c354a20d6fc", "size": 19922944, "sha": "9f81a320ab6575303bc7d446d59ed3ac0993284a638ed66153e756fea3b4fdcc"}, {"url": "/_blob/bd048d8ee1071cfcc1a82b52b292b0e5", "size": 19922944, "sha": "2e2e981d4600554e1d613d96df44e55fece874d36e3793c4d6b8eef579970638"}, {"url": "/_blob/c867fcc7a70c2ea8b3f68e35cb5b43bf", "size": 19922944, "sha": "afd6c898bfc43894901a3f632c9b3e681de227a2b1a99b3e88aae5afa9a57bd2"}, {"url": "/_blob/636513b8fb107f91aa1ac23263caf9df", "size": 19922944, "sha": "8fc241d91190ff479ba687620150bd32e974751bb6435939d72013ad113b6ace"}, {"url": "/_blob/ea2bd256ca8a9bd7e14a53617d9ddd26", "size": 19922944, "sha": "9041bb50d2f664389247d74908f840674e4ac9b7da86a0d4a8f6adc8408b4620"}, {"url": "/_blob/bbde059eedc948c6f0a3cc2a17f00431", "size": 19922944, "sha": "26651af25adeef34817148dbc42db74b8c7b6acd0e7adbf68955e9f6c2876bd6"}, {"url": "/_blob/e0edd03a6128e178bf86894534f713a7", "size": 19922944, "sha": "d3f9cedcb2706210b32d4a42807c439dc5213363ce58246e97b4f283e3f363c7"}, {"url": "/_blob/2bc437e41659633335883e94cbfa1da1", "size": 19922944, "sha": "4a88bcb1cd39117a07e01b11a3795795391998a3f2ac4610dc514f8b3ee27d85"}, {"url": "/_blob/859d0772868e4e4b33877778ee064980", "size": 19922944, "sha": "0f3354fbc0be1090bcbd6aefdf13e3501e6bd21ffc5cb4b07acc2eedbc352c1a"}, {"url": "/_blob/0a2cf02720c2a69c00f24d27bb48c26e", "size": 19922944, "sha": "9bf03f904329543f833d18a17859201d1b21f770d8a5081e04f94bce05b60ecd"}, {"url": "/_blob/27e87fe16b422178a541807c5f6d55bf", "size": 19922944, "sha": "423aea173e760fa4c0de87ca6b5ace82b23134817d98e17b44c4cbcd3c9f7e01"}, {"url": "/_blob/e91518687eb75470607aed0904ff7678", "size": 19922944, "sha": "35389cabb820a8de15ee7d1d7d268521b9f575fd95fab9de732a4c5593fd4ff4"}, {"url": "/_blob/a40d134916f4f42c2050787bbed1f8bf", "size": 19922944, "sha": "d142b5982d5b459a098b1d12aeb36d6da0299cc2429f0369a11e1c4b05b94455"}, {"url": "/_blob/c3f25c83e314332f4a96fe0d62b9a5ca", "size": 19922944, "sha": "844d58bab9883b5af603a663cae2e31885f220b5647dd84ea7d30ca7ecf950bd"}, {"url": "/_blob/c389386823087f10cf6ddb51a857a973", "size": 19922944, "sha": "5978a221cb2d065b4545bc7ad74e1835e8c697ffd9c0f4d7c00e2fa5a9c12ecd"}, {"url": "/_blob/40f2366263830e945c2a6ee190c37d73", "size": 19922944, "sha": "8beb9fccee0ec0785663d3487a3ab76cd9b3efb220640c219a831640c83f3e20"}, {"url": "/_blob/679c3e610111b434bcda6c38d2ec0871", "size": 19922944, "sha": "cf13753e9d4c22ac875cc954c8f819538cc240733ac4f64ef69f196195211de9"}, {"url": "/_blob/8f3bea4413cb75da5717eb44b5052b6f", "size": 19922944, "sha": "eac7c7ed03674d627d2861c9d8c9a8c9af454fa06656c15ce9c5dd614117178f"}, {"url": "/_blob/613540ad63f990c4aa3e457e93238418", "size": 19922944, "sha": "9f3f61ac259beb0a4486bc35c5939395f4200ffcf3214ae4ab159fe8c45ef618"}, {"url": "/_blob/53df19903993fd6adf0cbff5eb5ed790", "size": 19922944, "sha": "1b06ba523b40edb066ed9be4e5ea0f2f3f97a0bb8dcd20054bf1535f0bc5f420"}, {"url": "/_blob/2102aaf2055529c497f586f977b437ca", "size": 19922944, "sha": "26a76cd7f0ee3ca309dfb0bea3e197f51a90837cd5bf2e14e9e25c1fac93a510"}, {"url": "/_blob/99c13e276bdbbe53d96a9a45ca8acb0c", "size": 19922944, "sha": "79c6f63982682521e0020ed55f2093d152c711df962b79ad50046daf5811bacb"}, {"url": "/_blob/2cf7a7e82394e617260caf6734acad6e", "size": 19922944, "sha": "21d0345ca28ebfe99d5323949e21b400d27404417de76c663cce7e4f5787b9cf"}, {"url": "/_blob/4e8c57e7262125a82507e5628a1adcf4", "size": 19922944, "sha": "ce5d0d117ec040f9fa41c5654f931b6e6d738f6ee64df35d825f8713ba872467"}, {"url": "/_blob/1bfc31322d4b9d1a4b2e5f2295045a1a", "size": 19922944, "sha": "69fe1070c559ec2c8520ffe1c1d8db3ca6cb36c3ed558ce2344c6188b292c4af"}, {"url": "/_blob/3ec1438ee4c74783ea2f8cf73a093210", "size": 19922944, "sha": "8cf2f95f1177c0a9849a7c3d56704b0958eb8e80d9b14119ba2f4bf249ca2e67"}, {"url": "/_blob/fcaf450491b4416399161ad3213272f2", "size": 19922944, "sha": "bd05f7a999bada95ec6ea72808ec32ab7770af5f1c0b18a2df48bc2bd9bc0e68"}, {"url": "/_blob/40f05673863e544edcd735056d065db0", "size": 19922944, "sha": "109f997cb7542d08fc10447f94d8860ff652fb020ddc933a56c08d1108c3cc53"}, {"url": "/_blob/3760fe008a545c8b9fec90ac901dc776", "size": 19922944, "sha": "8a38158823357b44982805f27169cf0681898f4ac12e2ba4c3e2f52f63d2f829"}, {"url": "/_blob/8d358e9def34b8df0e9dc2b29c2be607", "size": 19922944, "sha": "ea088ba88297e6447a2f8426f3031a3650ef7cace4c7e089b8c5c670b7019d43"}, {"url": "/_blob/67f58290b87c8b56f1308ed776871c7c", "size": 19922944, "sha": "ccf698ff2bc991795487324fd1cdf00cf143eba2b029729e46b6e4d1d83bc6e5"}, {"url": "/_blob/3285e41c250843693ebeb57bff4c6318", "size": 19922944, "sha": "7658e472d179e58326b505472f6d87fef1e83c6ad1738a07b4201f5192819740"}, {"url": "/_blob/09c29b309219252f42da370de629c253", "size": 19922944, "sha": "ff408bdf036ce37f29ea83d6c7738518985ec4c544b3e3d3b3399e492998e2e0"}, {"url": "/_blob/edfca4c51e49842267a97997ab266a71", "size": 19922944, "sha": "dbef99a05beec7ac5b546f4a9ed343d665abcd02442c8a899bb5a641e82081e7"}, {"url": "/_blob/d3fb323d6c7ffe282dda4dd5086161d2", "size": 19922944, "sha": "f7fb80273d1bed578eb6451a142ed545769cb83fb22945484f015709882bd4e3"}, {"url": "/_blob/6b88b626cc20ab331061d0a8c7970423", "size": 19922944, "sha": "49f42c9aa9120c392e4dd48730d3eb744ff353b6c5eaecf7d5f1955cf8058d3e"}, {"url": "/_blob/31ac03c73a83492b008e1915a8403a1e", "size": 19922944, "sha": "d3f6ab49966f216a417215de03805b6c3aad983cdfff13c643639c97c6d61d91"}, {"url": "/_blob/d80b5063cc20fe159846836c2d3f346c", "size": 19922944, "sha": "ac864b3daf27debe128fa26c0cdf53c288a0eb796ee7d20d237a8630f0d3c921"}, {"url": "/_blob/13cbda133a84d1b5ae898d8a2c4ae0a5", "size": 19922944, "sha": "7ee0acdebe55fd3622ba0a27539c0885743cbc2564967124831180808eaca6c0"}, {"url": "/_blob/8f3ee22e37bd32fe2ba52dc657be92f1", "size": 19922944, "sha": "7c3c2168188686b2a33713f2d050251110a26e9ab9b274f0cbfc1f2bec74ac66"}, {"url": "/_blob/7195d293aca49cdd125a0a9939f4c47e", "size": 19922944, "sha": "995abdc3affc7f69384f192e6fd9816713258f375b171e358fb4a930e113131e"}, {"url": "/_blob/83d2fa1933e4d6b03ec1de7d7fe86b2b", "size": 19922944, "sha": "5dc1d264a6fc60e8437f13ebb580b3daa6356fce3c7692de0210a7466130d124"}, {"url": "/_blob/8ce5a82a5654915c22936374c846def6", "size": 19922944, "sha": "40e36a8d216e972f0b11bcc41952a082cf999b6f84daddad5ffae329a73d4adc"}, {"url": "/_blob/92e7c68fb1a08957ab9dd069cbbbb42f", "size": 19922944, "sha": "65a68c477cf99eb6f0bca67dcc6845a9b1f8ebea87a71c0ec317b54e65e114b0"}, {"url": "/_blob/9046d30aabeffc8b49c0b7e88bffe80a", "size": 19922944, "sha": "fd83d0f0124046d611e2819463193cf34a716df1be9a93ee95cc9d06feba7154"}, {"url": "/_blob/8f4a70be9dfe739926ff45e7ee7ba6f8", "size": 19922944, "sha": "7b5eac83de4b8530c4b099d772aec21cd601e193c2ddbe44d84ed6607fd5b2ff"}];                 // pieces stored on this page: [{url,size,sha}]
+const PRIOR = [];             // pieces of part 1 (for checking the chosen file): [{size,sha}]
+const FULL = 2025406479, NAME_FULL = 'K线与动能博弈_4K60.mp4', NAME_A = 'K线与动能博弈_4K60_前半部分.mp4';
+const $ = id => document.getElementById(id);
+const st = (msg, cls = '') => { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; };
+const mb = n => (n / 1048576).toFixed(1);
+const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+const sha = async blob => hex(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+const got = [];
+
+async function fetchOwn(base, total, label) {
+  let done = base + got.reduce((s, b) => s + b.size, 0);
+  for (let i = got.length; i < OWN.length; i++) {
+    const p = OWN[i]; let ok = null;
+    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+      try {
+        const r = await fetch(p.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+        const rd = r.body.getReader(), parts = []; let n = 0;
+        for (;;) { const { done: d, value } = await rd.read(); if (d) break; parts.push(value); n += value.length;
+          $('fill').style.width = ((done + n) / total * 100).toFixed(2) + '%';
+          st(`${label} ${mb(done + n)} / ${mb(total)} MB（第 ${i + 1}/${OWN.length} 块）`); }
+        const b = new Blob(parts);
+        if (b.size !== p.size || await sha(b) !== p.sha) throw new Error('校验不符');
+        ok = b;
+      } catch (e) { if (attempt === 3) throw new Error(`第 ${i + 1} 块下载失败（${e.message}），再点一次按钮会从这里继续。`); }
+    }
+    got.push(ok); done += ok.size;
+  }
+}
+
+async function offer(filename, blob, okMsg) {
+  const dl = await window.claude?.use?.('downloads');
+  if (!dl) { st('当前视图不支持保存文件，请在电脑浏览器的 claude.ai 中打开本页。', 'err'); return false; }
+  try { await dl.save({ filename, data: blob }); st(okMsg, 'ok'); return true; }
+  catch (e) {
+    if (e?.code === 'declined') st('已取消保存。再点一次按钮即可保存，不用重新下载。');
+    else if (e?.code === 'too_large') st('这个应用一次保存不了这么大的文件，请改用电脑浏览器打开本页。', 'err');
+    else if (e?.code === 'rate_limited') st('已经有一个保存窗口打开了，请先处理它。');
+    else st('保存失败：' + (e?.message || e?.code || e), 'err');
+    return false;
+  }
+}
+
+if (MODE === 'A') {
+  const total = OWN.reduce((s, p) => s + p.size, 0); let blob = null;
+  $('go').addEventListener('click', async () => {
+    $('go').disabled = true;
+    try {
+      if (!blob) { await fetchOwn(0, total, '正在下载前半部分'); blob = new Blob(got, { type: 'video/mp4' }); }
+      st('前半部分全部校验通过，正在打开保存窗口…', 'ok');
+      await offer(NAME_A, blob, `已保存 ${NAME_A}（${mb(total)} MB）。下一步：打开网页 B。`);
+    } catch (e) { st(e.message, 'err'); }
+    $('go').disabled = false;
+  });
+}
+
+if (MODE === 'B') {
+  let part1 = null, full = null;
+  const priorSize = PRIOR.reduce((s, p) => s + p.size, 0);
+  $('pick').addEventListener('change', async ev => {
+    const f = ev.target.files[0]; if (!f) return;
+    $('go').disabled = true; part1 = null;
+    if (f.size !== priorSize) { st(`选中的文件大小是 ${mb(f.size)} MB，应为 ${mb(priorSize)} MB。请选第 1 步保存的「前半部分」文件。`, 'err'); return; }
+    let off = 0;
+    for (let i = 0; i < PRIOR.length; i++) {
+      st(`正在核对前半部分 ${i + 1}/${PRIOR.length}…`);
+      $('fill').style.width = ((i + 1) / PRIOR.length * 100 * priorSize / FULL).toFixed(2) + '%';
+      if (await sha(f.slice(off, off + PRIOR[i].size)) !== PRIOR[i].sha) { st(`前半部分第 ${i + 1} 块与原片不一致，请回网页 A 重新保存。`, 'err'); return; }
+      off += PRIOR[i].size;
+    }
+    part1 = f; st('前半部分核对通过。点「合成并保存」继续。', 'ok'); $('go').disabled = false;
+  });
+  $('go').addEventListener('click', async () => {
+    if (!part1) return;
+    $('go').disabled = true;
+    try {
+      if (!full) { await fetchOwn(priorSize, FULL, '正在下载后半部分'); full = new Blob([part1, ...got], { type: 'video/mp4' }); }
+      if (full.size !== FULL) throw new Error('合成后的大小不对，请刷新页面重试。');
+      st('完整原片已合成，正在打开保存窗口…', 'ok');
+      await offer(NAME_FULL, full, `已保存完整原片 ${NAME_FULL}（${mb(FULL)} MB，每一块都已校验）。可以删除「前半部分」文件了。`);
+    } catch (e) { st(e.message, 'err'); }
+    $('go').disabled = false;
+  });
+}
+
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  const el = $(b.dataset.copy), old = b.textContent;
+  try { await navigator.clipboard.writeText(el.textContent); b.textContent = '已复制'; }
+  catch { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = '已选中，请按 Ctrl/⌘+C'; }
+  setTimeout(() => b.textContent = old, 1800);
+}));
+const md = $('save-md');
+if (md) md.addEventListener('click', async () => {
+  const dl = await window.claude?.use?.('downloads'); if (!dl) return;
+  try { await dl.save({ filename: 'TradingNow_视频提示词.md', data: $('prompt').textContent }); } catch {}
+});
+</script>
