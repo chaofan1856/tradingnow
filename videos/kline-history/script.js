@@ -30,17 +30,17 @@ function chapter(numCn, idx, title, en, sub) {
   return (ctx, S) => {
     const cx = 960;
     const a = S.p(0.15, 1.0);
-    K.text(ctx, `MODULE · 0${idx}`, cx, 330, { font: F.latin(500, 20), color: C.gold, align: 'center', spacing: 9, alpha: S.p(0.1, 1) });
+    K.text(ctx, `MODULE · 0${idx}`, cx, 300, { font: F.latin(500, 20), color: C.gold, align: 'center', spacing: 9, alpha: S.p(0.1, 1) });
     ctx.save(); ctx.translate(cx, 470); const s = lerp(1.25, 1, easeOut(S.t / 1.6)); ctx.scale(s, s);
-    K.goldText(ctx, numCn, 0, 0, 120, { alpha: a, glow: .8 + .2 * Math.sin(S.t * 2) });
+    K.goldText(ctx, numCn, 0, 0, 84, { alpha: a, glow: .8 + .2 * Math.sin(S.t * 2) });
     ctx.restore();
     K.rule(ctx, cx, 535, 280, S.p(0.6, 1.2));
     ctx.save(); ctx.beginPath(); ctx.rect(0, 548, 1920, 100); ctx.clip();
     const tp = S.p(0.9, 1.1, K.expo);
-    K.text(ctx, title, cx, 625 + (1 - tp) * 70, { font: F.serif(900, 62), color: C.white, align: 'center', spacing: 14, alpha: tp });
+    K.text(ctx, title, cx, 625 + (1 - tp) * 70, { font: F.serif(900, 44), color: C.white, align: 'center', spacing: 12, alpha: tp });
     ctx.restore();
     K.text(ctx, en.toUpperCase(), cx, 690, { font: F.latin(500, 20), color: C.gray, align: 'center', spacing: 7, alpha: S.p(1.5, 1) });
-    K.text(ctx, sub, cx, 736, { font: F.serif(500, 22), color: C.gray, align: 'center', spacing: 6, alpha: S.p(1.8, 1) });
+    K.text(ctx, sub, cx, 752, { font: F.serif(500, 22), color: C.gray, align: 'center', spacing: 6, alpha: S.p(1.8, 1) });
   };
 }
 
@@ -318,10 +318,10 @@ window.FILM = {
       const bg = K.gen.path([100, 108, 103, 114, 109, 121, 115, 128], { per: 6, seed: 3 });
       const ch = new K.Chart(bg.candles, { x: 120, y: 200, w: 1680, h: 640 });
       ch.draw(ctx, S.lin(0, -.2, 3.2) * bg.candles.length, { alpha: .16, glow: 0, color: () => C.gold });
-      K.text(ctx, 'THE  STORY  OF  THE  CANDLESTICK', cx, 400, { font: F.latin(500, 24), color: C.gold, align: 'center', spacing: 12, alpha: S.p(.3, 1.2) });
+      K.text(ctx, 'THE  STORY  OF  THE  CANDLESTICK', cx, 384, { font: F.latin(500, 22), color: C.gold, align: 'center', spacing: 12, alpha: S.p(.3, 1.2) });
       ctx.save(); ctx.beginPath(); ctx.rect(0, 410, 1920, 150); ctx.clip();
       const tp = S.p(.5, 1.4, K.expo);
-      K.goldText(ctx, 'K线图的前世今生', cx, 528 + (1 - tp) * 110, 112, { spacing: 18 });
+      K.goldText(ctx, 'K线图的前世今生', cx, 528 + (1 - tp) * 110, 68, { spacing: 12 });
       ctx.restore();
       const sw = clamp((S.t - 1.8) / 1.3);
       if (sw > 0 && sw < 1) {
