@@ -1,5 +1,5 @@
 /* ============================================================
-   《K线与动能博弈》 — content for the TradingNow film engine (index.html)
+   《趋势指挥官：均线》 — content for the TradingNow film engine (index.html)
 
    A scene:
      { id, header?, lines?: [subtitle markup], visual?(ctx, S, K), tr?: transition into this scene,
@@ -9,20 +9,62 @@
    K (drawing kit):  see index.html — text, goldText, rich, candle, Chart, gen.path/seq, dotted, dash,
                      line, rule, arrow, marker, bracket, vbrace, tag, baseline
    Transitions:      'zoom' | ['push', ±1] | 'sweep' | ['iris', [x,y]] | 'dissolve'
+   All moving-average lines on candle charts are computed from the candle closes (sma / ema below).
    ============================================================ */
 (() => {
 const { C, clamp, lerp, easeOut, easeInOut, rgba, mix, F } = K;
 const BOX = { x: 260, y: 250, w: 1400, h: 500 };          // standard chart stage (above the subtitle zone)
-const R = K.rng(2026);
+const TAU = Math.PI * 2;
 
 /* header presets */
-const H0 = { label: '导言', sub: '博弈符号的本质', en: 'The Nature of the Symbols', zh: '《K线与动能博弈》' };
-const H1 = { label: '模块', num: 1, sub: 'K线基础构造', en: 'Anatomy of a Candlestick', zh: '《多空符号的解构》' };
-const H2 = { label: '模块', num: 2, sub: '市场三大趋势识别', en: 'Reading the Trend', zh: '《秩序的轨迹》' };
-const H3 = { label: '模块', num: 3, sub: '动能增强与衰竭', en: 'Momentum Gain & Loss', zh: '《博弈的温度》' };
+const H0 = { label: '导言', sub: '红绿背后的隐藏丝线', en: 'The Hidden Thread', zh: '《趋势指挥官：均线》' };
+const H1 = { label: '模块', num: 1, sub: '跨界起源 · 从麦田到火箭', en: 'Unlikely Origins', zh: '《移动平均的来历》' };
+const H2 = { label: '模块', num: 2, sub: '现代均线之父与万有引力', en: 'The Gravity of Price', zh: '《价格的引力中心》' };
+const H3 = { label: '模块', num: 3, sub: '1981 · 一条震动华尔街的指令', en: 'Sell Everything, 1981', zh: '《神话与镜鉴》' };
+const H4 = { label: '结语', sub: '向洋流低头的潮水', en: 'Tide & Current', zh: '《趋势指挥官：均线》' };
 
-/* ---------- shared visual pieces ---------- */
+/* ---------- math: moving averages from closes ---------- */
 const easeBack = x => { x = clamp(x); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+const closes = ks => ks.map(k => k.c);
+function sma(cl, n) { const out = []; let s = 0; for (let i = 0; i < cl.length; i++) { s += cl[i]; if (i >= n) s -= cl[i - n]; out.push(i >= n - 1 ? s / n : null); } return out; }
+function ema(cl, n) { const k = 2 / (n + 1), out = []; let e = null; for (let i = 0; i < cl.length; i++) { if (i === n - 1) e = cl.slice(0, n).reduce((a, b) => a + b, 0) / n; else if (i >= n) e = k * cl[i] + (1 - k) * e; out.push(e); } return out; }
+/** candles with a warm-up history: MA is computed over everything, the chart shows only the tail */
+function series(wps, per, seed, warm, o = {}) {
+  const all = K.gen.path(wps, { per, seed, ...o }).candles;
+  return { all, show: all.slice(warm), warm };
+}
+/** points of an MA on a chart (display index j ↔ data index j+off), up to `reveal` candles */
+function maPts(ch, ma, off = 0, reveal = Infinity) {
+  const pts = [];
+  for (let j = 0; j < ch.k.length && j < reveal; j++) { const v = ma[j + off]; if (v != null) pts.push([ch.x(j), ch.y(v)]); }
+  return pts;
+}
+
+/* ---------- drawing helpers ---------- */
+/** smooth glowing polyline with draw progress (by length). o:{color,width,glow,alpha,head} */
+function curve(ctx, pts, p = 1, o = {}) {
+  if (pts.length < 2 || p <= 0) return null;
+  let L = 0; const seg = [];
+  for (let i = 1; i < pts.length; i++) { const d = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push(d); L += d; }
+  const end = L * clamp(p); let acc = 0, tip = pts[0];
+  ctx.save(); ctx.globalAlpha *= o.alpha ?? 1;
+  ctx.strokeStyle = o.color || C.goldHi; ctx.lineWidth = o.width || 3; ctx.lineJoin = ctx.lineCap = 'round';
+  if (o.glow !== 0) { ctx.shadowColor = rgba(o.color || C.goldHi, o.glow ?? .8); ctx.shadowBlur = o.blur || 16; }
+  if (o.dash) ctx.setLineDash(o.dash);
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i < pts.length; i++) {
+    if (acc + seg[i - 1] >= end) { const u = (end - acc) / seg[i - 1]; tip = [lerp(pts[i - 1][0], pts[i][0], u), lerp(pts[i - 1][1], pts[i][1], u)]; ctx.lineTo(...tip); break; }
+    acc += seg[i - 1]; ctx.lineTo(pts[i][0], pts[i][1]); tip = pts[i];
+  }
+  ctx.stroke();
+  if (o.head && p < 1) { ctx.setLineDash([]); ctx.fillStyle = '#FFF4D6'; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 24; ctx.beginPath(); ctx.arc(tip[0], tip[1], o.head, 0, TAU); ctx.fill(); }
+  ctx.restore();
+  return tip;
+}
+/** K.dotted needs at least two points */
+const dots = (ctx, pts, p, o) => { if (pts.length > 1) K.dotted(ctx, pts, p, o); };
+/** an MA label pinned to the end of a line */
+const maLabel = (ctx, pts, str, a, col = C.goldHi, dy = -14) => { if (pts.length) { const [x, y] = pts[pts.length - 1]; K.text(ctx, str, x + 14, y + dy, { font: F.latin(500, 22), color: col, alpha: a, spacing: 2 }); } };
 
 /** chapter card: 壹/贰/叁 → title → subtitle, with the gold rule */
 function chapter(numCn, idx, title, en, sub) {
@@ -30,12 +72,10 @@ function chapter(numCn, idx, title, en, sub) {
     const cx = 960;
     const a = S.p(0.15, 1.0);
     K.text(ctx, `MODULE · 0${idx}`, cx, 330, { font: F.latin(500, 20), color: C.gold, align: 'center', spacing: 9, alpha: S.p(0.1, 1) });
-    // big numeral, slowly breathing glow
     ctx.save(); ctx.translate(cx, 470); const s = lerp(1.25, 1, easeOut(S.t / 1.6)); ctx.scale(s, s);
     K.goldText(ctx, numCn, 0, 0, 120, { alpha: a, glow: .8 + .2 * Math.sin(S.t * 2) });
     ctx.restore();
     K.rule(ctx, cx, 535, 280, S.p(0.6, 1.2));
-    // title rises through a mask
     ctx.save(); ctx.beginPath(); ctx.rect(0, 548, 1920, 100); ctx.clip();
     const tp = S.p(0.9, 1.1, K.expo);
     K.text(ctx, title, cx, 625 + (1 - tp) * 70, { font: F.serif(900, 62), color: C.white, align: 'center', spacing: 14, alpha: tp });
@@ -45,505 +85,758 @@ function chapter(numCn, idx, title, en, sub) {
   };
 }
 
-/** the big anatomy candle (shared by the Real-Body/Wick scenes) */
-const AN = { x: 1180, open: 600, close: 380, high: 268, low: 712, w: 128 };
+/** one wheat stalk in gold line-art. lean: tip offset in px */
+function wheat(ctx, x, yb, h, lean, a, s = 1) {
+  if (a <= 0.002) return;
+  const tx = x + lean, ty = yb - h, ang = Math.atan2(ty - (yb - h * .55), tx - (x + lean * .25));
+  ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = rgba(C.gold, .85); ctx.lineWidth = 1.3 * s; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x, yb); ctx.quadraticCurveTo(x + lean * .25, yb - h * .55, tx, ty); ctx.stroke();
+  // leaf
+  ctx.beginPath(); ctx.moveTo(x + lean * .05, yb - h * .25); ctx.quadraticCurveTo(x + 22 * s + lean * .1, yb - h * .38, x + 30 * s + lean * .15, yb - h * .3); ctx.stroke();
+  // ear: grains alternating along the tip direction
+  const ex = Math.cos(ang), ey = Math.sin(ang), nx = -ey, ny = ex;
+  ctx.fillStyle = rgba(C.goldHi, .16); ctx.strokeStyle = rgba(C.goldHi, .9); ctx.shadowColor = rgba(C.gold, .5); ctx.shadowBlur = 6;
+  for (let g = 0; g < 7; g++) {
+    const d = (g - 7) * 7.5 * s;
+    for (const side of [-1, 1]) {
+      const gx = tx + ex * d + nx * side * 5 * s, gy = ty + ey * d + ny * side * 5 * s;
+      ctx.beginPath(); ctx.ellipse(gx, gy, 6 * s, 3 * s, ang + side * .5, 0, TAU); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(gx, gy); ctx.lineTo(gx + (ex * 1 + nx * side * .5) * 16 * s, gy + (ey * 1 + ny * side * .5) * 16 * s); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+/** a field of wheat; t drives a gentle wind */
+function wheatField(ctx, x0, x1, yb, t, a, rows = 3) {
+  for (let r = 0; r < rows; r++) {
+    const s = .7 + r * .2, gap = 34 * s, y = yb - (rows - 1 - r) * 34, al = a * (.45 + r * .27);
+    for (let x = x0 + (r % 2) * gap / 2; x <= x1; x += gap) {
+      const h = (95 + 30 * Math.sin(x * .13 + r)) * s, lean = 10 * Math.sin(t * 1.3 - x * .012 + r) + 6;
+      wheat(ctx, x, y, h, lean * s, al, s * .9);
+    }
+  }
+}
+/** line-art rocket, pointing along `ang` (0 = straight up) */
+function rocket(ctx, x, y, ang, s, a, t, thrust = 1) {
+  if (a <= 0.002) return;
+  ctx.save(); ctx.globalAlpha *= a; ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s);
+  // flame
+  if (thrust > 0) {
+    const fl = (34 + 10 * Math.sin(t * 47) + 6 * Math.sin(t * 31)) * thrust;
+    const g = ctx.createLinearGradient(0, 40, 0, 40 + fl);
+    g.addColorStop(0, rgba('#FFF1C8', .95)); g.addColorStop(.5, rgba(C.goldHi, .6)); g.addColorStop(1, rgba(C.red, 0));
+    ctx.fillStyle = g; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 24;
+    ctx.beginPath(); ctx.moveTo(-9, 40); ctx.quadraticCurveTo(0, 40 + fl * 1.2, 9, 40); ctx.closePath(); ctx.fill();
+  }
+  ctx.shadowColor = rgba(C.gold, .7); ctx.shadowBlur = 10;
+  ctx.strokeStyle = C.goldHi; ctx.lineWidth = 2 / s * 1.2; ctx.fillStyle = 'rgba(12,10,8,.85)';
+  ctx.beginPath(); ctx.moveTo(-14, 34); ctx.lineTo(-14, -30); ctx.quadraticCurveTo(-13, -58, 0, -78); ctx.quadraticCurveTo(13, -58, 14, -30); ctx.lineTo(14, 34); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-14, 10); ctx.lineTo(-28, 38); ctx.lineTo(-14, 32); ctx.moveTo(14, 10); ctx.lineTo(28, 38); ctx.lineTo(14, 32); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-9, 34); ctx.lineTo(-11, 42); ctx.lineTo(11, 42); ctx.lineTo(9, 34); ctx.stroke();
+  ctx.beginPath(); ctx.arc(0, -22, 6, 0, TAU); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-14, -40); ctx.lineTo(14, -40); ctx.stroke();
+  ctx.restore();
+}
+/** anonymous silhouette (head & shoulders), gold rim */
+function silhouette(ctx, x, y, s, a) {
+  if (a <= 0.002) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(10,9,8,.92)'; ctx.strokeStyle = rgba(C.goldHi, .85); ctx.lineWidth = 1.6; ctx.shadowColor = rgba(C.gold, .7); ctx.shadowBlur = 18;
+  ctx.beginPath();
+  ctx.moveTo(x - s * .62, y); ctx.bezierCurveTo(x - s * .6, y - s * .38, x - s * .3, y - s * .46, x - s * .14, y - s * .5);
+  ctx.lineTo(x - s * .12, y - s * .6); ctx.bezierCurveTo(x - s * .3, y - s * .7, x - s * .3, y - s * 1.12, x, y - s * 1.14);
+  ctx.bezierCurveTo(x + s * .3, y - s * 1.12, x + s * .3, y - s * .7, x + s * .12, y - s * .6); ctx.lineTo(x + s * .14, y - s * .5);
+  ctx.bezierCurveTo(x + s * .3, y - s * .46, x + s * .6, y - s * .38, x + s * .62, y); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+/** zig-zag spring from (x,y0) to (x,y1) */
+function spring(ctx, x, y0, y1, a, col = C.goldHi) {
+  if (a <= 0.002) return;
+  const n = 9, w = 14;
+  ctx.save(); ctx.globalAlpha *= a; ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.shadowColor = rgba(col, .7); ctx.shadowBlur = 10;
+  ctx.beginPath(); ctx.moveTo(x, y0);
+  for (let i = 1; i < n; i++) ctx.lineTo(x + (i % 2 ? w : -w), lerp(y0, y1, i / n));
+  ctx.lineTo(x, y1); ctx.stroke(); ctx.restore();
+}
 
 /* ---------- data ---------- */
-const UP = K.gen.path([100, 109, 104, 116, 110, 124, 117, 132, 126, 140], { per: [5, 3, 5, 3, 5, 3, 5, 3, 5], seed: 11, noise: .5 });
-const DOWN = K.gen.path([140, 131, 136, 124, 130, 116, 122, 108, 114, 100], { per: [5, 3, 5, 3, 5, 3, 5, 3, 5], seed: 12, noise: .5 });
-const RANGE = K.gen.path([105, 115, 101.5, 114.6, 101, 115.2, 100.8, 114.8, 101.2, 108], { per: [4, 5, 4, 5, 4, 5, 4, 5, 3], seed: 13, noise: 1.3, wick: .7 });
-const chartUP = new K.Chart(UP.candles, BOX), chartDOWN = new K.Chart(DOWN.candles, BOX), chartRANGE = new K.Chart(RANGE.candles, BOX, { lo: 95, hi: 121 });
+// cold open: a nervous tape; the MA is computed from the (jittering) closes every frame
+const NOISE = K.gen.path([100, 112, 97, 115, 104, 121, 108, 126, 114, 131], { per: 7, seed: 41, noise: 1.6, wick: 1.1 }).candles;
+// intro: a typical chart with MA5 / MA10 / MA20
+const INTRO = series([96, 100, 108, 103, 114, 108, 120, 114, 124], [6, 6, 6, 6, 6, 6, 6, 6], 31, 19, { noise: .9, wick: .7 });
+const chINTRO = new K.Chart(INTRO.show, { x: 260, y: 260, w: 1400, h: 470 });
+// MA window demo
+const WIN = K.gen.path([100, 106, 102, 110, 105, 113], { per: [5, 4, 5, 5, 5], seed: 52, noise: .8 }).candles;
+const chWIN = new K.Chart(WIN, { x: 300, y: 320, w: 1320, h: 400 }, { body: .5 });
+const MA_WIN = sma(closes(WIN), 5);
+// MA vs EMA on a V-turn
+const VT = series([116, 120, 104, 100, 117], [9, 9, 4, 12], 63, 12, { noise: .55 });
+const chVT = new K.Chart(VT.show, { x: 1010, y: 300, w: 640, h: 430 }, { body: .55 });
+const VT_MA = sma(closes(VT.all), 10), VT_EMA = ema(closes(VT.all), 10);
+// rubber band: steady, over-extended surge, snap back
+const RB = series([98, 101, 100, 102.5, 101.5, 120, 104, 106], [5, 4, 4, 4, 6, 5, 3], 71, 13, { noise: .35, wick: .5 });
+const chRB = new K.Chart(RB.show, { x: 260, y: 270, w: 1240, h: 470 }, { body: .55 });
+const RB_MA = sma(closes(RB.all), 10);
+// support / resistance
+const SUP = series([92, 100, 105, 103, 109, 106.5, 113, 110.5, 117, 115, 121], [5, 5, 3, 4, 3, 4, 3, 4, 3, 3], 81, 10, { noise: .3, wick: .4 });
+const RES = series([129, 121, 116, 118, 111, 113.5, 107, 109.5, 103, 105, 99], [5, 5, 3, 4, 3, 4, 3, 4, 3, 3], 82, 10, { noise: .3, wick: .4 });
+const chSUP = new K.Chart(SUP.show, { x: 270, y: 300, w: 640, h: 420 }, { body: .55 }), chRES = new K.Chart(RES.show, { x: 1010, y: 300, w: 640, h: 420 }, { body: .55 });
+const SUP_MA = sma(closes(SUP.all), 10), RES_MA = sma(closes(RES.all), 10);
+// 1981 panic
+const PANIC = K.gen.seq(100, [[.6, .5, .4], [-.5, .4, .5], [.4, .5, .3], [-.3, .3, .4], [.5, .4, .3], [-.4, .5, .4], [.3, .3, .3], [-1.2, .4, .8], [-2.6, .6, 1.4], [-4.2, .8, 2.2], [-3.4, 1.4, 1.8], [-2.2, 1.2, 1.6], [1.0, .8, 1.0], [-1.6, 1.0, 1.2]]);
+const chPANIC = new K.Chart(PANIC, { x: 300, y: 260, w: 1320, h: 330 }, { body: .55 });
+const VOL = [22, 25, 20, 24, 21, 26, 23, 48, 70, 100, 82, 64, 45, 52];
+// the long bull market
+const BULL = series([80, 84, 82, 90, 86, 97, 92, 104, 99, 112, 106, 120, 114, 129, 123, 138], [5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5, 3, 5], 91, 14, { noise: .45, wick: .5 });
+const chBULL = new K.Chart(BULL.show, { x: 260, y: 260, w: 1400, h: 490 }, { body: .55 });
+const BULL_MA = sma(closes(BULL.all), 14);
 
-const chop = K.gen.seq(100, [[1.2, .9, .8], [-1.4, .8, 1.1], [.9, 1.3, .6], [-1.1, .7, 1.2], [1.5, .9, .9], [-.8, 1.1, .7], [1.0, .6, 1.0], [-.6, .9, .8]]);
-const tightRun = K.gen.seq(chop[chop.length - 1].c, Array.from({ length: 15 }, (_, i) => [1.25 + R() * .45, .12 + R() * .1, .1 + R() * .08]));
-const TIGHT = [...chop, ...tightRun], chartTIGHT = new K.Chart(TIGHT, BOX);
+/* MA window state at time u (0..1 slide progress): a hop-and-hold motion */
+const winPos = u => { const n = WIN.length - 1, f = lerp(4, n, clamp(u)), i = Math.floor(f), fr = f - i; return Math.min(n, i + easeInOut(clamp((fr - .35) / .45))); };
 
-const GROW_R = K.gen.seq(100, [[.5, .2, .2], [.9, .2, .2], [1.5, .25, .2], [2.3, .3, .25], [3.3, .35, .3], [4.6, .4, .3]]);
-const GROW_G = K.gen.seq(113, [[-.5, .2, .2], [-.9, .2, .2], [-1.5, .2, .25], [-2.3, .25, .3], [-3.3, .3, .35], [-4.6, .3, .4]]);
-const chartGR = new K.Chart(GROW_R, { x: 300, y: 270, w: 560, h: 470 }), chartGG = new K.Chart(GROW_G, { x: 1060, y: 270, w: 560, h: 470 });
+/* Granville diagram geometry: MA (schematic) and price offsets around it */
+const GX = u => 300 + u * 1320;
+const GMA = u => 500 - 125 * Math.cos(TAU * (u - .56) / .88);
+const GOFF = [[0, 50], [.05, 105], [.11, 55], [.17, 0], [.23, -62], [.30, 26], [.35, -58], [.42, -16], [.52, -112], [.60, -46], [.66, 0], [.72, 58], [.78, -28], [.84, 62], [.90, 14], [.96, 70], [1, 86]];
+const goff = u => { let i = 0; while (i < GOFF.length - 2 && u > GOFF[i + 1][0]) i++; const [u0, a] = GOFF[i], [u1, b] = GOFF[i + 1]; const w = (1 - Math.cos(Math.PI * clamp((u - u0) / (u1 - u0)))) / 2; return lerp(a, b, w); };
+const GRULES = [
+  [.05, 'B4', '超跌反弹', 1], [.17, 'B1', '上穿均线', 1], [.30, 'B2', '假跌破', 1], [.42, 'B3', '回踩不破', 1],
+  [.52, 'S4', '超涨回落', 0], [.66, 'S1', '下穿均线', 0], [.78, 'S2', '假突破', 0], [.90, 'S3', '反弹不过', 0],
+];
 
-const wideA = K.gen.seq(100, Array.from({ length: 11 }, () => [1.2 + R() * .4, .15, .12]));
-const wideB = K.gen.seq(wideA[wideA.length - 1].c, [[2.2, 3.6, 2.8], [-3.4, 1.8, 3.9], [3.0, 4.2, 2.4], [-4.0, 2.6, 4.4], [2.4, 4.0, 3.5], [-2.8, 3.2, 3.6]]);
-const WIDE = [...wideA, ...wideB], chartWIDE = new K.Chart(WIDE, BOX);
-
-const SHRINK = K.gen.seq(100, [[1.4, .2, .2], [2.1, .25, .2], [4.6, .3, .3], [3.6, .45, .3], [2.6, .6, .35], [1.7, .8, .4], [1.0, .9, .5], [.5, 1.0, .6], [.22, 1.0, .7]]);
-const chartSHRINK = new K.Chart(SHRINK, BOX, { body: .5 });
-
-const CC = K.gen.seq(100, [[.6, .5, .4], [-.4, .4, .5], [1.6, .3, .2], [2.4, .35, .25], [2.9, .4, .3], [3.1, .5, .3], [2.6, .8, .3], [-3.0, .35, .6], [-.8, .5, .9]]);
-const chartCC = new K.Chart(CC, BOX, { body: .5 });
-
-/* mini charts for the summary triptych */
-const mini = (path, x) => new K.Chart(path.candles, { x, y: 330, w: 440, h: 330 }, path === RANGE ? { lo: 95, hi: 121 } : {});
-const MINI = [mini(UP, 180), mini(DOWN, 740), mini(RANGE, 1300)];
-
-/** swing labels for trends */
-function swings(ctx, S, chart, path, labelOf, from, d = .35) {
-  path.swings.forEach((s, j) => {
-    if (j === 0) return;
-    const a = S.at(...from, d) * clamp((S.t - S.beat(from[0]) - from[1] - j * .18) / .4);
-    if (a <= 0) return;
-    const y = chart.y(s.price) + (s.type === 'H' ? -14 : 14);
-    K.marker(ctx, chart.x(s.i), y, { alpha: a, r: 7, label: labelOf(s, j), pos: s.type === 'H' ? 'above' : 'below', font: F.latin(500, 21), color: C.goldHi });
-  });
-}
-const zig = (chart, path) => [[chart.x(0), chart.y(path.candles[0].o)], ...path.swings.map(s => [chart.x(s.i), chart.y(s.price) + (s.type === 'H' ? -14 : 14)])];
+/* Morse key-downs for "SELL" (unit 0.1 s), repeated */
+const MORSE = (() => { const u = .1, out = []; let t = 0; const code = ['...', '.', '.-..', '.-..'];
+  for (let rep = 0; rep < 3; rep++) { for (const ch of code) { for (const m of ch) { const d = m === '.' ? u : 3 * u; out.push([t, d]); t += d + u; } t += 2 * u; } t += 4 * u; }
+  return out; })();
 
 window.FILM = {
   title: '趋势指挥官：均线',
   transition: 1.1,
+  timing: { perChar: 0.14, base: 1.2, minLine: 2.4, pre: 0.8, post: 0.9 },
   subtitle: { x: 220, y: 912, size: 42, maxW: 1480 },
   scenes: [
 
   /* ================= COLD OPEN ================= */
-  { id: 'open', camera: { z0: 1.08, z1: 1.0 }, lines: ['你每天看到的K线，', '并不是{随机跳动的数字}。'],
+  { id: 'open', camera: { z0: 1.07, z1: 1.0 }, lines: ['密密麻麻的红绿K线，上下乱跳，让人迷失方向。', '直到一条{平滑的线}划过——趋势，一目了然。'],
     visual(ctx, S) {
-      // a tape of price dots streams in, then every dot condenses into candles
-      const N = 150, R2 = K.rng(5);
-      const pts = []; let p = 0;
-      for (let i = 0; i < N; i++) { p += (R2() - .48) * 9; pts.push([180 + i * 10.4, 520 + p + Math.sin(i * .2) * 26]); }
-      const reveal = S.lin(0, -.3, 2.6);
-      K.baseline(ctx, 180, 1740, 700, { p: S.at(0, 0, 1.6), step: 52, alpha: .9 });
-      for (let i = 0; i < N * reveal; i++) {
-        const [x, y] = pts[i];
-        const cond = S.at(1, .4 + i * .004, .9);                     // dots gather into bars on line 2
-        const group = Math.floor(i / 6), gx = 180 + group * 62.4 + 31;
-        const xx = lerp(x, gx, cond);
-        ctx.fillStyle = rgba(C.goldHi, .85 - cond * .5); ctx.shadowColor = C.gold; ctx.shadowBlur = 6;
-        ctx.beginPath(); ctx.arc(xx, y, 1.8, 0, 6.2832); ctx.fill();
-      }
-      ctx.shadowBlur = 0;
-      const ca = S.at(1, 1.2, 1.2);
-      if (ca > 0) for (let g = 0; g < N / 6; g++) {
-        const seg = pts.slice(g * 6, g * 6 + 6), ys = seg.map(q => q[1]);
-        const yf = v => v, k = { o: -seg[0][1], c: -seg[5][1], h: -Math.min(...ys), l: -Math.max(...ys) };
-        K.candle(ctx, 180 + g * 62.4 + 31, k, v => -v, { w: 26, alpha: ca, grow: clamp(ca * 1.6 - g * .02), glow: .4 });
-      }
+      const calm = S.at(1, .3, 2.6, easeInOut);
+      const amp = 1 - calm * .85;
+      // every candle trembles (pure function of time), less and less once the line arrives
+      const ks = NOISE.map((k, i) => { const j = (Math.sin(S.t * (9 + (i % 5)) + i * 1.7) + Math.sin(S.t * (15 + (i % 3)) + i)) * 1.1 * amp; return { o: k.o + j * .6, c: k.c - j, h: k.h + Math.abs(j) * .8, l: k.l - Math.abs(j) * .8 }; });
+      const ch = new K.Chart(ks, BOX, { lo: 90, hi: 136, body: .55 });
+      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.p(0, 1.4) });
+      const shake = Math.sin(S.t * 37) * 2.2 * amp * S.p(.3, .6);
+      ctx.save(); ctx.translate(shake, Math.cos(S.t * 29) * 1.4 * amp);
+      ch.draw(ctx, S.lin(0, -.6, 2.4) * ks.length, { dim: () => 1 - calm * .62, glow: .35 * amp });
+      ctx.restore();
+      // the smooth moving-average line sweeps in
+      const ma = sma(closes(ks), 10), pts = maPts(ch, ma);
+      curve(ctx, pts, S.at(1, 0, 2.2, easeInOut), { width: 4, head: 6, glow: .9, blur: 22 });
+      K.text(ctx, 'MA', pts[pts.length - 1][0] + 16, pts[pts.length - 1][1] + 8, { font: F.latin(500, 26), color: C.goldHi, alpha: S.at(1, 2, .8), spacing: 3 });
     } },
 
   /* ================= TITLE ================= */
   { id: 'title', dur: 5.2, tr: 'zoom', camera: { z0: 1.0, z1: 1.06 },
     visual(ctx, S) {
       const cx = 960;
-      // candle silhouettes rising behind the title
       const bg = K.gen.path([100, 108, 103, 114, 109, 121, 115, 128], { per: 6, seed: 3 });
       const ch = new K.Chart(bg.candles, { x: 120, y: 200, w: 1680, h: 640 });
-      ch.draw(ctx, S.lin(0, -.2, 3.2) * bg.candles.length, { alpha: .16, glow: 0, color: () => C.gold });
-      K.text(ctx, 'CANDLESTICKS  &  MOMENTUM', cx, 400, { font: F.latin(500, 24), color: C.gold, align: 'center', spacing: 12, alpha: S.p(.3, 1.2) });
+      ch.draw(ctx, S.lin(0, -.2, 3.2) * bg.candles.length, { alpha: .14, glow: 0, color: () => C.gold });
+      curve(ctx, maPts(ch, sma(closes(bg.candles), 6)), S.p(.4, 3), { width: 2, alpha: .35, glow: .4 });
+      K.text(ctx, 'MOVING AVERAGE  ·  THE TREND COMMANDER', cx, 400, { font: F.latin(500, 24), color: C.gold, align: 'center', spacing: 10, alpha: S.p(.3, 1.2) });
       ctx.save(); ctx.beginPath(); ctx.rect(0, 410, 1920, 150); ctx.clip();
       const tp = S.p(.5, 1.4, K.expo);
-      K.goldText(ctx, 'K线与动能博弈', cx, 528 + (1 - tp) * 110, 112, { spacing: 18 });
+      K.goldText(ctx, '趋势指挥官：均线', cx, 528 + (1 - tp) * 110, 104, { spacing: 14 });
       ctx.restore();
-      // light sweep across the title
       const sw = clamp((S.t - 1.8) / 1.3);
       if (sw > 0 && sw < 1) {
         ctx.save(); ctx.globalCompositeOperation = 'lighter';
-        const x = lerp(500, 1420, sw), g = ctx.createLinearGradient(x - 90, 0, x + 90, 0);
+        const x = lerp(440, 1480, sw), g = ctx.createLinearGradient(x - 90, 0, x + 90, 0);
         g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(.5, 'rgba(255,240,200,.28)'); g.addColorStop(1, 'rgba(255,240,200,0)');
         ctx.fillStyle = g; ctx.fillRect(x - 90, 410, 180, 150); ctx.restore();
       }
       K.rule(ctx, cx, 590, 330, S.p(1.3, 1.4));
-      K.text(ctx, '三大模块 · 读懂多空博弈的语言', cx, 650, { font: F.serif(500, 26), color: C.gray, align: 'center', spacing: 8, alpha: S.p(2.0, 1.2) });
+      K.text(ctx, '从麦田、火箭到华尔街 · 一条线的传奇', cx, 650, { font: F.serif(500, 26), color: C.gray, align: 'center', spacing: 8, alpha: S.p(2.0, 1.2) });
     } },
 
   /* ================= 导言 ================= */
-  { id: 'intro', header: H0, tr: ['iris', [960, 470]],
-    lines: ['每一根K线，都是多空双方在特定时间内，', '用{真金白银}博弈后留下的——', '{情绪切片}与{信用脚印}。', '在中国资本市场，[红色]代表多头的炽热与上涨，', '<绿色>代表空头的冰冷与下跌。', '看懂这套红绿符号，是进入{博弈大局}的第一步。'],
+  { id: 'intro', header: H0, tr: ['iris', [960, 480]], camera: { z0: 1.02, z1: 1.06, x1: -20 },
+    lines: ['打开任何一款行情软件，都能拉出几条{平滑的均线}。', '它被称为{股市的万有引力}。', '可它的核心算法，并非诞生于华尔街——', '而是来自英国的{统计学家}，和美国的{航天工程师}。'],
     visual(ctx, S) {
-      const y = v => v;
-      // one gold candle assembles from dust, then splits into the two camps
-      const split = S.at(3, 0, 1.4, easeInOut);
-      const form = S.at(0, 0, 1.6);
-      const R3 = K.rng(9);
-      if (form < 1) for (let i = 0; i < 90; i++) {
-        const tx = 960 + (R3() - .5) * 90, ty = 300 + R3() * 340, sx = 960 + (R3() - .5) * 1400, sy = 470 + (R3() - .5) * 800;
-        const p = easeOut(form * 1.3 - R3() * .3);
-        ctx.fillStyle = rgba(C.goldHi, .8 * (1 - form)); ctx.beginPath(); ctx.arc(lerp(sx, tx, p), lerp(sy, ty, p), 1.8, 0, 6.2832); ctx.fill();
-      }
-      const g = S.at(0, .9, 1.2);
-      const redX = lerp(960, 760, split), grnX = lerp(960, 1160, split);
-      const kU = { o: 600, c: 380, h: 300, l: 660 }, kD = { o: 380, c: 600, h: 300, l: 660 };
-      const yinv = v => v;  // already in px; flip so o<c reads correctly
-      const pxCandle = (x, up, col, a) => {
-        ctx.save(); ctx.globalAlpha = a; ctx.shadowColor = rgba(col, .55); ctx.shadowBlur = 26;
-        ctx.strokeStyle = col; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(x, lerp(490, 300, g)); ctx.lineTo(x, lerp(490, 660, g)); ctx.stroke();
-        ctx.fillStyle = col; const hgt = lerp(4, 220, g); ctx.fillRect(x - 46, 490 - hgt / 2, 92, hgt); ctx.restore();
+      const ch = chINTRO, cl = closes(INTRO.all), off = INTRO.warm;
+      const away = S.at(2, 0, 1.2, easeInOut);
+      ctx.save(); ctx.globalAlpha *= 1 - away * .88;
+      K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 26, { p: S.at(0, 0, 1) });
+      ch.draw(ctx, S.lin(0, 0, 2.6) * ch.k.length, { dim: () => 1 - S.at(0, 2.4, 1) * .5 });
+      const mas = [[5, C.white, 'MA5'], [10, C.goldHi, 'MA10'], [20, C.gold, 'MA20']];
+      mas.forEach(([n, col, lb], i) => {
+        const pts = maPts(ch, sma(cl, n), off), p = S.at(0, 1.4 + i * .35, 2.0, easeInOut);
+        curve(ctx, pts, p, { color: col, width: 2.6, glow: .6, head: 4 });
+        K.text(ctx, lb, ch.box.x + ch.box.w + 14, pts[pts.length - 1][1] + 8 + (i - 1) * 6, { font: F.latin(500, 20), color: col, alpha: S.at(0, 3.2 + i * .2, .6), spacing: 2 });
+      });
+      ctx.restore();
+      const g = S.at(1, 0, .9) * (1 - away);
+      K.text(ctx, '股市万有引力', 960, 236, { font: F.serif(900, 34), color: C.goldHi, align: 'center', spacing: 12, alpha: g, glow: .5 });
+      // two unexpected ancestors
+      const L = S.at(3, 0, 1, easeBack), Rr = S.at(3, 1.6, 1, easeBack);
+      const medal = (x, a, draw, zh, en) => {
+        if (a <= 0) return;
+        ctx.save(); ctx.globalAlpha *= clamp(a); ctx.translate(x, 470); ctx.scale(.8 + .2 * a, .8 + .2 * a);
+        ctx.strokeStyle = rgba(C.goldHi, .8); ctx.lineWidth = 1.4; ctx.shadowColor = rgba(C.gold, .7); ctx.shadowBlur = 18;
+        ctx.beginPath(); ctx.arc(0, 0, 140, 0, TAU); ctx.stroke(); ctx.shadowBlur = 0;
+        ctx.strokeStyle = rgba(C.gold, .35); ctx.beginPath(); ctx.arc(0, 0, 152, 0, TAU); ctx.stroke();
+        draw(); ctx.restore();
+        K.text(ctx, zh, x, 680, { font: F.serif(900, 34), color: C.white, align: 'center', spacing: 6, alpha: clamp(a) });
+        K.text(ctx, en, x, 718, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 6, alpha: clamp(a) });
       };
-      const col0 = mix(C.gold, C.red, split);
-      pxCandle(redX, true, col0, g);
-      if (split > 0) pxCandle(grnX, false, mix(C.gold, C.green, split), split);
-      // emotion & credit captions around the single candle (lines 2)
-      const em = S.at(2, 0, .8) * (1 - split);
-      K.tag(ctx, 760, 420, '情绪切片', { alpha: em, color: C.gold });
-      K.tag(ctx, 1160, 560, '信用脚印', { alpha: em, color: C.gold });
-      K.line(ctx, 830, 420, 905, 450, { alpha: em * .7, p: em });
-      K.line(ctx, 1090, 560, 1015, 530, { alpha: em * .7, p: em });
-      // camp labels
-      const la = S.at(3, .7, .8), lb = S.at(4, 0, .8);
-      K.text(ctx, '多头 · 上涨', redX, 730, { font: F.serif(700, 30), color: C.red, align: 'center', alpha: la, glow: .4, glowColor: C.red });
-      K.text(ctx, 'BULLISH', redX, 766, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 6, alpha: la });
-      K.text(ctx, '空头 · 下跌', grnX, 730, { font: F.serif(700, 30), color: C.green, align: 'center', alpha: lb, glow: .4, glowColor: C.green });
-      K.text(ctx, 'BEARISH', grnX, 766, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 6, alpha: lb });
-      // heat & cold auras
-      if (la > 0) { const r = ctx.createRadialGradient(redX, 490, 0, redX, 490, 260); r.addColorStop(0, rgba(C.red, .16 * la)); r.addColorStop(1, rgba(C.red, 0)); ctx.fillStyle = r; ctx.fillRect(redX - 260, 230, 520, 520); }
-      if (lb > 0) { const r = ctx.createRadialGradient(grnX, 490, 0, grnX, 490, 260); r.addColorStop(0, rgba(C.green, .14 * lb)); r.addColorStop(1, rgba(C.green, 0)); ctx.fillStyle = r; ctx.fillRect(grnX - 260, 230, 520, 520); }
-      K.rule(ctx, 960, 205, 260, S.at(5, 0, 1.2));
+      medal(620, L, () => { for (let i = -2; i <= 2; i++) wheat(ctx, i * 34, 95, 150 + (2 - Math.abs(i)) * 18, 8 * Math.sin(S.t * 1.3 + i), 1, 1); }, '英国 · 统计学家', 'BRITAIN · STATISTICIAN');
+      medal(1300, Rr, () => rocket(ctx, 0, 10, .25, 1.3, 1, S.t, .8), '美国 · 航天工程师', 'USA · AEROSPACE ENGINEER');
+      const q = S.at(3, .8, .8) * (1 - away * 0) * clamp(away * 2);
+      K.goldText(ctx, '？', 960, 500, 110, { alpha: q * (.75 + .25 * Math.sin(S.t * 3)) });
+      K.dash(ctx, 790, 470, 880, 470, { p: q, alpha: .6 }); K.dash(ctx, 1130, 470, 1040, 470, { p: q, alpha: .6 });
     } },
 
   /* ================= 模块一 ================= */
-  { id: 'ch1', dur: 4.2, tr: 'sweep', noHeaderFade: true, visual: chapter('壹', 1, '多空符号的解构', 'Anatomy of a Candlestick', 'K线基础构造 · 实体 · 影线 · 十字星') },
+  { id: 'ch1', dur: 4.2, tr: 'sweep', visual: chapter('壹', 1, '跨界起源', 'Unlikely Origins', '农作物产量 · 道氏理论 · 航天轨迹') },
 
-  { id: 'anatomy', header: H1, tr: 'zoom', camera: { z0: 1.02, z1: 1.07, x1: -30 },
-    lines: ['单根K线由{实体}（Real Body）与{影线}（Wicks）组成，', '记录了特定周期内的四个关键价格：{OHLC}。',
-      '[红色K线]：阳线，看涨，Bullish——价格上涨，多头占优。', '开盘价在实体{底部}，收盘价在实体{顶部}，', '收盘高于开盘，所以一路{向上飘红}。',
-      '<绿色K线>：阴线，看跌，Bearish——价格下跌，空头占优。', '开盘价在实体{顶部}，收盘价在实体{底部}，', '收盘低于开盘，所以一路{向下走绿}。'],
+  { id: 'wheat', header: H1, tr: 'zoom', camera: { z0: 1.0, z1: 1.06, y1: -10 }, chapter: '模块一：跨界起源',
+    lines: ['{1901年}，英国统计学家{胡克}（R. H. Hooker），', '在研究{气候}与{农作物收成}的关系时，', '用上了一种方法：{移动平均}。', '数据按窗口取平均，逐年的{起伏就被熨平}。'],
     visual(ctx, S) {
-      const flip = S.at(5, 0, 1.3, easeInOut);                       // red → green morph
-      const col = mix(C.red, C.green, flip);
-      const g = S.at(0, 0, 1.2, easeBack);
-      const x = AN.x, bodyTop = AN.close, bodyBot = AN.open;
-      // body & wicks grow from the centre
-      const cy = (bodyTop + bodyBot) / 2;
-      ctx.save(); ctx.shadowColor = rgba(col, .5); ctx.shadowBlur = 30;
-      ctx.strokeStyle = col; ctx.lineWidth = 4;
-      const wg = S.at(0, .5, 1.0);
-      ctx.beginPath(); ctx.moveTo(x, lerp(bodyTop, AN.high, wg)); ctx.lineTo(x, bodyTop); ctx.moveTo(x, bodyBot); ctx.lineTo(x, lerp(bodyBot, AN.low, wg)); ctx.stroke();
-      ctx.fillStyle = col; const hh = (bodyBot - bodyTop) * clamp(g, 0, 1.2);
-      ctx.fillRect(x - AN.w / 2, cy - hh / 2, AN.w, hh);
-      ctx.restore();
-      // braces on the right
-      K.vbrace(ctx, x + 110, bodyTop, bodyBot, '实体', { sub: 'REAL BODY', p: S.at(0, .9, .8) });
-      K.vbrace(ctx, x + 110, AN.high, bodyTop - 8, '影线', { sub: 'WICK', p: S.at(0, 1.4, .8), labelColor: C.gray });
-      K.vbrace(ctx, x + 110, bodyBot + 8, AN.low, '影线', { sub: 'WICK', p: S.at(0, 1.6, .8), labelColor: C.gray });
-      // OHLC leaders on the left; O and C trade places as the candle turns green
-      const oY = lerp(bodyBot, bodyTop, flip), cY = lerp(bodyTop, bodyBot, flip);
-      const lab = [['最高价', 'HIGH', AN.high, 0], ['收盘价', 'CLOSE', cY, .25], ['开盘价', 'OPEN', oY, .5], ['最低价', 'LOW', AN.low, .75]];
-      for (const [zh, en, yy, d] of lab) {
-        const a = S.at(1, d, .7);
-        if (a <= 0) continue;
-        K.dash(ctx, x - AN.w / 2 - 18, yy, x - 420, yy, { p: a, alpha: .7, color: C.gold, dash: [3, 6] });
-        K.text(ctx, zh, x - 440, yy + 9, { font: F.serif(700, 26), color: (zh === '开盘价' || zh === '收盘价') ? C.goldHi : C.white, align: 'right', alpha: a });
-        K.text(ctx, en, x - 440, yy + 36, { font: F.latin(500, 17), color: C.gray, align: 'right', spacing: 3, alpha: a });
-      }
-      // direction arrow open → close
-      const ar = S.at(3, .3, 1.0) * (1 - S.at(5, 0, .5));
-      K.arrow(ctx, x, bodyBot - 16, x, bodyTop + 16, { p: ar, alpha: ar, color: '#FFE8C8', width: 3, head: 18 });
-      const ar2 = S.at(6, .3, 1.0);
-      K.arrow(ctx, x, bodyTop + 16, x, bodyBot - 16, { p: ar2, alpha: ar2, color: '#E6FFF2', width: 3, head: 18 });
-      // type tag
-      K.tag(ctx, x, 210, '阳线 · BULLISH', { alpha: S.at(2, 0, .6) * (1 - flip), color: C.red });
-      K.tag(ctx, x, 210, '阴线 · BEARISH', { alpha: flip, color: C.green });
-    } },
-
-  { id: 'wicks', header: H1, tr: ['push', 1],
-    lines: ['影线里，藏着多空交锋的{秘密}。', '无论红绿，上影线顶端都是该周期的{最高点}——', '那是[多头冲锋的极限]。', '下影线底端，则是该周期的{最低点}——', '那是<空头打压的极限>。'],
-    visual(ctx, S) {
-      const y = v => v, a0 = S.at(0, 0, .9, easeBack);
-      const ks = [[760, { o: 560, c: 390, h: 260, l: 680 }, C.red], [1160, { o: 400, c: 570, h: 290, l: 700 }, C.green]];
-      for (const [x, k, col] of ks) {
-        ctx.save(); ctx.globalAlpha = clamp(a0); ctx.shadowColor = rgba(col, .45); ctx.shadowBlur = 22;
-        ctx.strokeStyle = col; ctx.lineWidth = 3.5; ctx.beginPath(); ctx.moveTo(x, k.h); ctx.lineTo(x, k.l); ctx.stroke();
-        ctx.fillStyle = col; const top = Math.min(k.o, k.c), hh = Math.abs(k.o - k.c) * a0; ctx.fillRect(x - 50, top + (Math.abs(k.o - k.c) - hh) / 2, 100, hh); ctx.restore();
-      }
-      // highs
-      const hiA = S.at(1, 0, .8), pulse1 = clamp((S.t - S.beat(1)) % 1.6 / 1.6);
-      for (const [x, k] of ks) {
-        ctx.save(); ctx.globalAlpha = hiA; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 4; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 22;
-        ctx.beginPath(); ctx.moveTo(x, k.h); ctx.lineTo(x, Math.min(k.o, k.c)); ctx.stroke(); ctx.restore();
-        K.marker(ctx, x, k.h, { alpha: hiA, pulse: hiA > .99 ? pulse1 : 0 });
-      }
-      K.dash(ctx, 560, 260, 1360, 260, { p: hiA, alpha: .45, dash: [4, 8] });
-      K.text(ctx, '最高点 HIGH', 1400, 268, { font: F.serif(700, 26), color: C.goldHi, alpha: hiA });
-      const atk = S.at(2, 0, .9);
-      K.arrow(ctx, 960, 330, 960, 200, { p: atk, alpha: atk, color: C.red, width: 2.5 });
-      K.text(ctx, '多头冲锋的极限', 990, 220, { font: F.serif(700, 22), color: C.red, alpha: atk });
-      // lows
-      const loA = S.at(3, 0, .8), pulse2 = clamp((S.t - S.beat(3)) % 1.6 / 1.6);
-      for (const [x, k] of ks) {
-        ctx.save(); ctx.globalAlpha = loA; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 4; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 22;
-        ctx.beginPath(); ctx.moveTo(x, k.l); ctx.lineTo(x, Math.max(k.o, k.c)); ctx.stroke(); ctx.restore();
-        K.marker(ctx, x, k.l, { alpha: loA, pulse: loA > .99 ? pulse2 : 0 });
-      }
-      K.dash(ctx, 560, 700, 1360, 700, { p: loA, alpha: .45, dash: [4, 8] });
-      K.text(ctx, '最低点 LOW', 1400, 708, { font: F.serif(700, 26), color: C.goldHi, alpha: loA });
-      const sup = S.at(4, 0, .9);
-      K.arrow(ctx, 960, 640, 960, 770, { p: sup, alpha: sup, color: C.green, width: 2.5 });
-      K.text(ctx, '空头打压的极限', 990, 770, { font: F.serif(700, 22), color: C.green, alpha: sup });
-    } },
-
-  { id: 'doji', header: H1, tr: 'zoom', camera: { z0: 1.0, z1: 1.06, x1: 20 },
-    lines: ['当实体极小，甚至几乎没有实体——', '开盘价与收盘价几乎重合，这就是{十字星}（Doji）。', '它代表市场{极度犹豫}（Indecision）：', '多空双方激烈厮杀一整轮，', '最终{回到原点}，谁也没能吞噬谁。'],
-    visual(ctx, S) {
-      // a live trace on the left builds the candle on the right
-      const keys = [0, .55, .2, 1.0, .35, -.25, -1.0, -.55, .3, -.1, .03];
-      const T0 = S.beat(0), Tlen = S.beat(2) + .6 - T0;
-      const u = clamp((S.t - T0) / Tlen), N = 220;
-      const price = s => { const f = s * (keys.length - 1), i = Math.min(keys.length - 2, Math.floor(f)), w = easeInOut(f - i); return lerp(keys[i], keys[i + 1], w) + Math.sin(s * 70) * .04 * Math.sin(s * Math.PI); };
-      const px = s => 300 + s * 560, py = v => 490 - v * 190;
-      K.baseline(ctx, 300, 860, 740, { p: S.at(0, 0, 1), step: 56 });
-      K.dash(ctx, 280, py(0), 1440, py(0), { alpha: .35, dash: [3, 7], p: S.at(0, 0, 1.2) });
-      K.text(ctx, '开盘', 270, py(0) + 7, { font: F.serif(500, 18), color: C.gray, align: 'right', alpha: S.at(0, 0, 1) });
-      const pts = []; let hi = 0, lo = 0;
-      for (let i = 0; i <= N * u; i++) { const s = i / N, v = price(s); pts.push([px(s), py(v)]); hi = Math.max(hi, v); lo = Math.min(lo, v); }
-      if (pts.length > 1) K.dotted(ctx, pts, 1, { gap: 6, r: 1.6 });
-      const cur = price(u);
-      // candle
-      const cx = 1180, k = { o: 0, c: cur, h: hi, l: lo };
-      const col = u >= 1 ? C.goldHi : (cur >= 0 ? C.red : C.green);
-      if (u > 0) {
-        ctx.save(); ctx.shadowColor = rgba(col, .5); ctx.shadowBlur = 22; ctx.strokeStyle = col; ctx.lineWidth = 3.5;
-        ctx.beginPath(); ctx.moveTo(cx, py(hi)); ctx.lineTo(cx, py(lo)); ctx.stroke();
-        ctx.fillStyle = col; const t0 = py(Math.max(0, cur)), b0 = py(Math.min(0, cur)); ctx.fillRect(cx - 55, t0, 110, Math.max(b0 - t0, 3.5));
+      const field = S.at(0, 0, 1.6);
+      wheatField(ctx, 300, 1620, 790, S.t, field);
+      K.tag(ctx, 960, 238, 'R. H. HOOKER  ·  1901  ·  英国统计学家', { alpha: S.at(0, .6, .7), font: F.serif(700, 20) });
+      // yearly harvest (illustrative) and its moving average
+      const N = 24, R = K.rng(19), Y = [];
+      for (let i = 0; i < N; i++) Y.push(50 + 10 * Math.sin(i * .32) + (R() - .5) * 26);
+      const bx = 380, bw = 1160, by = 300, bh = 210, lo = 25, hi = 80;
+      const px = i => bx + i * bw / (N - 1), py = v => by + bh * (1 - (v - lo) / (hi - lo));
+      const ca = S.at(1, 0, 1);
+      K.baseline(ctx, bx, bx + bw, by + bh + 14, { p: ca, step: bw / (N - 1), alpha: .8 });
+      K.text(ctx, '收成（示意）', bx - 16, by + 20, { font: F.serif(500, 18), color: C.gray, align: 'right', alpha: ca });
+      K.text(ctx, '年份 →', bx + bw, by + bh + 44, { font: F.serif(500, 18), color: C.gray, align: 'right', alpha: ca });
+      const raw = Y.map((v, i) => [px(i), py(v)]);
+      const rp = S.lin(1, 0, 2.2);
+      curve(ctx, raw, rp, { color: rgba(C.gray, .9), width: 1.4, glow: 0 });
+      raw.forEach(([x, y], i) => { const a = clamp(rp * (N - 1) - i + 1); if (a > 0) { ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(x, y, 3.2, 0, TAU); ctx.fill(); ctx.restore(); } });
+      const m = sma(Y, 5), mp = m.map((v, i) => v == null ? null : [px(i), py(v)]).filter(Boolean);
+      curve(ctx, mp, S.at(2, .3, 2.0, easeInOut), { width: 3.5, head: 5 });
+      K.text(ctx, '移动平均', mp[mp.length - 1][0] + 14, mp[mp.length - 1][1] + 8, { font: F.serif(700, 22), color: C.goldHi, alpha: S.at(2, 2, .7) });
+      // weather icons (line 2)
+      const w = S.at(1, .4, .8);
+      if (w > 0) {
+        ctx.save(); ctx.globalAlpha = w; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 1.6; ctx.shadowColor = rgba(C.gold, .6); ctx.shadowBlur = 10;
+        const sx = 1640, sy = 330, rot = S.t * .3;
+        ctx.beginPath(); ctx.arc(sx, sy, 20, 0, TAU); ctx.stroke();
+        for (let k = 0; k < 8; k++) { const a = rot + k * TAU / 8; ctx.beginPath(); ctx.moveTo(sx + Math.cos(a) * 28, sy + Math.sin(a) * 28); ctx.lineTo(sx + Math.cos(a) * 40, sy + Math.sin(a) * 40); ctx.stroke(); }
+        const cx = 290, cy = 420;
+        ctx.beginPath(); ctx.arc(cx - 18, cy, 16, Math.PI * .5, Math.PI * 1.5); ctx.arc(cx, cy - 12, 20, Math.PI, 0); ctx.arc(cx + 22, cy, 14, Math.PI * 1.5, Math.PI * .5); ctx.closePath(); ctx.stroke();
+        for (let k = 0; k < 3; k++) { const d = ((S.t * 1.4 + k * .33) % 1); ctx.globalAlpha = w * (1 - d); ctx.beginPath(); ctx.moveTo(cx - 16 + k * 16, cy + 24 + d * 30); ctx.lineTo(cx - 20 + k * 16, cy + 34 + d * 30); ctx.stroke(); }
         ctx.restore();
-        // the live price dot linking trace & candle
-        if (u < 1) { ctx.save(); ctx.fillStyle = C.goldHi; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(px(u), py(cur), 5, 0, 6.2832); ctx.fill(); ctx.restore(); K.dash(ctx, px(u), py(cur), cx - 60, py(cur), { alpha: .5, dash: [2, 5] }); }
       }
-      // doji horizontal bar when finished
-      const done = S.at(1, .2, .8);
-      if (u >= 1) {
-        ctx.save(); ctx.globalAlpha = done; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 5; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 20;
-        ctx.beginPath(); ctx.moveTo(cx - 70, py(0)); ctx.lineTo(cx + 70, py(0)); ctx.stroke(); ctx.restore();
+      K.tag(ctx, 960, 560, '起伏被熨平', { alpha: S.at(3, .3, .7), color: C.gold });
+    } },
+
+  { id: 'window', header: H1, tr: ['push', 1], camera: { z0: 1.02, z1: 1.0, x0: 20, x1: -20 },
+    lines: ['算法很简单：取最近{N个收盘价}，求平均。', '每过一天，窗口就{向前滑一格}——', '加入最新的一天，丢掉最旧的一天，再算一次。', '把每天的平均值连起来，就是{移动平均线}（MA）。'],
+    visual(ctx, S) {
+      const ch = chWIN, n = WIN.length, cl = closes(WIN);
+      const pos = winPos(S.lin(1, 0, S.beat(3) - S.beat(1) + 1.2));
+      const cur = Math.round(pos);
+      K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1) });
+      ch.draw(ctx, S.lin(0, -.4, 1.6) * n, { dim: i => (i > cur - 5 && i <= cur) ? 1 : .45, glow: .3 });
+      const wa = S.at(0, 1, .7);
+      // the window
+      if (wa > 0) {
+        const x0 = ch.x(pos - 4) - ch.step / 2, x1 = ch.x(pos) + ch.step / 2;
+        ctx.save(); ctx.globalAlpha = wa; ctx.fillStyle = rgba(C.gold, .08); ctx.fillRect(x0, ch.box.y - 10, x1 - x0, ch.box.h + 20);
+        ctx.strokeStyle = rgba(C.goldHi, .9); ctx.lineWidth = 1.6; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 14; ctx.strokeRect(x0, ch.box.y - 10, x1 - x0, ch.box.h + 20); ctx.restore();
+        K.text(ctx, 'N = 5', (x0 + x1) / 2, ch.box.y - 22, { font: F.latin(500, 22), color: C.goldHi, align: 'center', alpha: wa, spacing: 2 });
+        for (let j = cur - 4; j <= cur; j++) K.marker(ctx, ch.x(j), ch.y(cl[j]), { alpha: wa, r: 6, color: C.goldHi });
+        // live formula
+        const vals = cl.slice(cur - 4, cur + 1).map(v => v.toFixed(1));
+        K.text(ctx, `MA5 = ( ${vals.join(' + ')} ) ÷ 5 = ${MA_WIN[cur].toFixed(2)}`, 960, 262, { font: F.latin(500, 28), color: C.white, align: 'center', alpha: wa, spacing: 1 });
+        // in / out labels
+        const io = S.at(2, 0, .7);
+        K.tag(ctx, x1 + 4, ch.box.y + ch.box.h + 58, '+ 加入最新', { alpha: io, color: C.red, font: F.serif(700, 18), align: 'left' });
+        K.tag(ctx, x0 - 4 - 120, ch.box.y + ch.box.h + 58, '− 丢掉最旧', { alpha: io * (cur > 4 ? 1 : .0), color: C.green, font: F.serif(700, 18), align: 'left' });
       }
-      K.tag(ctx, cx, 205, '十字星 · DOJI', { alpha: S.at(1, .6, .7) });
-      K.text(ctx, '开盘价 ≈ 收盘价', cx + 110, py(0) + 9, { font: F.serif(700, 24), color: C.goldHi, alpha: S.at(1, 1, .7) });
-      // tug of war
-      const war = S.at(3, 0, .8) * (1 - S.at(4, .8, .8)), osc = Math.sin((S.t - S.beat(3)) * 7) * 10;
-      K.arrow(ctx, cx, py(0) - 40, cx, py(1) - 10 - osc, { p: war, alpha: war, color: C.red, width: 3 });
-      K.arrow(ctx, cx, py(0) + 40, cx, py(-1) + 10 + osc, { p: war, alpha: war, color: C.green, width: 3 });
-      K.text(ctx, '多', cx - 40, py(.8), { font: F.serif(900, 30), color: C.red, align: 'right', alpha: war });
-      K.text(ctx, '空', cx - 40, py(-.8) + 20, { font: F.serif(900, 30), color: C.green, align: 'right', alpha: war });
-      // back to origin
-      const home = S.at(4, .3, 1.2), ring = clamp((S.t - S.beat(4) - .3) % 1.8 / 1.8);
-      K.marker(ctx, cx, py(0), { alpha: home, r: 12, pulse: home > .99 ? ring : 0, label: '回到原点', pos: 'right', font: F.serif(700, 24) });
+      // MA dots accumulate as the window slides; connect into the line at the end
+      for (let j = 4; j <= cur; j++) { const a = wa * clamp(1 + (pos - j) * 3); ctx.save(); ctx.globalAlpha = a; ctx.fillStyle = C.goldHi; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 14; ctx.beginPath(); ctx.arc(ch.x(j), ch.y(MA_WIN[j]), 4.5, 0, TAU); ctx.fill(); ctx.restore(); }
+      const pts = maPts(ch, MA_WIN, 0, cur + 1);
+      curve(ctx, pts, S.at(3, .2, 1.6, easeInOut), { width: 3.5, head: 5 });
+      maLabel(ctx, pts, 'MA5', S.at(3, 1.6, .6), C.goldHi, 34);
+    } },
+
+  { id: 'dow', header: H1, tr: ['push', 1], camera: { z0: 1.0, z1: 1.05 },
+    lines: ['后来，{道氏理论的追随者}把它带进了股市。', '价格每天上蹿下跳，大多只是{噪音}；', '经过移动平均的过滤，{主要趋势}才浮出水面。'],
+    visual(ctx, S) {
+      const N = 150, R = K.rng(77), raw = [];
+      for (let i = 0; i < N; i++) raw.push(Math.sin(i / N * 5.2) * 70 - i * .9 + (R() - .5) * 90 + Math.sin(i * 1.7) * 18);
+      const m = sma(raw, 15), px = i => 280 + i * 9.0, py = v => 520 - v * .9;
+      const fx = 960, flow = S.lin(0, 0, 4.2);
+      // noise on the left of the filter, smooth trend on the right
+      const shown = Math.floor(flow * N);
+      const left = [], right = [], ghost = [];
+      for (let i = 0; i < shown; i++) { const x = px(i); if (x < fx - 60) left.push([x, py(raw[i])]); else ghost.push([x, py(raw[i])]); if (x > fx + 60 && m[i] != null) right.push([x, py(m[i])]); }
+      curve(ctx, left, 1, { color: rgba(C.white, .75), width: 1.3, glow: 0 });
+      curve(ctx, ghost, 1, { color: rgba(C.gray, .18), width: 1, glow: 0 });
+      curve(ctx, right, 1, { width: 3.5, head: flow < 1 ? 5 : 0 });
+      // the filter
+      const fa = S.at(0, .3, .8);
+      ctx.save(); ctx.globalAlpha = fa; ctx.strokeStyle = rgba(C.gold, .55); ctx.lineWidth = 1;
+      for (let k = 0; k <= 8; k++) { ctx.beginPath(); ctx.moveTo(fx - 50 + k * 12.5, 300); ctx.lineTo(fx - 50 + k * 12.5, 700); ctx.stroke(); }
+      for (let y = 300; y <= 700; y += 16) { ctx.beginPath(); ctx.moveTo(fx - 50, y); ctx.lineTo(fx + 50, y); ctx.stroke(); }
+      ctx.strokeStyle = C.goldHi; ctx.lineWidth = 2; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 16; ctx.strokeRect(fx - 50, 300, 100, 400);
+      ctx.restore();
+      K.text(ctx, '移动平均', fx, 738, { font: F.serif(700, 22), color: C.goldHi, align: 'center', alpha: fa });
+      K.text(ctx, 'FILTER', fx, 766, { font: F.latin(500, 17), color: C.gray, align: 'center', spacing: 4, alpha: fa });
+      K.tag(ctx, 960, 246, '道氏理论的追随者', { alpha: S.at(0, .2, .7), font: F.serif(700, 22) });
+      const la = S.at(1, 0, .8);
+      K.text(ctx, '噪音 NOISE', 560, 760, { font: F.serif(700, 24), color: C.white, align: 'center', alpha: la });
+      K.text(ctx, '主要趋势 PRIMARY TREND', 1370, 760, { font: F.serif(700, 24), color: C.goldHi, align: 'center', alpha: S.at(2, 0, .8) });
+    } },
+
+  { id: 'rocket', header: H1, tr: 'zoom', camera: { z0: 1.0, z1: 1.05, x1: -30, y1: 10 },
+    lines: ['{1960年代}，工程师{豪尔兰}（P. N. Haurlan）', '曾在美国航天项目中，处理{飞行轨迹}的跟踪数据。', '雷达读数跳动不停，{指数平滑}能把它们修成稳定的航迹。', '后来，他把这套方法带进股市，推广了{指数移动平均线}（EMA）。'],
+    visual(ctx, S) {
+      const gy = 780;
+      K.baseline(ctx, 260, 1660, gy, { p: S.at(0, 0, 1), step: 70 });
+      // launch gantry
+      const ga = S.at(0, 0, .8);
+      ctx.save(); ctx.globalAlpha = ga; ctx.strokeStyle = rgba(C.gold, .7); ctx.lineWidth = 1.3;
+      ctx.strokeRect(330, 520, 40, gy - 520);
+      for (let y = 520; y < gy; y += 26) { ctx.beginPath(); ctx.moveTo(330, y); ctx.lineTo(370, y + 26); ctx.moveTo(370, y); ctx.lineTo(330, y + 26); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(370, 600); ctx.lineTo(410, 600); ctx.moveTo(370, 680); ctx.lineTo(410, 680); ctx.stroke(); ctx.restore();
+      // trajectory
+      const traj = u => [lerp(430, 1330, Math.pow(u, 1.35)), lerp(700, 300, 1 - Math.pow(1 - u, 1.8))];
+      const u = S.at(0, 1.0, S.beat(2) + .6 - S.beat(0) - 1.0, x => { x = clamp(x); return x * x * (3 - 2 * x) * .25 + x * .75; });
+      const tp = []; for (let i = 0; i <= 80; i++) tp.push(traj(i / 80 * u));
+      dots(ctx, tp, 1, { alpha: .35, gap: 9, r: 1.3 });
+      // radar dish, beam sweeping toward the rocket
+      const [rx, ry] = traj(Math.max(u, .001)), dx = 1520, dy = gy - 70;
+      const ra = S.at(1, 0, .8);
+      ctx.save(); ctx.globalAlpha = ra; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 1.8; ctx.shadowColor = rgba(C.gold, .7); ctx.shadowBlur = 10;
+      const da = Math.atan2(ry - dy, rx - dx);
+      ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx - 20, gy); ctx.moveTo(dx, dy); ctx.lineTo(dx + 20, gy); ctx.stroke();
+      ctx.beginPath(); ctx.arc(dx, dy, 46, da - 1.1 + Math.PI, da + 1.1 + Math.PI, false); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(dx, dy); ctx.lineTo(dx + Math.cos(da) * 30, dy + Math.sin(da) * 30); ctx.stroke();
+      const g = ctx.createRadialGradient(dx, dy, 0, dx, dy, 900); g.addColorStop(0, rgba(C.goldHi, .14)); g.addColorStop(1, rgba(C.goldHi, 0));
+      ctx.fillStyle = g; ctx.shadowBlur = 0; const sw = .05 + .03 * Math.sin(S.t * 6);
+      ctx.beginPath(); ctx.moveTo(dx, dy); ctx.arc(dx, dy, 900, da - sw, da + sw); ctx.closePath(); ctx.fill();
+      ctx.restore();
+      K.text(ctx, '雷达 RADAR', dx, gy + 40, { font: F.serif(700, 20), color: C.gray, align: 'center', alpha: ra });
+      // noisy radar fixes behind the rocket, and their exponential smoothing
+      const NB = 40, R = K.rng(23), blips = [];
+      for (let i = 0; i < NB; i++) { const [x, y] = traj(i / (NB - 1)); blips.push([x + (R() - .5) * 46, y + (R() - .5) * 60]); }
+      const seen = Math.floor(clamp((u - .02) / .98) * NB * S.at(1, 0, .01));
+      const k = .3, sm = []; let ex = blips[0][0], ey = blips[0][1];
+      for (let i = 0; i < seen; i++) { if (i) { ex = k * blips[i][0] + (1 - k) * ex; ey = k * blips[i][1] + (1 - k) * ey; } sm.push([ex, ey]); }
+      for (let i = 0; i < seen; i++) K.marker(ctx, blips[i][0], blips[i][1], { r: 4, alpha: .75, color: C.white });
+      curve(ctx, sm, S.at(2, 0, .01), { width: 3.5, glow: .9 });
+      rocket(ctx, rx, ry, Math.atan2(traj(Math.min(1, u + .01))[1] - ry, traj(Math.min(1, u + .01))[0] - rx) + Math.PI / 2, 1.05, ga, S.t, u > 0 && u < 1 ? 1 : (u >= 1 ? .6 : .25));
+      K.tag(ctx, 640, 250, 'P. N. HAURLAN  ·  1960s', { alpha: S.at(0, .4, .7), font: F.serif(700, 20) });
+      const sl = S.at(2, .6, .7);
+      if (sm.length > 4) K.text(ctx, '指数平滑后的航迹', sm[Math.floor(sm.length * .55)][0] + 34, sm[Math.floor(sm.length * .55)][1] + 40, { font: F.serif(700, 22), color: C.goldHi, alpha: sl });
+      K.text(ctx, '跳动的读数', blips[8][0] - 30, blips[8][1] - 30, { font: F.serif(700, 20), color: C.white, align: 'right', alpha: S.at(1, 1.2, .7) * (1 - S.at(3, 0, .6)) });
+      const em = S.at(3, .3, .9, easeBack);
+      K.tag(ctx, 1150, 540, '指数平滑  →  EMA', { alpha: clamp(em), color: C.gold, font: F.serif(700, 24) });
+    } },
+
+  { id: 'ema', header: H1, tr: ['push', 1], camera: { z0: 1.0, z1: 1.04 },
+    lines: ['{MA}对窗口里的每一天{一视同仁}，权重相同；', '{EMA}则是越近的价格{权重越大}，越早的逐渐衰减。', '所以EMA{转身更快}，能更早跟上价格的拐点。'],
+    visual(ctx, S) {
+      // left: weights
+      const N = 10, k = 2 / (N + 1), bx = 300, step = 52, sc = 640;
+      const rows = [['MA · 等权', 'MA = 收盘价之和 ÷ N', 410, i => 1 / N, C.gold, 0], ['EMA · 近大远小', 'EMA = k×今收 + (1−k)×昨EMA', 660, i => k * Math.pow(1 - k, N - 1 - i), C.goldHi, 1]];
+      for (const [name, fml, y, wf, col, li] of rows) {
+        const a = S.at(li, 0, .8);
+        K.text(ctx, name, bx, y - 140, { font: F.serif(900, 28), color: col, alpha: a });
+        K.text(ctx, fml, bx + 2, y - 108, { font: F.serif(500, 19), color: C.gray, alpha: a });
+        K.line(ctx, bx - 10, y, bx + N * step, y, { p: a, color: rgba(C.gold, .55) });
+        for (let i = 0; i < N; i++) {
+          const g = S.at(li, .3 + i * .06, .6, easeBack), h = wf(i) * sc * g;
+          ctx.save(); ctx.globalAlpha = clamp(g); ctx.fillStyle = rgba(col, .75); ctx.shadowColor = rgba(col, .6); ctx.shadowBlur = 12;
+          ctx.fillRect(bx + i * step + 8, y - h, step - 16, h); ctx.restore();
+        }
+        K.text(ctx, '旧', bx + 6, y + 30, { font: F.serif(500, 18), color: C.gray, alpha: a });
+        K.text(ctx, '新', bx + N * step - 16, y + 30, { font: F.serif(500, 18), color: C.gray, alpha: a });
+        K.dash(ctx, bx + 30, y + 24, bx + N * step - 30, y + 24, { p: a, alpha: .5, dash: [3, 6] });
+      }
+      // right: the V-turn, MA10 vs EMA10 from the closes
+      const ch = chVT, off = VT.warm;
+      const r = S.lin(0, 0, 3.0) * ch.k.length;
+      K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1), step: 40 });
+      ch.draw(ctx, r, { dim: () => .55, glow: .2 });
+      const mp = maPts(ch, VT_MA, off, r), ep = maPts(ch, VT_EMA, off, r);
+      const lp = S.at(0, 0, .01);
+      dots(ctx, mp, lp, { color: C.gold, r: 2, gap: 6 });
+      curve(ctx, ep, lp * S.at(1, 0, .01), { width: 3.2 });
+      maLabel(ctx, mp, 'MA10', S.at(0, 3, .6), C.gold, 22);
+      maLabel(ctx, ep, 'EMA10', S.at(1, .4, .6), C.goldHi, -12);
+      // turning points: first index after the low where each line rises
+      const turn = arr => { let lo = Infinity, li = 0; for (let j = off; j < arr.length; j++) if (arr[j] != null && arr[j] < lo) { lo = arr[j]; li = j; } return li - off; };
+      const te = turn(VT_EMA), tm = turn(VT_MA), ta = S.at(2, 0, .8);
+      const ex_ = ch.x(te), ey_ = ch.y(VT_EMA[te + off]), mx_ = ch.x(tm), my_ = ch.y(VT_MA[tm + off]), tb = S.at(2, .6, .8);
+      K.marker(ctx, ex_, ey_, { alpha: ta, pulse: ta > .99 ? (S.t * .7) % 1 : 0 });
+      K.dash(ctx, ex_ + 4, ey_ - 14, 1400, 350, { p: ta, alpha: .7, dash: [3, 5] });
+      K.text(ctx, 'EMA 先拐头', 1400, 336, { font: F.serif(700, 24), color: C.goldHi, align: 'center', alpha: ta });
+      K.marker(ctx, mx_, my_, { alpha: tb, color: C.gold });
+      K.dash(ctx, mx_ + 8, my_ + 10, 1520, 690, { p: tb, alpha: .7, dash: [3, 5] });
+      K.text(ctx, 'MA 后拐头', 1530, 698, { font: F.serif(700, 24), color: C.gold, alpha: tb });
     } },
 
   /* ================= 模块二 ================= */
-  { id: 'ch2', dur: 4.2, tr: 'sweep', visual: chapter('贰', 2, '秩序的轨迹', 'Reading the Trend', '上涨 · 下跌 · 震荡') },
+  { id: 'ch2', dur: 4.2, tr: 'sweep', visual: chapter('贰', 2, '万有引力', 'The Gravity of Price', '葛兰威尔 · 回归 · 支撑与阻力 · 八大法则') },
 
-  { id: 'runs', header: H2, tr: 'zoom',
-    lines: ['市场不会直线运行。', '它通过{波段冲锋}（Runs）与{回调修正}（Pullbacks），', '以特定的秩序向前延伸。'],
+  { id: 'granville', header: H2, tr: ['iris', [620, 470]], camera: { z0: 1.03, z1: 1.0 }, chapter: '模块二：万有引力',
+    lines: ['让均线{封神}的，是20世纪华尔街的明星分析师——', '{约瑟夫·葛兰威尔}（Joseph Granville）。', '他的核心哲学：{均线，就是价格的万有引力中心}。'],
     visual(ctx, S) {
-      const wp = [[300, 720], [520, 520], [640, 600], [880, 410], [1000, 490], [1260, 320], [1380, 390], [1600, 250]];
-      K.baseline(ctx, 280, 1660, 760, { p: S.at(0, 0, 1.2) });
-      // a straight line that "fails", then the real path
-      const st = S.at(0, .2, 1.2) * (1 - S.at(1, 0, .6));
-      K.dash(ctx, 300, 720, 1600, 250, { p: st, alpha: st * .6, color: C.gray, dash: [6, 10] });
-      K.text(ctx, '×  直线', 1620, 250, { font: F.serif(700, 24), color: C.gray, alpha: st });
-      const p = S.lin(1, 0, 3.2);
-      K.dotted(ctx, wp, easeInOut(p), { gap: 7, r: 2 });
-      for (let i = 1; i < wp.length; i++) {
-        const a = S.at(1, .3 + i * .38, .5); if (a <= 0) continue;
-        const [x0, y0] = wp[i - 1], [x1, y1] = wp[i], up = y1 < y0, mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
-        K.text(ctx, up ? '冲锋' : '回调', mx + (up ? -30 : 30), my + (up ? 0 : 30), { font: F.serif(700, 22), color: up ? C.red : C.green, align: up ? 'right' : 'left', alpha: a });
-        K.text(ctx, up ? 'RUN' : 'PULLBACK', mx + (up ? -30 : 30), my + (up ? 26 : 56), { font: F.latin(500, 15), color: C.gray, align: up ? 'right' : 'left', spacing: 3, alpha: a });
+      const a = S.at(0, 0, 1.2);
+      // the gravity well behind the silhouette: rings pulled toward a centre line
+      const ga = S.at(2, 0, 1.2);
+      silhouette(ctx, 600, 640, 300, a);
+      K.text(ctx, 'ANALYST', 600, 690, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 8, alpha: a });
+      const na = S.at(1, 0, .9);
+      ctx.save(); ctx.beginPath(); ctx.rect(860, 330, 900, 110); ctx.clip();
+      K.goldText(ctx, '约瑟夫·葛兰威尔', 880, 420 + (1 - K.expo(na)) * 90, 72, { align: 'left', spacing: 6 });
+      ctx.restore();
+      K.text(ctx, 'JOSEPH GRANVILLE', 884, 472, { font: F.latin(500, 24), color: C.gold, spacing: 8, alpha: S.at(1, .4, .8) });
+      K.text(ctx, '20世纪 · 华尔街明星分析师', 884, 512, { font: F.serif(500, 22), color: C.gray, spacing: 4, alpha: S.at(0, 1.2, .8) });
+      // quote + a tiny gravity diagram
+      const y0 = 650;
+      K.line(ctx, 880, y0, 1640, y0, { p: ga, color: C.goldHi, width: 3, glow: .8 });
+      for (let i = 0; i < 7; i++) {
+        const x = 920 + i * 110, ph = (S.t * .8 + i * .37) % 1, d = 70 * (1 - ph);
+        const al = ga * Math.sin(Math.PI * ph);
+        K.arrow(ctx, x, y0 - 22 - d, x, y0 - 12 - d * .3, { alpha: al, color: C.red, width: 1.6, head: 9 });
+        K.arrow(ctx, x + 55, y0 + 22 + d, x + 55, y0 + 12 + d * .3, { alpha: al, color: C.green, width: 1.6, head: 9 });
       }
-      K.arrow(ctx, 1600, 250, 1680, 214, { p: S.at(2, 0, .8), alpha: S.at(2, 0, .8) });
+      K.text(ctx, '价格的万有引力中心', 1640, y0 - 104, { font: F.serif(900, 34), color: C.white, align: 'right', alpha: ga, spacing: 4 });
+      K.text(ctx, 'MA', 1660, y0 + 8, { font: F.latin(500, 24), color: C.goldHi, alpha: ga, spacing: 3 });
     } },
 
-  { id: 'up', header: H2, tr: ['push', 1], camera: { z0: 1.04, z1: 1.0, x0: 40, x1: -20 },
-    lines: ['[上涨趋势]：高点更高（Higher High），低点更高（Higher Low）。', '画面呈现一波高过一波的{红色阳线潮}。', '多头掌控全局——', '顺应红色的群体动能，策略以{逢低做多}（Long）为主。'],
+  { id: 'apple', header: H2, tr: ['push', 1], camera: { z0: 1.0, z1: 1.05, x1: -40 },
+    lines: ['就像传说中落在牛顿身边的那颗{苹果}——', '价格冲得再远，也会被拉回{均线}；', '而一触到均线，又像{弹簧}一样被弹开。'],
     visual(ctx, S) {
-      const n = UP.candles.length;
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      chartUP.draw(ctx, S.lin(0, 0, 4.2) * n);
-      K.dotted(ctx, zig(chartUP, UP), S.lin(1, 0, 2.2), { alpha: .9 });
-      swings(ctx, S, chartUP, UP, s => s.type === 'H' ? 'HH' : 'HL', [1, .2]);
-      const ga = S.at(2, 0, 1);
-      if (ga > 0) { const g = ctx.createLinearGradient(0, BOX.y + BOX.h, 0, BOX.y); g.addColorStop(0, rgba(C.red, 0)); g.addColorStop(1, rgba(C.red, .1 * ga)); ctx.fillStyle = g; ctx.fillRect(BOX.x, BOX.y, BOX.w, BOX.h); }
-      UP.swings.filter(s => s.type === 'L').forEach((s, j) => { const a = S.at(3, .2 + j * .25, .6); K.tag(ctx, chartUP.x(s.i), chartUP.y(s.price) + 80, '做多 LONG', { alpha: a, color: C.red, font: F.serif(700, 17) }); });
+      // branch
+      const ba = S.at(0, 0, .8);
+      ctx.save(); ctx.globalAlpha = ba; ctx.strokeStyle = rgba(C.gold, .85); ctx.lineWidth = 2.2; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(360, 262); ctx.quadraticCurveTo(440, 274, 560, 258); ctx.stroke();
+      ctx.lineWidth = 1.3;
+      for (const [lx, ly, an] of [[400, 270, .5], [455, 271, -.4], [520, 264, .3]]) { ctx.save(); ctx.translate(lx, ly); ctx.rotate(an + Math.sin(S.t + lx) * .06); ctx.beginPath(); ctx.ellipse(16, 10, 18, 7, .5, 0, TAU); ctx.stroke(); ctx.restore(); }
+      ctx.restore();
+      // MA curve across the stage (schematic rising average) and a ball-price bouncing on it
+      const mx = x => 470 + (x - 470), my = x => 640 - (x - 470) * .12 - 18 * Math.sin((x - 470) / 260);
+      const maPath = []; for (let x = 300; x <= 1660; x += 10) maPath.push([x, my(x)]);
+      const ma = S.at(0, 1.2, 1.2);
+      curve(ctx, maPath, ma, { width: 4, glow: .9 });
+      K.text(ctx, '均线 MA', 1660, my(1660) - 22, { font: F.serif(700, 22), color: C.goldHi, align: 'right', alpha: S.at(0, 2, .6) });
+      // apple falls from the branch to the line (free fall), small settle
+      const tf = S.t - S.beat(0) - .4, g = 900, yLand = my(470) - 18;
+      let ay = 292; if (tf > 0) ay = Math.min(yLand, 292 + .5 * g * tf * tf);
+      const landed = tf > 0 && ay >= yLand;
+      const bounceT = landed ? tf - Math.sqrt(2 * (yLand - 292) / g) : 0;
+      if (landed) ay = yLand - Math.abs(Math.sin(bounceT * 7)) * 40 * Math.exp(-bounceT * 4);
+      const morph = S.at(1, 0, .8);
+      if (morph < 1) {
+        ctx.save(); ctx.globalAlpha = 1 - morph; ctx.strokeStyle = C.red; ctx.lineWidth = 2.4; ctx.shadowColor = rgba(C.red, .7); ctx.shadowBlur = 16;
+        ctx.beginPath(); ctx.arc(462, ay, 15, 0, TAU); ctx.arc(478, ay, 15, 0, TAU); ctx.stroke();
+        ctx.strokeStyle = C.gold; ctx.beginPath(); ctx.moveTo(470, ay - 14); ctx.lineTo(474, ay - 28); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(482, ay - 26, 8, 4, -.4, 0, TAU); ctx.stroke(); ctx.restore();
+      }
+      const fa = S.at(0, .5, .6) * (1 - morph);
+      K.arrow(ctx, 540, 300, 540, 420, { p: fa, alpha: fa, color: C.goldHi, width: 1.8 });
+      K.text(ctx, '引力', 560, 370, { font: F.serif(700, 22), color: C.goldHi, alpha: fa });
+      // price as a bouncing ball over the MA
+      const span = 280, X0 = 470, amp = [150, 120, 160, 110, 130];
+      const off = x => { const k = Math.floor((x - X0) / span); return Math.abs(Math.sin(Math.PI * (x - X0) / span)) * (amp[k] ?? 100); };
+      const run = S.lin(1, .2, S.dur - S.beat(1) - 1.2);
+      const xHead = lerp(X0, 1640, run), pp = [];
+      for (let x = X0; x <= xHead; x += 6) pp.push([x, my(x) - 18 - off(x)]);
+      if (run > 0) {
+        dots(ctx, pp, 1, { color: C.white, r: 1.8, gap: 7 });
+        const [hx, hy] = pp[pp.length - 1] || [X0, my(X0) - 18];
+        ctx.save(); ctx.fillStyle = C.red; ctx.shadowColor = C.red; ctx.shadowBlur = 20; ctx.beginPath(); ctx.arc(hx, hy, 9, 0, TAU); ctx.fill(); ctx.restore();
+        // springs compress at each touch
+        for (let k = 1; k <= 4; k++) {
+          const tx = X0 + k * span; if (xHead < tx - 70) continue;
+          const d = Math.abs(xHead - tx), comp = clamp(1 - d / 70);
+          const top = my(tx) - 18 - lerp(56, 6, comp);
+          const sa = S.at(2, 0, .6) * (xHead > tx + 70 ? .55 : 1);
+          spring(ctx, tx, my(tx) - 2, top, sa);
+          K.marker(ctx, tx, my(tx), { alpha: clamp(1 - Math.abs(xHead - tx) / 60) + .25 * (xHead > tx ? 1 : 0), r: 8 });
+        }
+        // pull-back arrows on the descents
+        for (let k = 0; k < 4; k++) {
+          const cx = X0 + k * span + span * .72; if (xHead < cx) continue;
+          const a = S.at(1, .4, .6);
+          K.arrow(ctx, cx + 20, my(cx) - 18 - off(cx) - 30, cx + 20, my(cx) - 40, { alpha: a * .8, color: C.goldHi, width: 1.6, head: 10 });
+        }
+      }
+      K.tag(ctx, 1240, 300, '拉回 · 弹开', { alpha: S.at(2, .4, .7), color: C.gold, font: F.serif(700, 22) });
     } },
 
-  { id: 'down', header: H2, tr: ['push', 1], camera: { z0: 1.04, z1: 1.0, x0: 40, x1: -20 },
-    lines: ['<下跌趋势>：高点更低（Lower High），低点更低（Lower Low）。', '画面呈现一波低过一波的{绿色阴线潮}。', '空头用绿色撕扯市场——', '策略以{逢高做空}（Short）为主。'],
+  { id: 'rubber', header: H2, tr: ['push', 1], camera: { z0: 1.0, z1: 1.05, x1: 20 },
+    lines: ['股价再疯狂，也像被{橡皮筋}拴在均线上：', '偏离越远，拉力越大，', '最终回归均线——也就是市场的{平均成本}。', '所以，远离均线的价格，往往{难以持久}。'],
     visual(ctx, S) {
-      const n = DOWN.candles.length;
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      chartDOWN.draw(ctx, S.lin(0, 0, 4.2) * n);
-      K.dotted(ctx, zig(chartDOWN, DOWN), S.lin(1, 0, 2.2), { alpha: .9 });
-      swings(ctx, S, chartDOWN, DOWN, s => s.type === 'H' ? 'LH' : 'LL', [1, .2]);
-      const ga = S.at(2, 0, 1);
-      if (ga > 0) { const g = ctx.createLinearGradient(0, BOX.y, 0, BOX.y + BOX.h); g.addColorStop(0, rgba(C.green, 0)); g.addColorStop(1, rgba(C.green, .1 * ga)); ctx.fillStyle = g; ctx.fillRect(BOX.x, BOX.y, BOX.w, BOX.h); }
-      DOWN.swings.filter(s => s.type === 'H').forEach((s, j) => { const a = S.at(3, .2 + j * .25, .6); K.tag(ctx, chartDOWN.x(s.i), chartDOWN.y(s.price) - 80, '做空 SHORT', { alpha: a, color: C.green, font: F.serif(700, 17) }); });
+      const ch = chRB, n = ch.k.length, off = RB.warm;
+      const r = S.lin(0, 0, S.beat(2) + 1.6 - S.beat(0)) * n;
+      K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1) });
+      ch.draw(ctx, r, { glow: .3 });
+      const pts = maPts(ch, RB_MA, off, r);
+      curve(ctx, pts, 1, { width: 3.5 });
+      // the elastic band between the MA and the latest close
+      const j = Math.min(n - 1, Math.max(0, Math.ceil(r) - 1));
+      const c = ch.k[j].c, m = RB_MA[j + off], x = ch.x(j) + ch.step * .9;
+      const y1 = ch.y(c), y0 = ch.y(m), stretch = clamp(Math.abs(y1 - y0) / 230);
+      if (r > 1) {
+        const col = mix(C.goldHi, C.red, stretch), wob = Math.sin(S.t * 18) * 6 * stretch;
+        ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = lerp(5, 1.4, stretch); ctx.shadowColor = rgba(col, .8); ctx.shadowBlur = 14;
+        for (const s of [-1, 1]) { ctx.beginPath(); ctx.moveTo(x - 6, y0); ctx.quadraticCurveTo(x + s * (10 + wob), (y0 + y1) / 2, x - 6, y1); ctx.stroke(); }
+        ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x - 6, y0, 4, 0, TAU); ctx.arc(x - 6, y1, 4, 0, TAU); ctx.fill(); ctx.restore();
+      }
+      // tension meter on the right
+      const ma_ = S.at(1, 0, .8);
+      const mx = 1660, mt = 330, mb = 700;
+      ctx.save(); ctx.globalAlpha = ma_; ctx.strokeStyle = rgba(C.gold, .6); ctx.lineWidth = 1.2; ctx.strokeRect(mx - 14, mt, 28, mb - mt);
+      const fh = (mb - mt) * stretch; const gr = ctx.createLinearGradient(0, mb, 0, mt); gr.addColorStop(0, C.goldHi); gr.addColorStop(1, C.red);
+      ctx.fillStyle = gr; ctx.shadowColor = rgba(C.red, .6 * stretch); ctx.shadowBlur = 18; ctx.fillRect(mx - 10, mb - fh, 20, fh); ctx.restore();
+      K.text(ctx, '拉力', mx, mb + 40, { font: F.serif(700, 22), color: C.goldHi, align: 'center', alpha: ma_ });
+      // peak deviation
+      let pk = 0, pd = 0; for (let i = 0; i < n; i++) { const d = ch.k[i].c - RB_MA[i + off]; if (d > pd) { pd = d; pk = i; } }
+      if (r > 1) K.text(ctx, '偏离', x + 22, (y0 + y1) / 2 + 8, { font: F.serif(700, 24), color: mix(C.goldHi, C.red, stretch), alpha: S.at(1, 0, .6) * clamp(stretch * 4 - .4) });
+      const ca = S.at(2, .6, .8);
+      if (pts.length) K.tag(ctx, pts[pts.length - 1][0] - 90, pts[pts.length - 1][1] - 84, '均线 ≈ 平均成本', { alpha: ca, color: C.gold });
+      K.tag(ctx, ch.x(pk) - 20, ch.y(ch.k[pk].h) - 40, '难以持久', { alpha: S.at(3, .2, .7), color: C.red });
     } },
 
-  { id: 'range', header: H2, tr: ['push', 1], camera: { z0: 1.0, z1: 1.05 },
-    lines: ['{震荡市场}：价格在几乎相同的高点与低点之间横向移动。', '红绿交织、横向拉锯，像一场{泥潭战}。', '多空势均力敌，', '处于{筹码密集换手}的无序状态。'],
+  { id: 'sr', header: H2, tr: 'zoom', camera: { z0: 1.0, z1: 1.04 },
+    lines: ['一旦趋势形成，均线就成了{护城河}：', '上涨时，回踩不破，它是[支撑]；', '下跌时，反弹受阻，它是<阻力>。', '跌破上升的均线，或站上下降的均线，往往是{趋势生变}的信号。'],
     visual(ctx, S) {
-      const n = RANGE.candles.length, ch = chartRANGE;
-      const yH = ch.y(115.6), yL = ch.y(100.4);
-      const band = S.at(1, 0, 1.2);
-      if (band > 0) { ctx.fillStyle = rgba(C.gold, .06 * band); ctx.fillRect(BOX.x, yH, BOX.w * band, yL - yH); }
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      ch.draw(ctx, S.lin(0, 0, 4.5) * n);
-      const la = S.at(0, 2.4, 1.2);
-      K.dash(ctx, BOX.x, yH, BOX.x + BOX.w, yH, { p: la, alpha: .8 });
-      K.dash(ctx, BOX.x, yL, BOX.x + BOX.w, yL, { p: la, alpha: .8 });
-      K.text(ctx, '相同高点 SAME HIGHS', BOX.x, yH - 16, { font: F.serif(700, 21), color: C.goldHi, alpha: la });
-      K.text(ctx, '相同低点 SAME LOWS', BOX.x, yL + 34, { font: F.serif(700, 21), color: C.goldHi, alpha: la });
-      // tug arrows inside the band
-      const war = S.at(2, 0, .8), o = Math.sin((S.t) * 5) * 14;
-      K.arrow(ctx, 960 + o, (yH + yL) / 2, 760 + o, (yH + yL) / 2, { p: war, alpha: war, color: C.green });
-      K.arrow(ctx, 960 + o, (yH + yL) / 2, 1160 + o, (yH + yL) / 2, { p: war, alpha: war, color: C.red });
-      K.tag(ctx, 960, BOX.y - 10, '筹码密集换手', { alpha: S.at(3, .2, .7) });
+      const pair = [[chSUP, SUP, SUP_MA, 1, C.red, '上涨 · 均线在下', '支撑'], [chRES, RES, RES_MA, 2, C.green, '下跌 · 均线在上', '阻力']];
+      for (const [ch, d, ma, li, col, title, word] of pair) {
+        const r = S.lin(0, (li - 1) * .5, 2.6) * ch.k.length;
+        K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1), step: 40 });
+        ch.draw(ctx, r, { glow: .25, dim: () => 1 - (S.after(li) ? 0 : .35) });
+        const pts = maPts(ch, ma, d.warm, r);
+        curve(ctx, pts, 1, { width: 3.4 });
+        K.text(ctx, title, ch.box.x + ch.box.w / 2, 262, { font: F.serif(900, 28), color: col, align: 'center', alpha: S.at(li, 0, .7), glow: .3, glowColor: col });
+        // touches: candles whose wick reaches the MA (from the correct side)
+        let last = -9, k = 0;
+        for (let i = 0; i < ch.k.length; i++) {
+          const m = ma[i + d.warm]; if (m == null) continue;
+          const touch = li === 1 ? ch.k[i].l <= m + .4 && ch.k[i].c > m - .2 : ch.k[i].h >= m - .4 && ch.k[i].c < m + .2;
+          if (!touch || i - last < 3) continue; last = i;
+          const a = S.at(li, .4 + k * .3, .6); k++;
+          K.marker(ctx, ch.x(i), ch.y(m), { alpha: a, color: col, r: 10, pulse: a > .99 ? (S.t * .8 + k * .3) % 1 : 0 });
+          K.arrow(ctx, ch.x(i), ch.y(m) + (li === 1 ? 44 : -44), ch.x(i), ch.y(m) + (li === 1 ? 16 : -16), { alpha: a, color: col, width: 2, head: 10 });
+        }
+        K.tag(ctx, ch.box.x + ch.box.w / 2, ch.box.y + ch.box.h + 62, word + (li === 1 ? ' SUPPORT' : ' RESISTANCE'), { alpha: S.at(li, .8, .6) * (1 - S.at(3, 0, .5)), color: col });
+      }
+      K.tag(ctx, 960, 786, '反向穿越均线  →  趋势生变', { alpha: S.at(3, .3, .6), color: C.gold, font: F.serif(700, 22) });
     } },
 
-  { id: 'trio', header: H2, tr: 'zoom',
-    lines: ['记住这三种秩序：', '[上涨]看更高的高低点，<下跌>看更低的高低点，', '{震荡}看相同的高低点。'],
+  { id: 'eight', header: H2, tr: 'zoom', camera: { z0: 1.0, z1: 1.04, y1: -6 },
+    lines: ['他总结出流传最广的{葛兰威尔八大买卖法则}：', '均线走平转升，价格上穿、假跌破、回踩不破——[买]；', '均线走平转降，价格下穿、假突破、反弹不过——<卖>；', '离均线太远，则提防{回归}：超跌可买，超涨要卖。'],
     visual(ctx, S) {
-      const names = [['上涨趋势', 'UPTREND', C.red, 'HH · HL', '逢低做多'], ['下跌趋势', 'DOWNTREND', C.green, 'LH · LL', '逢高做空'], ['震荡市场', 'RANGING', C.goldHi, 'SAME H · L', '多空拉锯']];
-      MINI.forEach((ch, i) => {
-        const a = S.at(0, .15 + i * .25, .9, easeBack), x0 = ch.box.x;
-        ctx.save(); ctx.globalAlpha = clamp(a); ctx.translate(0, (1 - clamp(a)) * 40);
-        ctx.strokeStyle = rgba(C.gold, .35); ctx.lineWidth = 1; ctx.strokeRect(x0 - 20, 250, 480, 520);
-        const hl = i === 0 ? S.at(1, 0, .6) : i === 1 ? S.at(1, 1.6, .6) : S.at(2, 0, .6);
-        ctx.strokeStyle = rgba(names[i][2], .9 * hl); ctx.lineWidth = 2; ctx.shadowColor = names[i][2]; ctx.shadowBlur = 20 * hl; ctx.strokeRect(x0 - 20, 250, 480, 520); ctx.shadowBlur = 0;
-        K.text(ctx, names[i][0], x0 + 220, 300, { font: F.serif(900, 30), color: names[i][2], align: 'center' });
-        K.text(ctx, names[i][1], x0 + 220, 708, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 6 });
-        K.text(ctx, names[i][3] + '  ·  ' + names[i][4], x0 + 220, 745, { font: F.serif(700, 20), color: C.white, align: 'center' });
-        ch.draw(ctx, S.lin(0, .4 + i * .25, 2.2) * ch.k.length, { glow: .2 });
-        ctx.restore();
-      });
+      const N = 220, ma = [], pr = [];
+      for (let i = 0; i <= N; i++) { const u = i / N; ma.push([GX(u), GMA(u)]); pr.push([GX(u), GMA(u) + goff(u)]); }
+      const a0 = S.at(0, 0, 2, easeInOut);
+      curve(ctx, ma, a0, { width: 4, glow: .9 });
+      dots(ctx, pr, S.at(0, .5, 2.2, easeInOut), { color: C.white, r: 1.8, gap: 7 });
+      K.text(ctx, '均线', GX(1) + 12, GMA(1) + 8, { font: F.serif(700, 22), color: C.goldHi, alpha: S.at(0, 2, .6) });
+      K.text(ctx, '价格', GX(1) + 12, GMA(1) + goff(1) + 18, { font: F.serif(700, 22), color: C.white, alpha: S.at(0, 2.4, .6) });
+      for (const [u, id, zh, buy] of GRULES) {
+        const far = id === 'B4' || id === 'S4';
+        const li = far ? 3 : (buy ? 1 : 2);
+        const order = far ? (buy ? 0 : 1) : ['B1', 'B2', 'B3', 'S1', 'S2', 'S3'].indexOf(id) % 3;
+        const a = S.at(li, .2 + order * .55, .6, easeBack);
+        if (a <= 0) continue;
+        const x = GX(u), y = GMA(u) + goff(u), col = buy ? C.red : C.green;
+        const below = buy;                                     // buy labels below the price, sell labels above
+        K.marker(ctx, x, y, { alpha: clamp(a), color: col, r: 10, pulse: clamp(a) > .99 ? (S.t * .6 + u) % 1 : 0 });
+        const ly = below ? Math.max(y, GMA(u)) + 54 : Math.min(y, GMA(u)) - 46;
+        K.tag(ctx, x, ly, `${id} ${zh}`, { alpha: clamp(a), color: col, font: F.serif(700, 18) });
+      }
+      // legend
+      const lg = S.at(0, 1, .8);
+      K.text(ctx, '[ 示意 ]', 1640, 250, { font: F.serif(500, 18), color: C.gray, align: 'right', alpha: lg, spacing: 2 });
+      K.tag(ctx, 380, 262, '买 · 4', { alpha: S.at(1, 0, .6), color: C.red });
+      K.tag(ctx, 500, 262, '卖 · 4', { alpha: S.at(2, 0, .6), color: C.green });
     } },
 
   /* ================= 模块三 ================= */
-  { id: 'ch3', dur: 4.2, tr: 'sweep', visual: chapter('叁', 3, '博弈的温度', 'Momentum Gain & Loss', '动能增强 · 动能衰竭 · 反转信号') },
+  { id: 'ch3', dur: 4.2, tr: 'sweep', visual: chapter('叁', 3, '疯狂往事', 'Sell Everything, 1981', '一条震动华尔街的指令') },
 
-  { id: 'temp', header: H3, tr: ['iris', [960, 480]],
-    lines: ['如何在{反转发生之前}，', '洞察人性的[贪婪]增涨，或<恐惧>离场？', '答案藏在K线的{颜色}与{实体大小}里。'],
+  { id: 'telegraph', header: H3, tr: ['iris', [700, 600]], camera: { z0: 1.04, z1: 1.0 }, chapter: '模块三：疯狂往事',
+    lines: ['{1981年1月6日}晚，葛兰威尔向订户发出一条警告：', '{“卖掉一切”}——Sell Everything！', '一条指令，让整个华尔街{屏住了呼吸}。'],
     visual(ctx, S) {
-      // a breathing row of candles: bodies swell (greed) then shrink (fear)
-      const n = 13, a = S.at(0, 0, 1);
-      for (let i = 0; i < n; i++) {
-        const x = 420 + i * 90, ph = S.t * 1.6 - i * .45, s = .5 + .5 * Math.sin(ph);
-        const up = i < 7, col = up ? C.red : C.green, hh = (40 + s * 190) * clamp(a * 1.4 - i * .03);
-        ctx.save(); ctx.globalAlpha = clamp(a * 1.4 - i * .03); ctx.shadowColor = rgba(col, .45); ctx.shadowBlur = 18;
-        ctx.strokeStyle = col; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x, 480 - hh / 2 - 30); ctx.lineTo(x, 480 + hh / 2 + 30); ctx.stroke();
-        ctx.fillStyle = col; ctx.fillRect(x - 22, 480 - hh / 2, 44, hh); ctx.restore();
-      }
-      const g = S.at(1, 0, .7), f = S.at(1, 1.0, .7);
-      K.text(ctx, '贪婪', 300, 500, { font: F.serif(900, 48), color: C.red, align: 'right', alpha: g, glow: .5, glowColor: C.red });
-      K.text(ctx, '恐惧', 1620, 500, { font: F.serif(900, 48), color: C.green, alpha: f, glow: .5, glowColor: C.green });
-      K.rule(ctx, 960, 760, 520, S.at(2, 0, 1.2));
-      K.text(ctx, '颜色  ×  实体大小', 960, 230, { font: F.serif(700, 30), color: C.goldHi, align: 'center', spacing: 6, alpha: S.at(2, .2, .8) });
-    } },
-
-  { id: 'tight', header: { ...H3, sub: '动能增强 · Momentum Gain' }, tr: 'zoom', camera: { z0: 1.0, z1: 1.06, x1: -40 },
-    lines: ['动能增强 · 形态一：{紧凑排列}（Tight Price Movement）。', 'K线紧密相连，一连串{没有杂色}的红线，', '中间没有剧烈的反向波动，也没有长影线。', '主导方{完全控盘}，对手盘甚至没有反抗的余地。'],
-    visual(ctx, S) {
-      const n = TIGHT.length, ch = chartTIGHT, c0 = chop.length;
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      const dim = S.at(3, 0, 1);
-      ch.draw(ctx, S.lin(0, 0, 4.4) * n, { dim: i => i < c0 ? 1 - dim * .7 : 1 });
-      const b = S.at(1, 0, 1);
-      const yTop = Math.min(...tightRun.map(k => ch.y(k.h))) - 40;
-      K.bracket(ctx, ch.x(c0) - 20, ch.x(n - 1) + 20, yTop, '紧凑排列', { p: b, sub: 'TIGHT · NO MIXED COLOURS' });
-      // momentum line hugging the run
-      const pts = tightRun.map((k, j) => [ch.x(c0 + j), ch.y(k.l) + 26]);
-      K.dotted(ctx, pts, S.lin(2, 0, 1.6), { alpha: .8 });
-      K.text(ctx, '无长影 · 无反向波动', ch.x(c0 + 10) + 30, ch.y(tightRun[10].l) + 70, { font: F.serif(700, 20), color: C.gray, align: 'left', alpha: S.at(2, .6, .8) });
-      K.tag(ctx, ch.x(c0 + 7), ch.y(tightRun[7].l) + 140, '完全控盘', { alpha: S.at(3, .2, .7), color: C.red });
-    } },
-
-  { id: 'grow', header: { ...H3, sub: '动能增强 · Momentum Gain' }, tr: ['push', 1],
-    lines: ['形态二：{实体放大}（Growing Candles）。', '连续同色K线的实体越来越大——', '[红色越来越大]，代表买盘疯狂；', '<绿色越来越大>，代表恐慌抛售。', '多头或空头正在{加速冲锋}，动能处于极盛期。'],
-    visual(ctx, S) {
-      const pair = [[chartGR, GROW_R, 2, C.red, '买盘疯狂'], [chartGG, GROW_G, 3, C.green, '恐慌抛售']];
-      for (const [ch, ks, beat, col, word] of pair) {
-        const r = S.lin(beat, -.4, 2.2) * ks.length;
-        K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, 790, { p: S.at(1, 0, 1), step: 40 });
-        ch.draw(ctx, r, { glow: .45 });
-        // body-size meter under each candle
-        ks.forEach((k, i) => { const g = clamp(r - i); if (g <= 0) return; const h = Math.abs(k.c - k.o) * 12 * easeOut(g); ctx.fillStyle = rgba(col, .65); ctx.fillRect(ch.x(i) - 10, 800, 20, h); });
-        const pk = S.at(beat, 1.6, .7);
-        K.arrow(ctx, ch.x(0), 840, ch.x(5) + 30, 840 + 0, { p: pk, alpha: pk * .8, color: col });
-        K.text(ctx, word, ch.box.x + ch.box.w / 2, 235, { font: F.serif(900, 32), color: col, align: 'center', alpha: pk, glow: .4, glowColor: col });
-      }
-      const peak = S.at(4, 0, .9);
-      K.tag(ctx, 960, 500, '动能极盛', { alpha: peak, color: C.gold, font: F.serif(700, 24) });
-    }, subY: 1000 },
-
-  { id: 'wide', header: { ...H3, sub: '动能衰竭 · Momentum Loss' }, tr: 'sweep', camera: { z0: 1.0, z1: 1.05 },
-    lines: ['动能衰竭 · 信号一：{宽幅震荡}（Wide Swings）。', '在一段紧凑趋势后，突然出现剧烈的上下波动与长影线。', '主导方正在{失去绝对控制权}，', '对手盘大规模反扑，趋势随时可能{终结}。'],
-    visual(ctx, S) {
-      const ch = chartWIDE, n = WIDE.length, a0 = wideA.length;
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      const r = S.at(1, -.2, .01) > 0 ? a0 + S.lin(1, 0, 2.6) * (n - a0) : S.lin(0, 0, 2.2) * a0;
-      // shake the camera a touch as the wide candles land
-      const shake = r > a0 ? Math.sin(S.t * 31) * 2.5 * (1 - S.at(2, 0, 1)) : 0;
-      ctx.save(); ctx.translate(shake, 0);
-      ch.draw(ctx, r);
+      const t0 = S.beat(0) + .5, kt = S.t - t0;
+      let down = 0;
+      for (const [s, d] of MORSE) { if (kt >= s && kt < s + d) down = 1; else if (kt >= s + d && kt < s + d + .04) down = 1 - (kt - s - d) / .04; }
+      const stamp = S.at(1, 0, .45, easeOut), dimKey = 1 - .7 * S.at(1, 0, .5);
+      const ka = S.at(0, 0, .8) * dimKey;
+      // telegraph key (line art)
+      const bx = 520, by = 640;
+      ctx.save(); ctx.globalAlpha = ka; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 2; ctx.shadowColor = rgba(C.gold, .7); ctx.shadowBlur = 10; ctx.fillStyle = 'rgba(14,12,9,.9)';
+      ctx.beginPath(); ctx.roundRect(bx - 220, by, 440, 46, 8); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(bx - 200, by + 46, 400, 14, 4); ctx.stroke();
+      ctx.beginPath(); ctx.rect(bx - 150, by - 54, 34, 54); ctx.fill(); ctx.stroke();                 // pivot post
+      ctx.beginPath(); ctx.arc(bx + 120, by - 4, 9, 0, TAU); ctx.stroke();                            // contact
+      spring(ctx, bx + 40, by, by - 30 + down * 12, 1);
+      ctx.save(); ctx.translate(bx - 133, by - 46); ctx.rotate(.02 + down * .07);
+      ctx.beginPath(); ctx.roundRect(0, -8, 330, 16, 6); ctx.fill(); ctx.stroke();                  // lever
+      ctx.beginPath(); ctx.ellipse(330, -18, 40, 15, 0, 0, TAU); ctx.fill(); ctx.stroke();           // knob
+      ctx.beginPath(); ctx.moveTo(318, -3); ctx.lineTo(318, 8); ctx.moveTo(342, -3); ctx.lineTo(342, 8); ctx.stroke();
       ctx.restore();
-      K.bracket(ctx, ch.x(0) - 10, ch.x(a0 - 1) + 10, ch.y(wideA[0].l) + 60, '紧凑趋势', { up: false, p: S.at(0, 1.6, .8), labelColor: C.gray });
-      const zone = S.at(1, 1.4, .9);
-      if (zone > 0) {
-        const x0 = ch.x(a0) - 30, x1 = ch.x(n - 1) + 30;
-        ctx.fillStyle = rgba(C.gold, .07 * zone); ctx.fillRect(x0, BOX.y - 20, (x1 - x0) * zone, BOX.h + 40);
-        K.bracket(ctx, x0, x1, BOX.y - 30, '宽幅震荡', { p: zone, sub: 'WIDE SWINGS' });
+      // spark at the contact
+      if (down > .5) { ctx.fillStyle = '#FFF2CC'; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 30; ctx.beginPath(); ctx.arc(bx + 120, by - 10, 5, 0, TAU); ctx.fill(); }
+      ctx.restore();
+      // wire and morse marks travelling to the right
+      const wy = by + 23, wx0 = bx + 220, wx1 = 1680, v = 300;
+      K.line(ctx, wx0, wy, wx1, wy, { p: S.at(0, 0, 1), color: rgba(C.gold, .5), alpha: ka / Math.max(.01, S.at(0, 0, .8)) });
+      ctx.save(); ctx.globalAlpha = ka; ctx.strokeStyle = C.goldHi; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 14;
+      for (const [s, d] of MORSE) {
+        if (kt < s) break;
+        const a = wx0 + Math.max(0, kt - s - d) * v, b = wx0 + (kt - s) * v;
+        if (a > wx1) continue;
+        ctx.beginPath(); ctx.moveTo(a + 3, wy); ctx.lineTo(Math.min(b, wx1), wy); ctx.stroke();
       }
-      const ctl = S.at(2, 0, .8);
-      K.tag(ctx, ch.x(a0 + 3), BOX.y + BOX.h - 10, '控制权松动', { alpha: ctl, color: C.gold });
-      const back = S.at(3, 0, .8);
-      K.arrow(ctx, ch.x(n - 1) + 60, ch.y(WIDE[n - 1].h) - 10, ch.x(n - 1) + 60, ch.y(WIDE[n - 1].l) + 60, { p: back, alpha: back, color: C.green, width: 3 });
-      K.text(ctx, '反扑', ch.x(n - 1) + 80, ch.y(WIDE[n - 1].l) + 40, { font: F.serif(900, 26), color: C.green, alpha: back });
-    } },
-
-  { id: 'shrink', header: { ...H3, sub: '动能衰竭 · Momentum Loss' }, tr: ['push', 1],
-    lines: ['信号二：{实体缩小}（Shrinking Candles）。', '连续同色K线的实体越来越小，行进距离锐减。', '冲锋后劲不足——', '多头（[红色变小]）或空头（<绿色变小>）已{精疲力竭}。'],
-    visual(ctx, S) {
-      const ch = chartSHRINK, n = SHRINK.length;
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      ch.draw(ctx, S.lin(0, 0, 3.6) * n, { glow: .4 });
-      // body-size curve: momentum fading
-      const pts = SHRINK.map((k, i) => [ch.x(i), 880 - 34 - Math.abs(k.c - k.o) * 0]);
-      const mpts = SHRINK.slice(2).map((k, i) => [ch.x(i + 2), BOX.y + BOX.h - 30 - Math.abs(k.c - k.o) * 34]);
-      K.dotted(ctx, mpts, S.lin(1, 0, 2), { alpha: .9, r: 2 });
-      K.text(ctx, '动能', mpts[0][0] - 20, mpts[0][1] + 6, { font: F.serif(700, 22), color: C.goldHi, align: 'right', alpha: S.at(1, 0, .6) });
-      const ex = S.at(2, 0, .8);
-      K.arrow(ctx, mpts[mpts.length - 1][0] + 30, mpts[mpts.length - 1][1] - 50, mpts[mpts.length - 1][0] + 30, mpts[mpts.length - 1][1] + 10, { p: ex, alpha: ex });
-      K.bracket(ctx, ch.x(4) - 20, ch.x(n - 1) + 20, ch.y(SHRINK[n - 1].h) - 50, '行进距离锐减', { p: S.at(1, .8, .8) });
-      K.tag(ctx, ch.x(n - 1) + 50, ch.y(SHRINK[n - 1].c), '精疲力竭', { alpha: S.at(3, .4, .7), color: C.gold, align: 'left' });
-    } },
-
-  { id: 'color', header: { ...H3, sub: '动能衰竭 · Momentum Loss' }, tr: 'zoom', camera: { z0: 1.0, z1: 1.08, x1: -60, y1: 10 },
-    lines: ['信号三：{颜色突变}（Color Change）。', '在一连串汹涌的[红色阳线]之后，', '突然刺入一根<无法创出新高的绿色阴线>。', '原有的价格惯性未能延续——', '多空动能遭到{实质性阻断}。'],
-    visual(ctx, S) {
-      const ch = chartCC, n = CC.length, g = 7;
-      K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      const r = S.after(2) ? g + S.lin(2, .3, .8) * (n - g) : S.lin(0, 0, 3.2) * g;
-      ch.draw(ctx, r, { glow: .4, dim: i => i < g ? 1 - S.at(3, 0, 1) * .45 : 1 });
-      const prevHi = Math.max(...CC.slice(0, g).map(k => k.h));
-      const la = S.at(2, 0, .8);
-      K.dash(ctx, ch.x(2) - 30, ch.y(prevHi), ch.x(n - 1) + 120, ch.y(prevHi), { p: la, alpha: .8 });
-      K.text(ctx, '前高', ch.x(n - 1) + 140, ch.y(prevHi) + 8, { font: F.serif(700, 22), color: C.goldHi, alpha: la });
-      const gx = ch.x(g), hit = S.at(2, 1.0, .5);
-      K.marker(ctx, gx, ch.y(CC[g].h) - 16, { alpha: hit, label: '未创新高 ×', pos: 'left', color: C.green, labelColor: C.green, pulse: clamp((S.t - S.beat(2) - 1) % 1.5 / 1.5) * (hit > .99 ? 1 : 0) });
-      // the momentum wall
-      const wall = S.at(4, 0, .9);
-      if (wall > 0) {
-        ctx.save(); ctx.globalAlpha = wall; const gr = ctx.createLinearGradient(gx - 40, 0, gx + 40, 0);
-        gr.addColorStop(0, rgba(C.goldHi, 0)); gr.addColorStop(.5, rgba(C.goldHi, .35)); gr.addColorStop(1, rgba(C.goldHi, 0));
-        ctx.fillStyle = gr; ctx.fillRect(gx - 40, BOX.y - 40 + (1 - wall) * 300, 80, (BOX.h + 80) * wall); ctx.restore();
-        K.line(ctx, gx, BOX.y - 40, gx, BOX.y + BOX.h + 40, { p: wall, glow: .8, color: C.goldHi, width: 2 });
-        K.tag(ctx, gx, BOX.y + BOX.h + 72, '动能阻断', { alpha: wall, color: C.gold, font: F.serif(700, 22) });
+      ctx.restore();
+      K.tag(ctx, 960, 262, '1981.01.06  ·  夜', { alpha: S.at(0, .2, .7), font: F.serif(700, 22) });
+      K.text(ctx, '· · ·   ·   · — · ·   · — · ·', 1180, 600, { font: F.latin(500, 26), color: C.gold, align: 'center', spacing: 2, alpha: S.at(0, 1.4, .8) * dimKey });
+      K.text(ctx, 'S   E   L   L', 1180, 560, { font: F.latin(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: S.at(0, 1.6, .8) * dimKey });
+      // SELL EVERYTHING stamp
+      if (stamp > 0) {
+        const sc = lerp(1.5, 1, stamp), shake = (1 - S.at(1, .3, .6)) * Math.sin(S.t * 60) * 6;
+        ctx.save(); ctx.translate(960 + shake, 470); ctx.scale(sc, sc); ctx.globalAlpha = stamp;
+        ctx.font = F.latin(500, 132); ctx.textAlign = 'center'; ctx.letterSpacing = '6px';
+        ctx.shadowColor = rgba(C.red, .9); ctx.shadowBlur = 40 + 20 * Math.sin(S.t * 5); ctx.fillStyle = C.red;
+        ctx.fillText('SELL EVERYTHING', 0, 0);
+        ctx.shadowBlur = 0; ctx.strokeStyle = rgba('#FFD0D0', .5); ctx.lineWidth = 1; ctx.strokeText('SELL EVERYTHING', 0, 0);
+        ctx.restore();
+        K.text(ctx, '卖  掉  一  切', 960, 560, { font: F.serif(900, 50), color: C.red, align: 'center', alpha: S.at(1, .4, .6), glow: .7, glowColor: C.red, spacing: 6 });
+        const hold = S.at(2, 0, 1);
+        K.rule(ctx, 960, 610, 420, hold);
       }
-      const inertia = S.at(3, 0, 1) * (1 - S.at(4, 0, .6));
-      K.dotted(ctx, CC.slice(2, g).map((k, i) => [ch.x(i + 2), ch.y(k.h) - 30]).concat([[ch.x(g) + 40, ch.y(prevHi) - 90]]), inertia, { alpha: inertia, color: C.red });
     } },
 
-  /* ================= RECAP & END ================= */
-  { id: 'recap', tr: 'dissolve', camera: { z0: 1.03, z1: 1.0 },
-    lines: ['K线，是多空博弈的{情绪切片}；', '趋势，是市场运行的{秩序轨迹}；', '动能，是这场博弈的{温度}。', '读懂它们，才算真正读懂了{多空博弈}。'],
+  { id: 'panic', header: H3, tr: ['push', 1], camera: { z0: 1.0, z1: 1.05, y0: -10, y1: 10 },
+    lines: ['次日，美股应声{大跌}，', '纽交所成交量创下{当时的纪录}。', '据说，交易系统一度{不堪重负}——恐慌如潮水般蔓延。'],
     visual(ctx, S) {
-      const rows = [['壹', 'K线', '情绪切片', C.red], ['贰', '趋势', '秩序轨迹', C.goldHi], ['叁', '动能', '博弈温度', C.green]];
+      const ch = chPANIC, n = PANIC.length, r = S.lin(0, -.3, 3.2) * n;
+      const glitch = S.at(2, 0, .5) * (1 - S.at(2, 2.6, 1));
+      // falling "sell" rain (abstract)
+      const R = K.rng(5), rain = S.at(0, .8, 1.2);
+      for (let i = 0; i < 70; i++) {
+        const x = 280 + R() * 1360, sp = 160 + R() * 220, ph = R();
+        const y = 230 + ((S.t * sp / 600 + ph) % 1) * 560, al = rain * (.12 + R() * .3);
+        K.arrow(ctx, x, y - 26, x, y, { alpha: al, color: C.green, width: 1.4, head: 8, glow: false });
+      }
+      const slices = glitch > .02 ? 7 : 1;
+      for (let s = 0; s < slices; s++) {
+        ctx.save();
+        if (slices > 1) { const y0 = 240 + s * 52; ctx.beginPath(); ctx.rect(0, y0, 1920, 52); ctx.clip(); ctx.translate(Math.sin(S.t * 23 + s * 2.1) * 26 * glitch * (s % 2 ? 1 : -.7), 0); }
+        ch.draw(ctx, r, { glow: .4 });
+        ctx.restore();
+      }
+      // volume
+      const vb = 780, vh = 150, va = S.at(1, 0, .8);
+      K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, vb, { p: S.at(0, 0, 1), step: 40 });
+      for (let i = 0; i < n; i++) {
+        const g = clamp((r - i)) * va; if (g <= 0) continue;
+        const rec = i === 9, h = VOL[i] / 100 * vh * easeOut(g), col = rec ? C.goldHi : (PANIC[i].c >= PANIC[i].o ? C.red : C.green);
+        ctx.save(); ctx.fillStyle = rgba(col, rec ? .95 : .55); if (rec) { ctx.shadowColor = C.goldHi; ctx.shadowBlur = 30; }
+        ctx.fillRect(ch.x(i) - ch.cw / 2, vb - h, ch.cw, h); ctx.restore();
+      }
+      K.text(ctx, '成交量', ch.box.x - 14, vb - 8, { font: F.serif(700, 20), color: C.gray, align: 'right', alpha: va });
+      K.tag(ctx, ch.x(9) + 150, vb - vh + 10, '当时的纪录', { alpha: S.at(1, .8, .7), color: C.gold, font: F.serif(700, 20) });
+      K.line(ctx, ch.x(9) + 14, vb - vh + 6, ch.x(9) + 86, vb - vh + 10, { p: S.at(1, .8, .7), alpha: .8 });
+      // overload warning
+      const w = glitch * (.6 + .4 * Math.sin(S.t * 14));
+      K.tag(ctx, 1400, 280, '系统一度不堪重负', { alpha: w, color: C.green, font: F.serif(700, 22) });
+    } },
+
+  { id: 'bull', header: H3, tr: 'zoom', camera: { z0: 1.0, z1: 1.06, x0: 30, x1: -40 },
+    lines: ['然而，神话随后破灭：美股不久便开启了{超级大牛市}，', '价格沿着[上升的均线]一路向上。', '他却长期坚持<看空>——据报道，不少追随者损失惨重。', '再响亮的预言，也敌不过{趋势}本身。'],
+    visual(ctx, S) {
+      const ch = chBULL, n = ch.k.length, r = S.lin(0, 0, S.beat(2) + 1 - S.beat(0)) * n;
+      K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1) });
+      const glow = S.at(1, 0, 1);
+      if (glow > 0) { const g = ctx.createLinearGradient(0, ch.box.y + ch.box.h, 0, ch.box.y); g.addColorStop(0, rgba(C.red, 0)); g.addColorStop(1, rgba(C.red, .09 * glow)); ctx.fillStyle = g; ctx.fillRect(ch.box.x, ch.box.y, ch.box.w, ch.box.h); }
+      ch.draw(ctx, r, { glow: .3 });
+      const pts = maPts(ch, BULL_MA, BULL.warm, r);
+      curve(ctx, pts, 1, { width: 3.6 });
+      maLabel(ctx, pts, 'MA', S.at(1, 0, .6), C.goldHi, 30);
+      // the bear call, fading as the market climbs
+      const bear = S.at(0, .4, .7) * (1 - .85 * S.at(2, .8, 2.4));
+      const bx = 520, by = 330;
+      K.tag(ctx, bx, by, '看空 · BEARISH CALL', { alpha: bear, color: C.green, font: F.serif(700, 22) });
+      K.arrow(ctx, bx, by + 26, bx, by + 120, { alpha: bear, color: C.green, width: 2.6, p: S.at(0, .8, .8) });
+      const x = S.at(2, 1.4, .6);
+      K.line(ctx, bx - 110, by - 20, bx + 110, by + 20, { p: x, color: C.gray, width: 2, alpha: .8 });
+      K.tag(ctx, 1460, 300, '超级大牛市', { alpha: S.at(1, .6, .7), color: C.red, font: F.serif(700, 22) });
+      const tr = S.at(3, 0, 1);
+      if (tr > 0) curve(ctx, pts, 1, { width: 6, alpha: tr * (.5 + .3 * Math.sin(S.t * 3)), glow: 1, blur: 30 });
+      K.tag(ctx, 1240, 620, '预言  <  趋势', { alpha: S.at(3, .3, .7), color: C.gold, font: F.serif(700, 24) });
+    } },
+
+  /* ================= 结语 / RECAP ================= */
+  { id: 'recap', header: H4, tr: 'sweep', camera: { z0: 1.06, z1: .98 }, chapter: '结语：潮水与洋流',
+    lines: ['K线，是容易激动的{潮水}；', '均线，是深沉的{洋流}。', '潮水涌得再高，最终也要向洋流{低头}。'],
+    visual(ctx, S) {
+      const calm = S.at(1, 0, S.beat(2) + 2 - S.beat(1), easeInOut), amp = lerp(1, .12, calm);
+      const n = 52, bx = 260, step = 1400 / n, base = 430;
+      const cl = [], ks = [];
+      let prev = base;
+      for (let i = 0; i < n; i++) {
+        const w = Math.sin(i * .45 - S.t * 2.2) * 70 + Math.sin(i * 1.3 + S.t * 1.4) * 34 + Math.sin(i * 2.9 - S.t * 3.1) * 16;
+        const c = base - 40 * Math.sin(i * .06) + w * amp;
+        const o = prev, h = Math.min(o, c) - (8 + Math.abs(Math.sin(i * 7.1 + S.t * 3)) * 22) * amp, l = Math.max(o, c) + (8 + Math.abs(Math.cos(i * 5.3 + S.t * 2.6)) * 22) * amp;
+        ks.push({ o: -o, c: -c, h: -h, l: -l }); cl.push(c); prev = c;
+      }
+      const sink = S.at(2, .4, 2, easeInOut);
+      const reveal = S.at(0, -.6, 1.6);
+      for (let i = 0; i < n; i++) K.candle(ctx, bx + step * (i + .5), ks[i], v => -v, { w: step * .55, alpha: reveal * (1 - .55 * calm), grow: clamp(reveal * 1.6 - i * .01), glow: .4 * amp });
+      const m = sma(cl, 8), pts = m.map((v, i) => v == null ? null : [bx + step * (i + .5), v]).filter(Boolean);
+      curve(ctx, pts, S.at(1, 0, 1.6, easeInOut), { width: 4, head: 5, glow: .9 });
+      K.text(ctx, '潮水  TIDE', 300, 260, { font: F.serif(700, 24), color: C.white, alpha: S.at(0, .4, .7) * (1 - .6 * calm), spacing: 4 });
+      // the deep current
+      const ca = S.at(1, .6, 1.4);
+      if (ca > 0) {
+        const cy = lerp(700, 690, sink);
+        const g = ctx.createLinearGradient(0, cy - 70, 0, cy + 70);
+        g.addColorStop(0, rgba(C.gold, 0)); g.addColorStop(.5, rgba(C.gold, .16 * ca)); g.addColorStop(1, rgba(C.gold, 0));
+        ctx.fillStyle = g; ctx.fillRect(260, cy - 70, 1400, 140);
+        for (let k = 0; k < 7; k++) {
+          const yy = cy - 48 + k * 16, sp = 60 + k * 9, ph = (S.t * sp) % 70;
+          const line = []; for (let x = 260; x <= 1660; x += 20) line.push([x, yy + Math.sin(x * .006 + k + S.t * .4) * 6]);
+          ctx.save(); ctx.globalAlpha = ca * (.25 + .5 * Math.sin(Math.PI * (k + .5) / 7));
+          ctx.strokeStyle = C.goldHi; ctx.lineWidth = 1.4; ctx.setLineDash([26, 44]); ctx.lineDashOffset = -ph; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 8;
+          ctx.beginPath(); line.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); ctx.restore();
+        }
+        K.text(ctx, '洋流  CURRENT', 1640, cy + 104, { font: F.serif(700, 24), color: C.goldHi, align: 'right', alpha: ca, spacing: 4 });
+        // the tide bows to the current: light threads from the MA down into the stream
+        const bow = S.at(2, .2, 1.2);
+        for (let i = 4; i < pts.length; i += 6) K.dash(ctx, pts[i][0], pts[i][1] + 12, pts[i][0], cy - 40, { p: bow, alpha: .35 * bow, dash: [2, 6] });
+      }
+    } },
+
+  { id: 'summary', tr: 'dissolve', camera: { z0: 1.03, z1: 1.0 },
+    lines: ['均线，用数学的冷静{过滤}了人性的狂热。', '但请记住：工具永远只是{路标}，', '盲目迷信任何神话，都会被{市场}吞噬。'],
+    visual(ctx, S) {
+      const rows = [['壹', '起源', '麦田 · 火箭 · 移动平均', C.goldHi], ['贰', '引力', '回归 · 支撑 · 阻力', C.red], ['叁', '镜鉴', '工具只是路标', C.green]];
       rows.forEach(([n, a, b, col], i) => {
         const p = S.at(i, 0, .9), y = 330 + i * 140;
         ctx.save(); ctx.globalAlpha = p; ctx.translate((1 - p) * -60, 0);
-        K.goldText(ctx, n, 640, y + 22, 64, { weight: 900 });
-        K.text(ctx, a, 760, y + 18, { font: F.serif(900, 48), color: C.white });
-        K.line(ctx, 900, y, 1120, y, { p, color: rgba(C.gold, .6) });
-        K.text(ctx, b, 1150, y + 16, { font: F.serif(700, 40), color: col, glow: .4, glowColor: col });
+        K.goldText(ctx, n, 560, y + 22, 64, { weight: 900 });
+        K.text(ctx, a, 680, y + 18, { font: F.serif(900, 48), color: C.white });
+        K.line(ctx, 820, y, 1010, y, { p, color: rgba(C.gold, .6) });
+        K.text(ctx, b, 1040, y + 16, { font: F.serif(700, 38), color: col, glow: .4, glowColor: col });
         ctx.restore();
       });
-      K.rule(ctx, 960, 760, 420, S.at(3, 0, 1.2));
+      K.rule(ctx, 960, 760, 420, S.at(2, .8, 1.2));
     } },
 
   { id: 'end', dur: 5.5, tr: 'zoom', noWatermark: true,
@@ -562,7 +855,7 @@ window.FILM = {
       }
       ctx.restore();
       K.rule(ctx, 960, 560, 340, S.p(.8, 1.4));
-      K.text(ctx, 'K线与动能博弈', 960, 625, { font: F.serif(700, 28), color: C.white, align: 'center', spacing: 8, alpha: S.p(1.2, 1) });
+      K.text(ctx, '趋势指挥官：均线', 960, 625, { font: F.serif(700, 28), color: C.white, align: 'center', spacing: 8, alpha: S.p(1.2, 1) });
       K.text(ctx, '内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。', 960, 940, { font: F.serif(500, 19), color: C.gray, align: 'center', spacing: 2, alpha: S.p(1.6, 1) });
     } },
   ],

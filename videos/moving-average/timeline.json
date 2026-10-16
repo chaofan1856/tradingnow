@@ -1,0 +1,184 @@
+{
+ "title": "趋势指挥官：均线",
+ "fps": 60,
+ "frames": 16758,
+ "seconds": 279.3,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 9.98,
+   "f0": 0,
+   "f1": 599
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 9.98,
+   "dur": 5.2,
+   "f0": 599,
+   "f1": 911
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 15.18,
+   "dur": 17,
+   "f0": 911,
+   "f1": 1931
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 32.18,
+   "dur": 4.2,
+   "f0": 1931,
+   "f1": 2183
+  },
+  {
+   "id": "wheat",
+   "type": "scene",
+   "start": 36.38,
+   "dur": 17.28,
+   "f0": 2183,
+   "f1": 3220
+  },
+  {
+   "id": "window",
+   "type": "scene",
+   "start": 53.66,
+   "dur": 17.42,
+   "f0": 3220,
+   "f1": 4265
+  },
+  {
+   "id": "dow",
+   "type": "scene",
+   "start": 71.08,
+   "dur": 13,
+   "f0": 4265,
+   "f1": 5045
+  },
+  {
+   "id": "rocket",
+   "type": "scene",
+   "start": 84.08,
+   "dur": 21.2,
+   "f0": 5045,
+   "f1": 6317
+  },
+  {
+   "id": "ema",
+   "type": "scene",
+   "start": 105.28,
+   "dur": 14.26,
+   "f0": 6317,
+   "f1": 7172
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 119.54,
+   "dur": 4.2,
+   "f0": 7172,
+   "f1": 7424
+  },
+  {
+   "id": "granville",
+   "type": "scene",
+   "start": 123.74,
+   "dur": 15.38,
+   "f0": 7424,
+   "f1": 8347
+  },
+  {
+   "id": "apple",
+   "type": "scene",
+   "start": 139.12,
+   "dur": 12.3,
+   "f0": 8347,
+   "f1": 9085
+  },
+  {
+   "id": "rubber",
+   "type": "scene",
+   "start": 151.42,
+   "dur": 15.6,
+   "f0": 9085,
+   "f1": 10021
+  },
+  {
+   "id": "sr",
+   "type": "scene",
+   "start": 167.02,
+   "dur": 16.58,
+   "f0": 10021,
+   "f1": 11016
+  },
+  {
+   "id": "eight",
+   "type": "scene",
+   "start": 183.6,
+   "dur": 19.1,
+   "f0": 11016,
+   "f1": 12162
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 202.7,
+   "dur": 4.2,
+   "f0": 12162,
+   "f1": 12414
+  },
+  {
+   "id": "telegraph",
+   "type": "scene",
+   "start": 206.9,
+   "dur": 14.54,
+   "f0": 12414,
+   "f1": 13286
+  },
+  {
+   "id": "panic",
+   "type": "scene",
+   "start": 221.44,
+   "dur": 12.02,
+   "f0": 13286,
+   "f1": 14008
+  },
+  {
+   "id": "bull",
+   "type": "scene",
+   "start": 233.46,
+   "dur": 17.42,
+   "f0": 14008,
+   "f1": 15053
+  },
+  {
+   "id": "recap",
+   "type": "scene",
+   "start": 250.88,
+   "dur": 10.76,
+   "f0": 15053,
+   "f1": 15698
+  },
+  {
+   "id": "summary",
+   "type": "scene",
+   "start": 261.64,
+   "dur": 12.16,
+   "f0": 15698,
+   "f1": 16428
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 273.8,
+   "dur": 5.5,
+   "f0": 16428,
+   "f1": 16758
+  }
+ ]
+}
