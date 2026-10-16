@@ -28,7 +28,7 @@ canvas{display:block;width:1920px;height:1080px}
      ============================================================ -->
 <script>
 'use strict';
-const W = 1920, H = 1080, SCALE = 2, FPS = 30;
+const W = 1920, H = 1080, SCALE = 2, FPS = 60;
 
 /* ---------- palette (the house style) ---------- */
 const C = {
@@ -396,21 +396,62 @@ window.TIMELINE = SC.map(s => ({ id: s.id, type: s.type || 'scene', start: +s.st
 
 /* ---------- static layers ---------- */
 const cv = document.getElementById('c'), ctx = cv.getContext('2d');
-const BG = (() => {                                // background: near-black with a soft warm centre and vignette
-  const c = document.createElement('canvas'); c.width = W * SCALE; c.height = H * SCALE;
-  const x = c.getContext('2d'); x.scale(SCALE, SCALE);
-  x.fillStyle = C.bg; x.fillRect(0, 0, W, H);
-  const g = x.createRadialGradient(W * .5, H * .42, 0, W * .5, H * .42, W * .7);
-  g.addColorStop(0, 'rgba(40,34,24,.42)'); g.addColorStop(.55, 'rgba(18,16,12,.25)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+const BG = (() => {                                // background: grained black — mottled, fine film grain, sparse specks, warm centre, vignette
+  const PW = W * SCALE, PH = H * SCALE;
+  const c = document.createElement('canvas'); c.width = PW; c.height = PH;
+  const x = c.getContext('2d');
+  const img = x.createImageData(PW, PH), d = img.data, R = rng(1990);
+  const vn = (seed, cell) => {                      // smooth value noise on a grid of `cell` px
+    const r = rng(seed), gw = Math.ceil(PW / cell) + 2, gh = Math.ceil(PH / cell) + 2, g = Float32Array.from({ length: gw * gh }, r), sm = t => t * t * (3 - 2 * t);
+    return (px, py) => { const gx = px / cell, gy = py / cell, ix = gx | 0, iy = gy | 0, fx = sm(gx - ix), fy = sm(gy - iy), i = iy * gw + ix;
+      return lerp(lerp(g[i], g[i + 1], fx), lerp(g[i + gw], g[i + gw + 1], fx), fy); };
+  };
+  const m1 = vn(3, 900), m2 = vn(4, 260), m3 = vn(5, 70);
+  for (let py = 0; py < PH; py++) for (let px = 0; px < PW; px++) {
+    const mot = (m1(px, py) - .5) * 9 + (m2(px, py) - .5) * 6 + (m3(px, py) - .5) * 3;   // worn, stone-like mottling
+    const gr = (R() + R() + R() - 1.5) * 9;                                                 // fine monochrome grain (≈gaussian)
+    const sp = R() < .0012 ? 14 + R() * 30 : 0;                                              // sparse bright specks
+    const v = 11 + mot + gr + sp, i = (py * PW + px) * 4;
+    d[i] = v * 1.06; d[i + 1] = v * .98; d[i + 2] = v * .86; d[i + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+  x.scale(SCALE, SCALE);
+  x.globalCompositeOperation = 'lighter';
+  const g = x.createRadialGradient(W * .5, H * .42, 0, W * .5, H * .42, W * .62);
+  g.addColorStop(0, 'rgba(46,36,20,.55)'); g.addColorStop(.5, 'rgba(20,15,8,.3)'); g.addColorStop(1, 'rgba(0,0,0,0)');
   x.fillStyle = g; x.fillRect(0, 0, W, H);
-  // faint dot grid
-  x.fillStyle = 'rgba(201,162,90,.045)';
-  for (let yy = 30; yy < H; yy += 40) for (let xx = 30; xx < W; xx += 40) { x.beginPath(); x.arc(xx, yy, 1, 0, 6.2832); x.fill(); }
-  const v = x.createRadialGradient(W / 2, H / 2, H * .35, W / 2, H / 2, W * .75);
-  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)');
+  x.fillStyle = 'rgba(201,162,90,.035)';            // faint dot grid
+  for (let yy = 30; yy < H; yy += 40) for (let xx = 30; xx < W; xx += 40) { x.beginPath(); x.arc(xx, yy, .9, 0, 6.2832); x.fill(); }
+  x.globalCompositeOperation = 'source-over';
+  const v = x.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, W * .72);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.72)');
   x.fillStyle = v; x.fillRect(0, 0, W, H);
   return c;
 })();
+
+/* ---------- atmosphere: slow light beams + drifting bokeh (drawn every frame, under the scene) ---------- */
+const BOKEH = (() => { const R = rng(606), a = []; for (let i = 0; i < 16; i++) a.push({ x: R() * W, y: R() * H, r: 60 + R() * 150, a: .025 + R() * .045, ph: R() * 6.28, sp: .04 + R() * .08 }); return a; })();
+function drawAtmosphere(time) {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const b of BOKEH) {                          // out-of-focus gold lights
+    const x = (b.x + Math.sin(time * b.sp + b.ph) * 120 + time * 4) % (W + 300) - 150, y = b.y + Math.cos(time * b.sp * .8 + b.ph) * 70;
+    const a = b.a * (.6 + .4 * Math.sin(time * .5 + b.ph));
+    const g = ctx.createRadialGradient(x, y, 0, x, y, b.r);
+    g.addColorStop(0, rgba(C.goldHi, a)); g.addColorStop(.55, rgba(C.gold, a * .45)); g.addColorStop(1, rgba(C.gold, 0));
+    ctx.fillStyle = g; ctx.fillRect(x - b.r, y - b.r, b.r * 2, b.r * 2);
+  }
+  for (let k = 0; k < 3; k++) {                     // volumetric beams from the upper left, slowly sweeping
+    const ang = -.62 + k * .17 + Math.sin(time * .07 + k * 2.1) * .06, wdt = 90 + k * 60;
+    const a = .028 + .018 * Math.sin(time * .21 + k * 1.7);
+    ctx.save(); ctx.translate(-120, -160); ctx.rotate(-ang);
+    const g = ctx.createLinearGradient(0, -wdt, 0, wdt);
+    g.addColorStop(0, rgba(C.goldHi, 0)); g.addColorStop(.5, rgba(C.goldHi, a)); g.addColorStop(1, rgba(C.goldHi, 0));
+    ctx.fillStyle = g; ctx.globalAlpha = 1;
+    ctx.beginPath(); ctx.moveTo(0, -wdt * .2); ctx.lineTo(2600, -wdt); ctx.lineTo(2600, wdt); ctx.lineTo(0, wdt * .2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
 
 /* ---------- header (top-left module tag + top-right reference) ---------- */
 function drawHeader(h, a, dy = 0) {
@@ -543,7 +584,7 @@ const TRANSITIONS = {
 };
 
 /* ---------- gold dust: one continuous particle field under the whole film ---------- */
-const DUST = (() => { const R = rng(88), a = []; for (let i = 0; i < 170; i++) a.push({ x: R() * W, y: R() * H, z: .25 + R() * .75, r: .5 + R() ** 3 * 2.2, ph: R() * 6.28, sp: .3 + R() * .7 }); return a; })();
+const DUST = (() => { const R = rng(88), a = []; for (let i = 0; i < 420; i++) a.push({ x: R() * W, y: R() * H, z: .2 + R() * .8, r: .35 + R() ** 4 * 2.6, ph: R() * 6.28, sp: .3 + R() * .7 }); return a; })();
 function drawDust(time, kick) {                       // kick: 0..1 transition energy → particles stream
   ctx.save(); ctx.globalCompositeOperation = 'lighter';
   for (const d of DUST) {
@@ -551,7 +592,7 @@ function drawDust(time, kick) {                       // kick: 0..1 transition e
     let x = (d.x + time * vx + Math.sin(time * .3 + d.ph) * 18 * d.z + kick * 220 * d.z) % W; if (x < 0) x += W;
     let y = (d.y + time * vy + Math.cos(time * .23 + d.ph) * 12 * d.z) % H; if (y < 0) y += H;
     const tw = .55 + .45 * Math.sin(time * (1.1 + d.sp) + d.ph);
-    const a = .32 * d.z * tw;
+    const a = (.22 + .3 * d.z) * tw;
     ctx.fillStyle = rgba(C.goldHi, a);
     if (kick > .02 && d.z > .7) {                     // faint motion trails on the nearest motes during transitions
       const g = ctx.createLinearGradient(x, 0, x - kick * 70 * d.z, 0);
@@ -572,6 +613,7 @@ window.seek = function seek(frame) {
   const time = f / FPS;
   ctx.setTransform(SCALE, 0, 0, SCALE, 0, 0); ctx.globalAlpha = 1; ctx.shadowBlur = 0; ctx.filter = 'none';
   ctx.drawImage(BG, 0, 0, W, H);
+  drawAtmosphere(time);
 
   let k = SC.findIndex(s => time >= s.start && time < s.end); if (k < 0) k = SC.length - 1;
   const sc = SC[k];

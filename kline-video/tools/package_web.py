@@ -8,7 +8,7 @@ import hashlib, html, json, os, re, subprocess, sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, '成片', 'K线与动能博弈_4K.mp4')
 OUT = os.path.join(ROOT, 'web', 'dist')
-PART = 14 * 1024 * 1024
+PART = 19 * 1024 * 1024          # artifact asset store takes ≤ 20 MiB per file
 
 os.makedirs(OUT, exist_ok=True)
 for f in os.listdir(OUT):

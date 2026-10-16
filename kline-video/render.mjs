@@ -5,7 +5,7 @@
 // chunks from a queue; each tab pipes its JPEG frames straight into its own ffmpeg (no frames on disk).
 // Finished chunks are cached by content hash, so editing one scene only re-renders that scene.
 //
-//   node render.mjs                     full film, 4K           -> segs/*.mp4 + video.mp4 + timeline.json
+//   node render.mjs                     full film, 4K 60fps          -> segs/*.mp4 + video.mp4 + timeline.json
 //   node render.mjs --workers 4         number of parallel tabs (default: CPU count − 1, min 2)
 //   node render.mjs --only up,down      re-render just these scene ids (others come from the cache)
 //   node render.mjs --preview           1080p, fast encode       -> 成片/preview-1080p.mp4 (separate cache)
@@ -20,7 +20,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 9341;
-const W = 1920, H = 1080, FPS = 30, CHUNK = 180;
+const W = 1920, H = 1080, FPS = 60, CHUNK = 300;
 
 const argv = process.argv.slice(2);
 const arg = n => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
@@ -81,7 +81,7 @@ async function openPage(cdp) {
   await evalJS('window.ASSETS_READY');
   const shot = async f => {
     await evalJS(`window.seek(${f})`);
-    const { data } = await S('Page.captureScreenshot', { format: 'jpeg', quality: PREVIEW ? 88 : 96, optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
+    const { data } = await S('Page.captureScreenshot', { format: 'jpeg', quality: PREVIEW ? 88 : +(process.env.JPEGQ || 92), optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
     return Buffer.from(data, 'base64');
   };
   return { evalJS, shot };
@@ -91,9 +91,9 @@ async function openPage(cdp) {
 function encoder(file) {
   const v = PREVIEW
     ? ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20']
-    : ['-c:v', 'libx264', '-preset', 'medium', '-crf', '14', '-profile:v', 'high', '-level', '5.1', '-tune', 'animation', '-x264-params', 'aq-mode=3'];
+    : ['-c:v', 'libx264', '-preset', process.env.PRESET || 'fast', '-crf', process.env.CRF || '16', '-profile:v', 'high', '-level', '5.2', '-x264-params', 'aq-mode=3:deblock=-1,-1:psy-rd=1.0,0.15'];
   const p = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FPS), '-i', '-',
-    ...v, '-threads', '2', '-g', String(FPS), '-bf', '2', '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
+    ...v, '-threads', process.env.X264_THREADS || '1', '-g', String(FPS * 2), '-bf', '2', '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
     '-vf', 'scale=in_range=full:out_range=tv:in_color_matrix=bt709:out_color_matrix=bt709', '-movflags', '+faststart', file], { stdio: ['pipe', 'inherit', 'inherit'] });
   const done = new Promise((res, rej) => p.on('close', c => c === 0 ? res() : rej(new Error('ffmpeg exit ' + c))));
   const write = buf => new Promise(r => p.stdin.write(buf) ? r() : p.stdin.once('drain', r));
