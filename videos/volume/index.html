@@ -290,7 +290,7 @@ const K = {
     const a = o.alpha ?? 1; if (a <= 0.002) return;
     ctx.save(); ctx.globalAlpha *= a;
     ctx.font = o.font || F.serif(700, 20);
-    const w = ctx.measureText(str).width + 26, h = 34, col = o.color || C.gold;
+    const w = ctx.measureText(str).width + 26, h = Math.round(20 * FS() + 16), col = o.color || C.gold;
     const x0 = o.align === 'left' ? x : x - w / 2;
     ctx.fillStyle = rgba(col, .14); ctx.strokeStyle = rgba(col, .85); ctx.lineWidth = 1.2;
     ctx.beginPath(); ctx.roundRect(x0, y - h / 2, w, h, 4); ctx.fill(); ctx.stroke();

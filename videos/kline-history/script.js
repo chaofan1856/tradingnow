@@ -59,7 +59,7 @@ function panel(ctx, x, y, w, h, o = {}) {
 /** vertical (top-to-bottom) text */
 function vtext(ctx, str, x, y, o = {}) {
   const s = o.size || 26;
-  [...str].forEach((ch, i) => K.text(ctx, ch, x, y + i * s * 1.12, { font: F.serif(o.weight || 700, s), color: o.color || C.white, align: 'center', alpha: o.alpha ?? 1, glow: o.glow, glowColor: o.glowColor }));
+  [...str].forEach((ch, i) => K.text(ctx, ch, x, y + i * s * FS() * 1.05, { font: F.serif(o.weight || 700, s), color: o.color || C.white, align: 'center', alpha: o.alpha ?? 1, glow: o.glow, glowColor: o.glowColor }));
 }
 
 /** a straw rice bale (tawara), flat-colour; ghost = dashed outline only */
@@ -306,7 +306,7 @@ window.FILM = {
         const g = ctx.createLinearGradient(x - 80, 0, x + 80, 0); g.addColorStop(0, 'rgba(241,213,151,0)'); g.addColorStop(.5, 'rgba(241,213,151,.22)'); g.addColorStop(1, 'rgba(241,213,151,0)');
         ctx.fillStyle = g; ctx.fillRect(x - 80, 220, 160, 530); ctx.restore();
       }
-      K.tag(ctx, 960, 790, '同一种图表 · ONE LANGUAGE', { alpha: S.at(1, .9, .8), font: F.serif(700, 22) });
+      K.tag(ctx, 960, 745, '同一种图表 · ONE LANGUAGE', { alpha: S.at(1, .9, .8), font: F.serif(700, 22) });
       ctx.restore();
       if (q > 0) { ctx.save(); ctx.translate(960, 480); const z = lerp(1.3, 1, easeOut(q)); ctx.scale(z, z); K.goldText(ctx, '?', 0, 70, 220, { alpha: q, glow: 1.2 }); ctx.restore(); }
     } },
@@ -441,7 +441,7 @@ window.FILM = {
         K.text(ctx, k % 2 ? '买' : '卖', x, y, { font: F.serif(900, 26), color: k % 2 ? C.red : C.green, align: 'center', alpha: bid * Math.sin(Math.PI * ph) });
       }
       K.text(ctx, '据记载 · 1730年前后 · 官方认可', 1400, 250, { font: F.serif(700, 22), color: C.goldHi, align: 'center', alpha: S.at(3, .2, .7) });
-      K.tag(ctx, 1400, 790, '最早的期货市场之一 · 一般认为', { alpha: S.at(4, .3, .7), color: C.gold, font: F.serif(700, 22) });
+      K.tag(ctx, 1400, 735, '最早的期货市场之一 · 一般认为', { alpha: S.at(4, .3, .7), color: C.gold, font: F.serif(700, 22) });
     } },
 
   { id: 'tegata', header: H1, tr: ['push', 1], camera: { z0: 1.02, z1: 1.06, x1: -20 },
@@ -455,9 +455,9 @@ window.FILM = {
       ctx.strokeStyle = 'rgba(80,58,24,.8)'; ctx.lineWidth = 2; ctx.strokeRect(-104, -214, 208, 408);
       ctx.strokeStyle = 'rgba(80,58,24,.35)'; ctx.lineWidth = 1; for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(-104 + i * 52, -200); ctx.lineTo(-104 + i * 52, 180); ctx.stroke(); }
       ctx.restore();
-      vtext(ctx, '空米手形', 500, 330, { size: 52, weight: 900, color: '#2A1D0C', alpha: clamp(a) });
-      vtext(ctx, '米百石', 446, 330, { size: 24, weight: 700, color: '#5A4420', alpha: clamp(a) * .9 });
-      vtext(ctx, '来年交割', 446, 520, { size: 24, weight: 700, color: '#5A4420', alpha: clamp(a) * .9 });
+      vtext(ctx, '空米手形', 500, 350, { size: 34, weight: 900, color: '#2A1D0C', alpha: clamp(a) });
+      vtext(ctx, '', 446, 330, { size: 15, weight: 700, color: '#5A4420', alpha: clamp(a) * .9 });
+      vtext(ctx, '', 446, 520, { size: 15, weight: 700, color: '#5A4420', alpha: clamp(a) * .9 });
       const seal = S.at(0, 1.4, .4, easeBack);
       if (seal > 0) {
         ctx.save(); ctx.translate(555, 640); const z = lerp(1.8, 1, clamp(seal)); ctx.scale(z, z); ctx.globalAlpha *= clamp(seal);
@@ -490,7 +490,7 @@ window.FILM = {
       K.line(ctx, 840, 660, 960, 660, { alpha: hd, p: hd, color: C.goldHi, width: 2, glow: .6 });
       K.tag(ctx, 1360, 620, '投机 · SPECULATE', { alpha: sp, color: C.red, font: F.serif(700, 24) });
       K.arrow(ctx, 1290, 690, 1290, 650 - wob, { p: sp, alpha: sp, color: C.red }); K.arrow(ctx, 1430, 650, 1430, 690 + wob, { p: sp, alpha: sp, color: C.green });
-      K.tag(ctx, 1130, 760, '早期期货合约 · FUTURES', { alpha: S.at(3, .3, .7), color: C.gold, font: F.serif(700, 24) });
+      K.tag(ctx, 1130, 735, '早期期货合约 · FUTURES', { alpha: S.at(3, .3, .7), color: C.gold, font: F.serif(700, 24) });
     } },
 
   { id: 'pain', header: H1, tr: ['push', 1], camera: { z0: 1.0, z1: 1.05 },
@@ -555,10 +555,10 @@ window.FILM = {
       halo.addColorStop(0, rgba(C.goldHi, .16 * a)); halo.addColorStop(1, rgba(C.goldHi, 0));
       ctx.fillStyle = halo; ctx.fillRect(300, 170, 600, 600);
       ctx.save(); ctx.strokeStyle = rgba(C.gold, .45 * a); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(600, 470, 230, 0, TAU * a); ctx.stroke(); ctx.restore();
-      silhouette(ctx, 600, 800, .95, a);
-      K.text(ctx, '本间宗久', 600, 250, { font: F.serif(900, 34), color: C.goldHi, align: 'center', spacing: 8, alpha: S.at(0, .8, .8), glow: .4 });
-      K.text(ctx, 'HOMMA MUNEHISA · 相传', 600, 284, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 3, alpha: S.at(0, 1.1, .8) });
-      K.tag(ctx, 600, 820, '股市之神', { alpha: S.at(2, .2, .7), font: F.serif(700, 24) });
+      silhouette(ctx, 600, 765, .95, a);
+      K.text(ctx, '本间宗久', 600, 282, { font: F.serif(900, 34), color: C.goldHi, align: 'center', spacing: 8, alpha: S.at(0, .8, .8), glow: .4 });
+      K.text(ctx, 'HOMMA MUNEHISA · 相传', 600, 322, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 3, alpha: S.at(0, 1.1, .8) });
+      K.tag(ctx, 600, 735, '股市之神', { alpha: S.at(2, .2, .7), font: F.serif(700, 24) });
       // the scale: supply vs demand → greed vs fear
       const port = S.at(1, 0, .9) * (1 - S.at(3, 0, .6));
       if (port > 0) {
@@ -623,7 +623,7 @@ window.FILM = {
         K.marker(ctx, ch.x(iUp), ch.y(SAKATA[iUp].h) - 18, { alpha: ps, label: '买方 · 贪婪', pos: 'above', color: C.red, labelColor: C.red });
         K.marker(ctx, ch.x(iDn), ch.y(SAKATA[iDn].l) + 18, { alpha: S.at(2, .8, .8), label: '卖方 · 恐惧', pos: 'below', color: C.green, labelColor: C.green });
       }
-      K.tag(ctx, 1210, 790, 'K线的前身 · 一般认为', { alpha: S.at(3, .2, .7), color: C.gold, font: F.serif(700, 22) });
+      K.tag(ctx, 1210, 735, 'K线的前身 · 一般认为', { alpha: S.at(3, .2, .7), color: C.gold, font: F.serif(700, 22) });
     } },
 
   { id: 'ohlc', header: H2, tr: ['push', 1], camera: { z0: 1.0, z1: 1.06, x1: 20 },
@@ -636,7 +636,7 @@ window.FILM = {
       const price = s => { const f = s * (keys.length - 1), i = Math.min(keys.length - 2, Math.floor(f)), w = easeInOut(f - i); return lerp(keys[i], keys[i + 1], w) + Math.sin(s * 70) * .035 * Math.sin(s * Math.PI); };
       const px = s => 300 + s * 560, py = v => 500 - v * 200;
       K.baseline(ctx, 300, 860, 760, { p: S.at(0, 0, 1), step: 56 });
-      K.text(ctx, '一个时段 · ONE SESSION', 580, 800, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 3, alpha: S.at(0, .3, .8) });
+      K.text(ctx, '一个时段 · ONE SESSION', 580, 755, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 3, alpha: S.at(0, .3, .8) });
       const pts = []; let hi = 0, lo = 0;
       for (let i = 0; i <= N * u; i++) { const s = i / N, v = price(s); pts.push([px(s), py(v)]); hi = Math.max(hi, v); lo = Math.min(lo, v); }
       if (pts.length > 1) K.dotted(ctx, pts, 1, { gap: 6, r: 1.6 });
@@ -685,7 +685,7 @@ window.FILM = {
         const a = S.at(0, .3 + i * .25, .6, easeBack), hl = i === 0 ? S.at(1, 0, .6) * (1 - S.at(3, 0, .5)) : i === 1 ? S.at(2, 0, .6) * (1 - S.at(3, 0, .5)) : S.at(3, (i - 2) * .3, .5);
         K.tag(ctx, 560 + i * 200, 250 - (1 - clamp(a)) * 20, n, { alpha: clamp(a) * (hl > 0 ? 1 : (S.after(1) ? .55 : 1)), color: hl > 0 ? C.goldHi : C.gold, font: F.serif(700, 26) });
       });
-      const pair = [[chSANZAN, SANZAN, 1, '三山 · 顶部', C.green, 'H'], [chSANSEN, SANSEN, 2, '三川 · 底部（一种解读）', C.red, 'L']];
+      const pair = [[chSANZAN, SANZAN, 1, '三山 · 顶部', C.green, 'H'], [chSANSEN, SANSEN, 2, '三川 · 底部', C.red, 'L']];
       for (const [ch, P, beat, label, col, kind] of pair) {
         const a = S.at(beat, 0, .8) * (1 - S.at(3, 0, .7)), bx = ch.box;
         if (a <= 0.002) continue;
@@ -778,12 +778,12 @@ window.FILM = {
       chCDL.draw(ctx, S.lin(2, .4, 2.4) * n, { alpha: ra, glow: .45, dim: j => j === n - 1 ? 1 : 1 - .6 * S.at(3, 0, .8) });
       // focus: one bar vs one candle
       const i = n - 1, k = BARS.candles[i], f1 = S.at(2, 1.4, .7), f2 = S.at(3, 0, .8);
-      K.marker(ctx, chBAR.x(i), chBAR.y(k.h) - 18, { alpha: f1, r: 8, label: '细线 + 小横杠', pos: 'above', font: F.serif(700, 20) });
+      K.marker(ctx, chBAR.x(i), chBAR.y(k.h) - 18, { alpha: f1, r: 8, label: '细线 + 小横杠', pos: 'left', font: F.serif(700, 20) });
       if (f2 > 0) {
         const top = chCDL.y(Math.max(k.o, k.c)), bot = chCDL.y(Math.min(k.o, k.c));
         K.vbrace(ctx, chCDL.x(i) + 30, top, bot, '实体', { p: f2 });
         K.vbrace(ctx, chCDL.x(i) + 30, chCDL.y(k.h), top - 4, '', { p: f2, color: C.gray });
-        K.tag(ctx, 1340, 790, '一目了然', { alpha: S.at(3, .6, .6), color: C.gold, font: F.serif(700, 22) });
+        K.tag(ctx, 1340, 735, '一目了然', { alpha: S.at(3, .6, .6), color: C.gold, font: F.serif(700, 22) });
         ctx.save(); ctx.globalAlpha *= f2 * (.5 + .5 * Math.sin(S.t * 4)); ctx.strokeStyle = C.goldHi; ctx.lineWidth = 1.4;
         ctx.strokeRect(chCDL.x(i) - 22, chCDL.y(k.h) - 10, 44, chCDL.y(k.l) - chCDL.y(k.h) + 20); ctx.restore();
       }
@@ -808,7 +808,7 @@ window.FILM = {
           if (lit > 0 && (r + c + j) % 2 === 0) { const up = (r * 3 + c + j) % 3 !== 0, h2 = 6 + ((r + c) % 3) * 3; pxCandle(ctx, wx + 8, wy + 7 - h2 / 2, wy + 7 + h2 / 2, wy - 1, wy + 15, 7, up ? C.red : C.green, lit * clamp(lit * 3 - (r * .1)), .6); }
         }
       });
-      K.text(ctx, '华尔街 · WALL STREET', 1310, 820, { font: F.serif(700, 22), color: C.gray, align: 'center', spacing: 3, alpha: sk });
+      K.text(ctx, '', 1310, 232, { font: F.serif(700, 22), color: C.gray, align: 'center', spacing: 3, alpha: sk });
       // the knowledge arcs from East to West
       const arc = S.at(1, .2, 1.6, easeInOut);
       const P = s => { const x0 = 660, y0 = 350, x1 = 1290, y1 = 260, cx = 980, cy = 120; return [(1 - s) ** 2 * x0 + 2 * (1 - s) * s * cx + s * s * x1, (1 - s) ** 2 * y0 + 2 * (1 - s) * s * cy + s * s * y1]; };
@@ -816,8 +816,8 @@ window.FILM = {
       K.dotted(ctx, pts, arc, { alpha: .9, gap: 8, r: 2 });
       if (arc >= 1) { const s = (t * .45) % 1, [x, y] = P(s); pxCandle(ctx, x, y - 10, y + 10, y - 18, y + 18, 10, C.red, Math.sin(Math.PI * s), .9); }
       K.text(ctx, '东方 → 西方', 980, 300, { font: F.serif(700, 24), color: C.goldHi, align: 'center', spacing: 4, alpha: S.at(1, 1.0, .7) });
-      K.tag(ctx, 1590, 215, '全球通用 · GLOBAL STANDARD', { alpha: S.at(3, .3, .7), color: C.gold, font: F.serif(700, 22) });
-      K.tag(ctx, 500, 790, '东方技艺 · 系统西传', { alpha: S.at(1, .6, .7), font: F.serif(700, 22) });
+      K.tag(ctx, 1420, 250, '全球通用 · GLOBAL STANDARD', { alpha: S.at(3, .3, .7), color: C.gold, font: F.serif(700, 22) });
+      K.tag(ctx, 500, 745, '东方技艺 · 系统西传', { alpha: S.at(1, .6, .7), font: F.serif(700, 22) });
     } },
 
   /* ================= 模块四 ================= */
@@ -836,7 +836,7 @@ window.FILM = {
         for (let d = 0; d < 3; d++) { ctx.fillStyle = rgba(C.gray, .6); ctx.beginPath(); ctx.arc(x + w - 30 - d * 20, y + 24, 5, 0, TAU); ctx.fill(); }
         ctx.restore();
         K.text(ctx, title, x + 22, y + 33, { font: F.serif(700, 24), color: C.white, alpha: a });
-        K.text(ctx, sub, x + 22 + 120, y + 33, { font: F.serif(700, 22), color: C.gray, alpha: a });
+        K.text(ctx, sub, x + 22 + 200, y + 33, { font: F.serif(700, 22), color: C.gray, alpha: a });
         const ch = new K.Chart(BOARD.candles, { x: x + 24, y: y + 64, w: w - 48, h: 240 });
         ch.draw(ctx, S.lin(beat, 0, 2.2) * n, { alpha: a, glow: .5, color: i => BOARD.candles[i].c >= BOARD.candles[i].o ? upCol : dnCol });
         ROWS.forEach(([nm, px, ch2], j) => {
@@ -878,7 +878,7 @@ window.FILM = {
         ctx.strokeStyle = C.gold; for (let k = -2; k <= 2; k++) { ctx.beginPath(); ctx.moveTo(x + k * 6, y + 140); ctx.lineTo(x + k * 6, y + 200 + Math.sin(t * 2 + k) * 4); ctx.stroke(); }
         ctx.restore();
         K.text(ctx, '喜庆 · 好运', x, 740, { font: F.serif(700, 28), color: C.red, align: 'center', alpha: a, glow: .5, glowColor: C.red });
-        K.text(ctx, '东方', x, 778, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: a });
+        K.text(ctx, '', x, 760, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: a });
       }
       // a traffic light that keeps changing its mind
       const tl = S.at(0, .8, .8);
@@ -909,7 +909,7 @@ window.FILM = {
         panel(ctx, 1290, 590, 300, 72, { alpha: da, color: C.red, line: .8, glow: .4 });
         K.text(ctx, '-1,250,000', 1440, 638, { font: F.mono(32), color: C.red, align: 'center', alpha: da });
         K.text(ctx, '赤字 · 危险', 1440, 712, { font: F.serif(700, 28), color: C.red, align: 'center', alpha: da, glow: .5, glowColor: C.red });
-        K.text(ctx, '西方', 1440, 750, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: da });
+        K.text(ctx, '', 1440, 742, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: da });
       }
     } },
 

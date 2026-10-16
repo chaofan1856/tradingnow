@@ -94,7 +94,7 @@ function tapeStrip(ctx, x0, x1, y, off, sp, item, o = {}) {
   g.addColorStop(0, 'rgba(178,162,128,.92)'); g.addColorStop(.14, 'rgba(214,200,170,.9)'); g.addColorStop(.86, 'rgba(214,200,170,.9)'); g.addColorStop(1, 'rgba(160,144,112,.92)');
   ctx.fillStyle = g; ctx.shadowColor = 'rgba(0,0,0,.65)'; ctx.shadowBlur = 14; ctx.fillRect(x0, y - h / 2, xe - x0, h); ctx.shadowBlur = 0;
   ctx.beginPath(); ctx.rect(x0, y - h / 2, xe - x0, h); ctx.clip();
-  const fs = o.fs || 24, nMax = Math.floor(off / sp), nMin = Math.max(0, Math.floor((off - (x1 - x0)) / sp) - 1);
+  const fs = (o.fs || 24) * 1.2 / FS(), nMax = Math.floor(off / sp), nMin = Math.max(0, Math.floor((off - (x1 - x0)) / sp) - 1);
   ctx.font = F.mono(fs);
   for (let n = nMin; n <= nMax; n++) {
     const it = item(n), left = x0 + off - (n + 1) * sp + 18;
@@ -421,7 +421,7 @@ window.FILM = {
         K.text(ctx, zh, x, y, { font: F.serif(700, 32), color: C.white, align: 'center', alpha: oa });
         K.text(ctx, en, x, y + 32, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 4, alpha: oa });
       });
-      K.tag(ctx, 960, 640, '技术分析巨头', { alpha: S.at(1, 1.0, .7) * dimO, color: C.gold });
+      K.tag(ctx, 960, 598, '技术分析巨头', { alpha: S.at(1, 1.0, .7) * dimO, color: C.gold });
       // volume ⇄ price
       const vp = S.at(2, .3, .9);
       K.goldText(ctx, '量', 800, 310, 72, { alpha: vp });
@@ -475,8 +475,8 @@ window.FILM = {
       if (zone > 0) { ctx.fillStyle = rgba(C.green, .07 * zone); ctx.fillRect(ch.x(10) - 30, ch.box.y - 10, ch.x(14) - ch.x(10) + 60, base - ch.box.y + 10); }
       ch.draw(ctx, r, { glow: .35 });
       vbars(ctx, ch, EFFV, base, 190, r, { alpha: .7, color: i => i >= 10 && i < 15 ? mix(C.gold, C.goldHi, S.at(2, .8, .6)) : (EFF[i].c >= EFF[i].o ? C.red : C.green), glow: .3 });
-      K.text(ctx, '价格 · 结果', 245, 420, { font: F.serif(700, 22), color: C.white, align: 'right', alpha: S.at(1, 0, .8) });
-      K.text(ctx, '成交量 · 努力', 245, 720, { font: F.serif(700, 22), color: C.goldHi, align: 'right', alpha: S.at(1, .4, .8) });
+      K.text(ctx, '价格', 245, 420, { font: F.serif(700, 22), color: C.white, align: 'right', alpha: S.at(1, 0, .8) });
+      K.text(ctx, '成交量', 245, 720, { font: F.serif(700, 22), color: C.goldHi, align: 'right', alpha: S.at(1, .4, .8) });
       const big = S.at(2, 1.2, .8);
       K.bracket(ctx, ch.x(10) - 22, ch.x(14) + 22, base - 200 - 14, '努力：天量', { p: big, color: C.goldHi });
       const topH = Math.max(...EFF.slice(10, 15).map(k => k.h));
@@ -661,8 +661,8 @@ window.FILM = {
       const sa = S.at(1, 0, .9);
       silhouette(ctx, SX, SY, 30, { alpha: sa });
       K.text(ctx, 'Roaring Kitty', SX, 530, { font: F.latin(500, 24), color: C.goldHi, align: 'center', alpha: sa });
-      K.text(ctx, '“咆哮小猫”', SX, 562, { font: F.serif(700, 22), color: C.white, align: 'center', alpha: sa });
-      K.text(ctx, 'Keith Gill', SX, 592, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 2, alpha: sa });
+      K.text(ctx, '“咆哮小猫”', SX, 578, { font: F.serif(700, 22), color: C.white, align: 'center', alpha: sa });
+      K.text(ctx, 'Keith Gill', SX, 618, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 2, alpha: sa });
       // the vault: buy & hold
       const va = S.at(2, 0, .8);
       if (va > 0) {

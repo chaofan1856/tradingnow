@@ -425,7 +425,7 @@ window.FILM = {
       ctx.fillStyle = g; ctx.shadowBlur = 0; const sw = .05 + .03 * Math.sin(S.t * 6);
       ctx.beginPath(); ctx.moveTo(dx, dy); ctx.arc(dx, dy, 900, da - sw, da + sw); ctx.closePath(); ctx.fill();
       ctx.restore();
-      K.text(ctx, '雷达 RADAR', dx, gy + 40, { font: F.serif(700, 20), color: C.gray, align: 'center', alpha: ra });
+      K.text(ctx, '', dx, gy + 40, { font: F.serif(700, 20), color: C.gray, align: 'center', alpha: ra });
       // noisy radar fixes behind the rocket, and their exponential smoothing
       const NB = 40, R = K.rng(23), blips = [];
       for (let i = 0; i < NB; i++) { const [x, y] = traj(i / (NB - 1)); blips.push([x + (R() - .5) * 46, y + (R() - .5) * 60]); }
@@ -448,11 +448,11 @@ window.FILM = {
     visual(ctx, S) {
       // left: weights
       const N = 10, k = 2 / (N + 1), bx = 300, step = 52, sc = 640;
-      const rows = [['MA · 等权', 'MA = 收盘价之和 ÷ N', 410, i => 1 / N, C.gold, 0], ['EMA · 近大远小', 'EMA = k×今收 + (1−k)×昨EMA', 660, i => k * Math.pow(1 - k, N - 1 - i), C.goldHi, 1]];
+      const rows = [['MA · 等权', 'MA = 收盘价之和 ÷ N', 450, i => 1 / N, C.gold, 0], ['EMA · 近大远小', 'EMA = k×今收 + (1−k)×昨EMA', 700, i => k * Math.pow(1 - k, N - 1 - i), C.goldHi, 1]];
       for (const [name, fml, y, wf, col, li] of rows) {
         const a = S.at(li, 0, .8);
-        K.text(ctx, name, bx, y - 140, { font: F.serif(900, 28), color: col, alpha: a });
-        K.text(ctx, fml, bx + 2, y - 108, { font: F.serif(500, 19), color: C.gray, alpha: a });
+        K.text(ctx, name, bx, y - 172, { font: F.serif(900, 28), color: col, alpha: a });
+        K.text(ctx, fml, bx + 2, y - 136, { font: F.serif(500, 14), color: C.gray, alpha: a });
         K.line(ctx, bx - 10, y, bx + N * step, y, { p: a, color: rgba(C.gold, .55) });
         for (let i = 0; i < N; i++) {
           const g = S.at(li, .3 + i * .06, .6, easeBack), h = wf(i) * sc * g;
@@ -499,7 +499,7 @@ window.FILM = {
       K.text(ctx, 'ANALYST', 600, 690, { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 8, alpha: a });
       const na = S.at(1, 0, .9);
       ctx.save(); ctx.beginPath(); ctx.rect(860, 330, 900, 110); ctx.clip();
-      K.goldText(ctx, '约瑟夫·葛兰威尔', 880, 420 + (1 - K.expo(na)) * 90, 72, { align: 'left', spacing: 6 });
+      K.goldText(ctx, '约瑟夫·葛兰威尔', 860, 420 + (1 - K.expo(na)) * 90, 52, { align: 'left', spacing: 6 });
       ctx.restore();
       K.text(ctx, 'JOSEPH GRANVILLE', 884, 472, { font: F.latin(500, 24), color: C.gold, spacing: 8, alpha: S.at(1, .4, .8) });
       K.text(ctx, '20世纪 · 华尔街明星分析师', 884, 512, { font: F.serif(500, 22), color: C.gray, spacing: 4, alpha: S.at(0, 1.2, .8) });
@@ -632,7 +632,7 @@ window.FILM = {
           K.marker(ctx, ch.x(i), ch.y(m), { alpha: a, color: col, r: 10, pulse: a > .99 ? (S.t * .8 + k * .3) % 1 : 0 });
           K.arrow(ctx, ch.x(i), ch.y(m) + (li === 1 ? 44 : -44), ch.x(i), ch.y(m) + (li === 1 ? 16 : -16), { alpha: a, color: col, width: 2, head: 10 });
         }
-        K.tag(ctx, ch.box.x + ch.box.w / 2, ch.box.y + ch.box.h + 62, word + (li === 1 ? ' SUPPORT' : ' RESISTANCE'), { alpha: S.at(li, .8, .6) * (1 - S.at(3, 0, .5)), color: col });
+        K.tag(ctx, ch.box.x + ch.box.w / 2, ch.box.y + ch.box.h + 26, word + (li === 1 ? ' SUPPORT' : ' RESISTANCE'), { alpha: S.at(li, .8, .6) * (1 - S.at(3, 0, .5)), color: col });
       }
       K.tag(ctx, 960, 786, '反向穿越均线  →  趋势生变', { alpha: S.at(3, .3, .6), color: C.gold, font: F.serif(700, 22) });
     } },
@@ -711,7 +711,7 @@ window.FILM = {
       if (stamp > 0) {
         const sc = lerp(1.5, 1, stamp), shake = (1 - S.at(1, .3, .6)) * Math.sin(S.t * 60) * 6;
         ctx.save(); ctx.translate(960 + shake, 470); ctx.scale(sc, sc); ctx.globalAlpha = stamp;
-        ctx.font = F.latin(500, 132); ctx.textAlign = 'center'; ctx.letterSpacing = '6px';
+        ctx.font = F.latin(500, 82); ctx.textAlign = 'center'; ctx.letterSpacing = '6px';
         ctx.shadowColor = rgba(C.red, .9); ctx.shadowBlur = 40 + 20 * Math.sin(S.t * 5); ctx.fillStyle = C.red;
         ctx.fillText('SELL EVERYTHING', 0, 0);
         ctx.shadowBlur = 0; ctx.strokeStyle = rgba('#FFD0D0', .5); ctx.lineWidth = 1; ctx.strokeText('SELL EVERYTHING', 0, 0);
