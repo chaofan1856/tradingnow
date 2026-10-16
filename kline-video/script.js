@@ -60,7 +60,7 @@ const TIGHT = [...chop, ...tightRun], chartTIGHT = new K.Chart(TIGHT, BOX);
 
 const GROW_R = K.gen.seq(100, [[.5, .2, .2], [.9, .2, .2], [1.5, .25, .2], [2.3, .3, .25], [3.3, .35, .3], [4.6, .4, .3]]);
 const GROW_G = K.gen.seq(113, [[-.5, .2, .2], [-.9, .2, .2], [-1.5, .2, .25], [-2.3, .25, .3], [-3.3, .3, .35], [-4.6, .3, .4]]);
-const chartGR = new K.Chart(GROW_R, { x: 300, y: 270, w: 560, h: 470 }), chartGG = new K.Chart(GROW_G, { x: 1060, y: 270, w: 560, h: 470 });
+const chartGR = new K.Chart(GROW_R, { x: 300, y: 300, w: 560, h: 380 }), chartGG = new K.Chart(GROW_G, { x: 1060, y: 300, w: 560, h: 380 });
 
 const wideA = K.gen.seq(100, Array.from({ length: 11 }, () => [1.2 + R() * .4, .15, .12]));
 const wideB = K.gen.seq(wideA[wideA.length - 1].c, [[2.2, 3.6, 2.8], [-3.4, 1.8, 3.9], [3.0, 4.2, 2.4], [-4.0, 2.6, 4.4], [2.4, 4.0, 3.5], [-2.8, 3.2, 3.6]]);
@@ -91,7 +91,7 @@ const zig = (chart, path) => [[chart.x(0), chart.y(path.candles[0].o)], ...path.
 window.FILM = {
   title: 'K线与动能博弈',
   transition: 1.1,
-  subtitle: { x: 220, y: 912, size: 42, maxW: 1480 },
+  subtitle: { x: 160, y: 880, size: 48, maxW: 1600 },   // 48 × FS 1.75 = 84px: readable at first glance on a phone
   scenes: [
 
   /* ================= COLD OPEN ================= */
@@ -435,7 +435,7 @@ window.FILM = {
       ch.draw(ctx, S.lin(0, 0, 4.4) * n, { dim: i => i < c0 ? 1 - dim * .7 : 1 });
       const b = S.at(1, 0, 1);
       const yTop = Math.min(...tightRun.map(k => ch.y(k.h))) - 40;
-      K.bracket(ctx, ch.x(c0) - 20, ch.x(n - 1) + 20, yTop, '紧凑排列', { p: b, sub: 'TIGHT · NO MIXED COLOURS' });
+      K.bracket(ctx, ch.x(c0) - 20, ch.x(n - 1) + 20, yTop, '紧凑排列', { p: b });
       // momentum line hugging the run
       const pts = tightRun.map((k, j) => [ch.x(c0 + j), ch.y(k.l) + 26]);
       K.dotted(ctx, pts, S.lin(2, 0, 1.6), { alpha: .8 });
@@ -449,17 +449,17 @@ window.FILM = {
       const pair = [[chartGR, GROW_R, 2, C.red, '买盘疯狂'], [chartGG, GROW_G, 3, C.green, '恐慌抛售']];
       for (const [ch, ks, beat, col, word] of pair) {
         const r = S.lin(beat, -.4, 2.2) * ks.length;
-        K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, 790, { p: S.at(1, 0, 1), step: 40 });
+        K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, 700, { p: S.at(1, 0, 1), step: 40 });
         ch.draw(ctx, r, { glow: .45 });
         // body-size meter under each candle
-        ks.forEach((k, i) => { const g = clamp(r - i); if (g <= 0) return; const h = Math.abs(k.c - k.o) * 12 * easeOut(g); ctx.fillStyle = rgba(col, .65); ctx.fillRect(ch.x(i) - 10, 800, 20, h); });
+        ks.forEach((k, i) => { const g = clamp(r - i); if (g <= 0) return; const h = Math.abs(k.c - k.o) * 12 * easeOut(g); ctx.fillStyle = rgba(col, .65); ctx.fillRect(ch.x(i) - 10, 710, 20, h); });
         const pk = S.at(beat, 1.6, .7);
-        K.arrow(ctx, ch.x(0), 840, ch.x(5) + 30, 840 + 0, { p: pk, alpha: pk * .8, color: col });
+        K.arrow(ctx, ch.x(0), 778, ch.x(5) + 30, 778, { p: pk, alpha: pk * .8, color: col });
         K.text(ctx, word, ch.box.x + ch.box.w / 2, 262, { font: F.serif(900, 32), color: col, align: 'center', alpha: pk, glow: .4, glowColor: col });
       }
       const peak = S.at(4, 0, .9);
       K.tag(ctx, 960, 500, '动能极盛', { alpha: peak, color: C.gold, font: F.serif(700, 24) });
-    }, subY: 1000 },
+    } },
 
   { id: 'wide', header: { ...H3, sub: '动能衰竭 · Momentum Loss' }, tr: 'sweep', camera: { z0: 1.0, z1: 1.05 },
     lines: ['动能衰竭 · 信号一：{宽幅震荡}（Wide Swings）。', '在一段紧凑趋势后，突然出现剧烈的上下波动与长影线。', '主导方正在{失去绝对控制权}，', '对手盘大规模反扑，趋势随时可能{终结}。'],
@@ -477,7 +477,7 @@ window.FILM = {
       if (zone > 0) {
         const x0 = ch.x(a0) - 30, x1 = ch.x(n - 1) + 30;
         ctx.fillStyle = rgba(C.gold, .07 * zone); ctx.fillRect(x0, BOX.y - 20, (x1 - x0) * zone, BOX.h + 40);
-        K.bracket(ctx, x0, x1, BOX.y - 30, '宽幅震荡', { p: zone });
+        K.bracket(ctx, x0, x1, BOX.y + 40, '宽幅震荡', { p: zone });
       }
       const ctl = S.at(2, 0, .8);
       K.tag(ctx, ch.x(a0 + 3), BOX.y + BOX.h - 10, '控制权松动', { alpha: ctl, color: C.gold });

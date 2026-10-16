@@ -59,7 +59,7 @@ function mix(c1, c2, t) { const a = hex(c1), b = hex(c2); return '#' + a.map((v,
 /* ---------- fonts ---------- */
 // Every on-screen text size is multiplied by FS so subtitles and labels read on a phone.
 // The watermark (brand) is deliberately NOT scaled. A film may override with FILM.fontScale.
-const FS = () => (window.FILM && window.FILM.fontScale) || 1.55;
+const FS = () => (window.FILM && window.FILM.fontScale) || 1.75;
 const F = {
   serif: (w, s) => `${w} ${(s * FS()).toFixed(1)}px SerifSC, LatinSerif, serif`,
   latin: (w, s) => `${w} ${(s * FS()).toFixed(1)}px LatinSerif, SerifSC, serif`,
@@ -141,8 +141,13 @@ const K = {
         if (a > 0.002) {
           ctx.globalAlpha = a;
           ctx.fillStyle = c.col;
-          if (c.col !== C.white) { ctx.shadowColor = rgba(c.col, .45 * a); ctx.shadowBlur = 14; } else ctx.shadowBlur = 0;
-          ctx.fillText(c.ch, x, y + (1 - p) * 10);
+          const yy = y + (1 - p) * 10;
+          ctx.lineJoin = 'round'; ctx.lineWidth = 7; ctx.strokeStyle = `rgba(0,0,0,${(.8 * a).toFixed(3)})`;   // dark outline: readable on any background, on a phone
+          ctx.shadowColor = 'rgba(0,0,0,.85)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 3;
+          ctx.strokeText(c.ch, x, yy);
+          ctx.shadowOffsetY = 0;
+          if (c.col !== C.white) { ctx.shadowColor = rgba(c.col, .5 * a); ctx.shadowBlur = 16; } else ctx.shadowBlur = 0;
+          ctx.fillText(c.ch, x, yy);
         }
         x += c.w; k++;
       }

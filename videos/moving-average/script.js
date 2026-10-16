@@ -214,7 +214,7 @@ window.FILM = {
   title: '趋势指挥官：均线',
   transition: 1.1,
   timing: { perChar: 0.14, base: 1.2, minLine: 2.4, pre: 0.8, post: 0.9 },
-  subtitle: { x: 220, y: 912, size: 42, maxW: 1480 },
+  subtitle: { x: 160, y: 880, size: 48, maxW: 1600 },   // 48 × FS 1.75 = 84px: readable at first glance on a phone
   scenes: [
 
   /* ================= COLD OPEN ================= */
