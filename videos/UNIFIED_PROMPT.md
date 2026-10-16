@@ -22,7 +22,7 @@
    每个知识点都要有专门设计的原创动画（K线/均线/成交量等图表用真实计算，示意图标注“示意”）。
 6. 硬性规则：
    - 时长 ≤ 5 分钟（node render.mjs --timeline 查看）。知识点太长就精简措辞，核心不丢。
-   - 左上角水印 = 频道 Logo 原图 assets/logo.png，绝不重绘、改色、改形；全部文字 1.55 倍大（引擎已内置），手机一眼可读。
+   - 左上角水印 = 频道 Logo 原图 assets/logo.png，绝不重绘、改色、改形；全部文字 1.75 倍大（引擎已内置），手机一眼可读。
    - 画面全部原创绘制：不使用或临摹任何照片、纪录片画面、书籍封面、公司/平台 Logo、真人肖像；人物只用名字或无脸剪影。
    - 史实按知识点使用；流传或有争议的说法写“相传 / 一般认为 / 据说”，明显错误的年份人物要纠正。
    - 红 = 多头/上涨，绿 = 空头/下跌（中国市场习惯）。
@@ -44,7 +44,7 @@
 12. 写 web/youtube.json（标题 + 简介：章节时间点取自 timeline.json + 风险提示 + #标签），抽标题卡一帧做 web/poster.jpg。
 13. python3 tools/web_build.py 生成 web/page_1..N.html；依次用 Artifact 发布每一页（capabilities {assets:{}, downloads:true}，files 带 poster.jpg，icon video），
     URL 按顺序写入 web/links.json；附件块用 asset:true + file_paths（每次 ≤25）上传到对应页并把 /_blob/ 地址写入 web/asset_urls.json；
-    发布文件块随该页发布（每次 ≤4 个 / ≤64MB）。附件存储满了就把剩余块改为 15MB 发布文件块或开下一页。
+    发布文件块随该页发布（每次 ≤4 个 / ≤64MB）。附件存储满了就把剩余块改为 15MB 发布文件块或开下一页；个别附件块若被拒（unsupported_type），把它拆成 256KB 发布文件块 + 其余部分的附件块，并在 plan.json 中原位替换。
     全部上传后 web_build.py 显示 missing: 0，再用同一路径重新发布每一页。
 14. 清理 segs、video.mp4、web/pieces 释放磁盘；提交并推送分支（大文件已在 .gitignore 里，绝不提交 mp4/wav）。
 15. 最后只发给我：每支视频的标题、时长、规格，以及按步骤顺序排列的下载网页链接（第 1 步…第 N 步，最后一步合成完整 4K60 MP4 并保存）。
