@@ -20,7 +20,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const DIR = path.dirname(fileURLToPath(import.meta.url));
-const PORT = 9341;
+const PORT = +process.env.CDP_PORT || 9341 + Math.floor(Math.random() * 600);   // random so parallel runs never collide
 const W = 1920, H = 1080, FPS = 60, CHUNK = 300;
 
 const argv = process.argv.slice(2);
