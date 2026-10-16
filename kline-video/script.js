@@ -304,7 +304,7 @@ window.FILM = {
         ctx.beginPath(); ctx.moveTo(cx - 70, py(0)); ctx.lineTo(cx + 70, py(0)); ctx.stroke(); ctx.restore();
       }
       K.tag(ctx, cx, 205, '十字星 · DOJI', { alpha: S.at(1, .6, .7) });
-      K.text(ctx, '开盘价 ≈ 收盘价', cx + 110, py(0) + 9, { font: F.serif(700, 24), color: C.goldHi, alpha: S.at(1, 1, .7) });
+      K.text(ctx, '开盘价 ≈ 收盘价', cx + 110, py(0) + 9, { font: F.serif(700, 24), color: C.goldHi, alpha: S.at(1, 1, .7) * (1 - S.at(4, 0, .6)) });
       // tug of war
       const war = S.at(3, 0, .8) * (1 - S.at(4, .8, .8)), osc = Math.sin((S.t - S.beat(3)) * 7) * 10;
       K.arrow(ctx, cx, py(0) - 40, cx, py(1) - 10 - osc, { p: war, alpha: war, color: C.red, width: 3 });
@@ -455,7 +455,7 @@ window.FILM = {
         ks.forEach((k, i) => { const g = clamp(r - i); if (g <= 0) return; const h = Math.abs(k.c - k.o) * 12 * easeOut(g); ctx.fillStyle = rgba(col, .65); ctx.fillRect(ch.x(i) - 10, 800, 20, h); });
         const pk = S.at(beat, 1.6, .7);
         K.arrow(ctx, ch.x(0), 840, ch.x(5) + 30, 840 + 0, { p: pk, alpha: pk * .8, color: col });
-        K.text(ctx, word, ch.box.x + ch.box.w / 2, 235, { font: F.serif(900, 32), color: col, align: 'center', alpha: pk, glow: .4, glowColor: col });
+        K.text(ctx, word, ch.box.x + ch.box.w / 2, 262, { font: F.serif(900, 32), color: col, align: 'center', alpha: pk, glow: .4, glowColor: col });
       }
       const peak = S.at(4, 0, .9);
       K.tag(ctx, 960, 500, '动能极盛', { alpha: peak, color: C.gold, font: F.serif(700, 24) });
@@ -472,12 +472,12 @@ window.FILM = {
       ctx.save(); ctx.translate(shake, 0);
       ch.draw(ctx, r);
       ctx.restore();
-      K.bracket(ctx, ch.x(0) - 10, ch.x(a0 - 1) + 10, ch.y(wideA[0].l) + 60, '紧凑趋势', { up: false, p: S.at(0, 1.6, .8), labelColor: C.gray });
+      K.bracket(ctx, ch.x(0) - 10, ch.x(a0 - 1) + 10, ch.y(wideA[a0 - 1].h) - 40, '紧凑趋势', { p: S.at(0, 1.6, .8), labelColor: C.gray });
       const zone = S.at(1, 1.4, .9);
       if (zone > 0) {
         const x0 = ch.x(a0) - 30, x1 = ch.x(n - 1) + 30;
         ctx.fillStyle = rgba(C.gold, .07 * zone); ctx.fillRect(x0, BOX.y - 20, (x1 - x0) * zone, BOX.h + 40);
-        K.bracket(ctx, x0, x1, BOX.y - 30, '宽幅震荡', { p: zone, sub: 'WIDE SWINGS' });
+        K.bracket(ctx, x0, x1, BOX.y - 30, '宽幅震荡', { p: zone });
       }
       const ctl = S.at(2, 0, .8);
       K.tag(ctx, ch.x(a0 + 3), BOX.y + BOX.h - 10, '控制权松动', { alpha: ctl, color: C.gold });
@@ -515,7 +515,7 @@ window.FILM = {
       K.dash(ctx, ch.x(2) - 30, ch.y(prevHi), ch.x(n - 1) + 120, ch.y(prevHi), { p: la, alpha: .8 });
       K.text(ctx, '前高', ch.x(n - 1) + 140, ch.y(prevHi) + 8, { font: F.serif(700, 22), color: C.goldHi, alpha: la });
       const gx = ch.x(g), hit = S.at(2, 1.0, .5);
-      K.marker(ctx, gx, ch.y(CC[g].h) - 16, { alpha: hit, label: '未创新高 ×', pos: 'left', color: C.green, labelColor: C.green, pulse: clamp((S.t - S.beat(2) - 1) % 1.5 / 1.5) * (hit > .99 ? 1 : 0) });
+      K.marker(ctx, gx, ch.y(CC[g].h) - 16, { alpha: hit, label: '未创新高 ×', pos: 'above', color: C.green, labelColor: C.green, pulse: clamp((S.t - S.beat(2) - 1) % 1.5 / 1.5) * (hit > .99 ? 1 : 0) });
       // the momentum wall
       const wall = S.at(4, 0, .9);
       if (wall > 0) {

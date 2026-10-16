@@ -57,10 +57,13 @@ function rgba(c, a = 1) { const [r, g, b] = hex(c); return `rgba(${r},${g},${b},
 function mix(c1, c2, t) { const a = hex(c1), b = hex(c2); return '#' + a.map((v, i) => Math.round(lerp(v, b[i], clamp(t))).toString(16).padStart(2, '0')).join(''); }
 
 /* ---------- fonts ---------- */
+// Every on-screen text size is multiplied by FS so subtitles and labels read on a phone.
+// The watermark (brand) is deliberately NOT scaled. A film may override with FILM.fontScale.
+const FS = () => (window.FILM && window.FILM.fontScale) || 1.55;
 const F = {
-  serif: (w, s) => `${w} ${s}px SerifSC, LatinSerif, serif`,
-  latin: (w, s) => `${w} ${s}px LatinSerif, SerifSC, serif`,
-  mono: s => `300 ${s}px MonoL, monospace`,
+  serif: (w, s) => `${w} ${(s * FS()).toFixed(1)}px SerifSC, LatinSerif, serif`,
+  latin: (w, s) => `${w} ${(s * FS()).toFixed(1)}px LatinSerif, SerifSC, serif`,
+  mono: s => `300 ${(s * FS()).toFixed(1)}px MonoL, monospace`,
   brand: s => `600 ${s}px BrandSans, sans-serif`,
 };
 
@@ -102,7 +105,7 @@ const K = {
   /** rich subtitle markup: {gold}  [red]  <green> ; reveal is per-character.
    *  o: {size, weight, x, y, maxW, lh, align, t (seconds since line start), out (0..1 fade-out), stagger} */
   rich(ctx, markup, o) {
-    const size = o.size || 42, weight = o.weight || 700, lh = o.lh || size * 1.38;
+    const size = o.size || 42, weight = o.weight || 700, lh = o.lh || size * FS() * 1.32;
     ctx.save();
     ctx.font = F.serif(weight, size);
     const chars = [];
@@ -115,8 +118,15 @@ const K = {
     }
     // wrap (never start a line with closing punctuation)
     const lines = [[]]; let lw = 0; const maxW = o.maxW || 1480;
+    const word = ch => /[A-Za-z0-9.%$'-]/.test(ch);
     for (const c of chars) {
-      if (lw + c.w > maxW && !'，。、：；！？）」』—'.includes(c.ch)) { lines.push([]); lw = 0; }
+      if (lw + c.w > maxW && !'，。、：；！？）」』—'.includes(c.ch)) {
+        const cur = lines[lines.length - 1];
+        let k = cur.length;                                  // never split an English word / number: carry it to the next line
+        if (word(c.ch)) while (k > 0 && word(cur[k - 1].ch)) k--;
+        const carry = k > 0 && k < cur.length ? cur.splice(k) : [];
+        lines.push(carry); lw = carry.reduce((s, x) => s + x.w, 0);
+      }
       lines[lines.length - 1].push(c); lw += c.w;
     }
     const total = lines.length, stagger = o.stagger ?? 0.022, t = o.t ?? 99, out = clamp(o.out ?? 0);
@@ -254,8 +264,8 @@ const K = {
     ctx.strokeStyle = col; ctx.lineWidth = 1.3;
     ctx.beginPath(); ctx.moveTo(cx - half, y + 10 * s); ctx.lineTo(cx - half, y); ctx.lineTo(cx + half, y); ctx.lineTo(cx + half, y + 10 * s); ctx.stroke();
     ctx.restore();
-    if (label) K.text(ctx, label, cx, y - (up ? 16 : -32), { font: o.font || F.serif(700, 24), color: o.labelColor || C.goldHi, align: 'center', alpha: (o.alpha ?? 1) * clamp((o.p ?? 1) * 2 - 1) });
-    if (o.sub) K.text(ctx, o.sub, cx, y - (up ? 46 : -58), { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 1, alpha: (o.alpha ?? 1) * clamp((o.p ?? 1) * 2 - 1) });
+    if (label) K.text(ctx, label, cx, y - (up ? 16 : -12 - 24 * FS()), { font: o.font || F.serif(700, 24), color: o.labelColor || C.goldHi, align: 'center', alpha: (o.alpha ?? 1) * clamp((o.p ?? 1) * 2 - 1) });
+    if (o.sub) K.text(ctx, o.sub, cx, y - (up ? 16 + 30 * FS() : -32 - 30 * FS()), { font: F.latin(500, 18), color: C.gray, align: 'center', spacing: 1, alpha: (o.alpha ?? 1) * clamp((o.p ?? 1) * 2 - 1) });
   },
 
   /** vertical brace on the right of [y1,y2] at x with label */
@@ -350,19 +360,11 @@ K.Chart = class {
 };
 
 /* ---------- brand watermark (TN mark + wordmark) — always top-left ---------- */
-function drawWatermark(ctx, x, y, s, alpha, color = C.brand) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color;
-  ctx.translate(x, y); ctx.scale(s / 80, s / 80);          // mark designed in an 100×80 box
-  ctx.beginPath();
-  ctx.moveTo(12, 0); ctx.lineTo(62, 0); ctx.lineTo(62, 20); ctx.lineTo(44, 20); ctx.lineTo(44, 80); ctx.lineTo(24, 80); ctx.lineTo(24, 20);
-  ctx.lineTo(12, 20); ctx.arc(12, 10, 10, Math.PI / 2, Math.PI * 1.5); ctx.closePath();   // T with a rounded left cap
-  ctx.moveTo(50, 28); ctx.lineTo(66, 28); ctx.lineTo(84, 58); ctx.lineTo(84, 0); ctx.lineTo(100, 0); ctx.lineTo(100, 80);
-  ctx.lineTo(86, 80); ctx.lineTo(66, 48); ctx.lineTo(66, 80); ctx.lineTo(50, 80); ctx.closePath();                        // N
-  ctx.fill();
-  ctx.restore();
-  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.font = F.brand(s * 1.12); ctx.textBaseline = 'alphabetic';
-  ctx.fillText('TradingNow', x + s * 1.42, y + s * .98);
-  ctx.restore();
+function drawWatermark(ctx, x, y, s, alpha) {             // the channel's own logo (assets/logo.png), never redrawn
+  const L = document.getElementById('logo');
+  if (!L || !L.naturalWidth) return;
+  const h = s * 1.2, w = h * L.naturalWidth / L.naturalHeight;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.drawImage(L, x, y, w, h); ctx.restore();
 }
 K.watermark = drawWatermark;
 </script>
@@ -516,7 +518,7 @@ function drawScene(c, sc, t) {                       // visual + subtitle of one
       const st = FILM.subtitle || {};
       K.rich(c, lineText(sc.lines[li]), {
         x: sc.subX ?? st.x ?? 220, y: sc.subY ?? st.y ?? 912, size: st.size || 42, maxW: st.maxW || 1480, align: sc.subAlign || st.align,
-        t: t - start, out: (t - (end - .3)) / .3,
+        t: t - start, out: (t - (end - .3)) / .3, anchorTop: true,   // 2-line subtitles grow downward, never into the picture
       });
     }
   }
@@ -646,7 +648,7 @@ window.seek = function seek(frame) {
   const fin = clamp(time / 1.0), fout = clamp((T - time) / 1.4), fade = Math.min(fin, fout);
   if (fade < 1) { ctx.fillStyle = `rgba(0,0,0,${1 - fade})`; ctx.fillRect(0, 0, W, H); }
   const wm = (A ? (A.noWatermark && B.noWatermark) : sc.noWatermark) ? 0 : 1;
-  if (wm) drawWatermark(ctx, 120, 36, 17, .88 * Math.min(1, clamp((time - .6) / .8)));
+  if (wm) drawWatermark(ctx, 120, 34, 26, .88 * Math.min(1, clamp((time - .6) / .8)));
   return f;
 };
 
