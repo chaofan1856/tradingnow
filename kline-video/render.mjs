@@ -81,7 +81,7 @@ async function openPage(cdp) {
   await evalJS('window.ASSETS_READY');
   const shot = async f => {
     await evalJS(`window.seek(${f})`);
-    const { data } = await S('Page.captureScreenshot', { format: 'jpeg', quality: PREVIEW ? 88 : +(process.env.JPEGQ || 92), optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
+    const { data } = await S('Page.captureScreenshot', { format: 'jpeg', quality: PREVIEW ? 88 : +(process.env.JPEGQ || 100), optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
     return Buffer.from(data, 'base64');
   };
   return { evalJS, shot };
@@ -91,7 +91,7 @@ async function openPage(cdp) {
 function encoder(file) {
   const v = PREVIEW
     ? ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20']
-    : ['-c:v', 'libx264', '-preset', process.env.PRESET || 'fast', '-crf', process.env.CRF || '16', '-profile:v', 'high', '-level', '5.2', '-x264-params', 'aq-mode=3:deblock=-1,-1:psy-rd=1.0,0.15'];
+    : ['-c:v', 'libx264', '-preset', process.env.PRESET || 'medium', '-crf', process.env.CRF || '12', '-tune', 'grain', '-profile:v', 'high', '-level', '5.2'];
   const p = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-c:v', 'mjpeg', '-framerate', String(FPS), '-i', '-',
     ...v, '-threads', process.env.X264_THREADS || '1', '-g', String(FPS * 2), '-bf', '2', '-pix_fmt', 'yuv420p', '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
     '-vf', 'scale=in_range=full:out_range=tv:in_color_matrix=bt709:out_color_matrix=bt709', '-movflags', '+faststart', file], { stdio: ['pipe', 'inherit', 'inherit'] });
