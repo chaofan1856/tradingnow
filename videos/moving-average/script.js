@@ -429,11 +429,11 @@ window.FILM = {
       // noisy radar fixes behind the rocket, and their exponential smoothing
       const NB = 40, R = K.rng(23), blips = [];
       for (let i = 0; i < NB; i++) { const [x, y] = traj(i / (NB - 1)); blips.push([x + (R() - .5) * 46, y + (R() - .5) * 60]); }
-      const seen = Math.floor(clamp((u - .02) / .98) * NB * S.at(1, 0, .01));
+      const seen = Math.floor(clamp((u - .02) / .98) * NB * S.at(1, 0, .6));
       const k = .3, sm = []; let ex = blips[0][0], ey = blips[0][1];
       for (let i = 0; i < seen; i++) { if (i) { ex = k * blips[i][0] + (1 - k) * ex; ey = k * blips[i][1] + (1 - k) * ey; } sm.push([ex, ey]); }
       for (let i = 0; i < seen; i++) K.marker(ctx, blips[i][0], blips[i][1], { r: 4, alpha: .75, color: C.white });
-      curve(ctx, sm, S.at(2, 0, .01), { width: 3.5, glow: .9 });
+      curve(ctx, sm, S.at(2, 0, 1.2), { width: 3.5, glow: .9 });
       rocket(ctx, rx, ry, Math.atan2(traj(Math.min(1, u + .01))[1] - ry, traj(Math.min(1, u + .01))[0] - rx) + Math.PI / 2, 1.05, ga, S.t, u > 0 && u < 1 ? 1 : (u >= 1 ? .6 : .25));
       K.tag(ctx, 640, 250, 'P. N. HAURLAN  ·  1960s', { alpha: S.at(0, .4, .7), font: F.serif(700, 20) });
       const sl = S.at(2, .6, .7);
@@ -469,9 +469,9 @@ window.FILM = {
       K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1), step: 40 });
       ch.draw(ctx, r, { dim: () => .55, glow: .2 });
       const mp = maPts(ch, VT_MA, off, r), ep = maPts(ch, VT_EMA, off, r);
-      const lp = S.at(0, 0, .01);
+      const lp = S.at(0, 0, 1.0);
       dots(ctx, mp, lp, { color: C.gold, r: 2, gap: 6 });
-      curve(ctx, ep, lp * S.at(1, 0, .01), { width: 3.2 });
+      curve(ctx, ep, lp * S.at(1, 0, 1.0), { width: 3.2 });
       maLabel(ctx, mp, 'MA10', S.at(0, 3, .6), C.gold, 22);
       maLabel(ctx, ep, 'EMA10', S.at(1, .4, .6), C.goldHi, -12);
       // turning points: first index after the low where each line rises
@@ -618,7 +618,7 @@ window.FILM = {
       for (const [ch, d, ma, li, col, title, word] of pair) {
         const r = S.lin(0, (li - 1) * .5, 2.6) * ch.k.length;
         K.baseline(ctx, ch.box.x, ch.box.x + ch.box.w, ch.box.y + ch.box.h + 24, { p: S.at(0, 0, 1), step: 40 });
-        ch.draw(ctx, r, { glow: .25, dim: () => 1 - (S.after(li) ? 0 : .35) });
+        ch.draw(ctx, r, { glow: .25, dim: () => 1 - .35 * (1 - S.at(li, 0, .6)) });
         const pts = maPts(ch, ma, d.warm, r);
         curve(ctx, pts, 1, { width: 3.4 });
         K.text(ctx, title, ch.box.x + ch.box.w / 2, 262, { font: F.serif(900, 28), color: col, align: 'center', alpha: S.at(li, 0, .7), glow: .3, glowColor: col });
@@ -705,8 +705,8 @@ window.FILM = {
       }
       ctx.restore();
       K.tag(ctx, 960, 262, '1981.01.06  ·  夜', { alpha: S.at(0, .2, .7), font: F.serif(700, 22) });
-      K.text(ctx, '· · ·   ·   · — · ·   · — · ·', 1180, 600, { font: F.latin(500, 26), color: C.gold, align: 'center', spacing: 2, alpha: S.at(0, 1.4, .8) * dimKey });
-      K.text(ctx, 'S   E   L   L', 1180, 560, { font: F.latin(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: S.at(0, 1.6, .8) * dimKey });
+      K.text(ctx, '', 1180, 600, { font: F.latin(500, 26), color: C.gold, align: 'center', spacing: 2, alpha: S.at(0, 1.4, .8) * dimKey });
+      K.text(ctx, '', 1180, 560, { font: F.latin(500, 20), color: C.gray, align: 'center', spacing: 6, alpha: S.at(0, 1.6, .8) * dimKey });
       // SELL EVERYTHING stamp
       if (stamp > 0) {
         const sc = lerp(1.5, 1, stamp), shake = (1 - S.at(1, .3, .6)) * Math.sin(S.t * 60) * 6;

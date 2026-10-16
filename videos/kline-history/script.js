@@ -683,7 +683,7 @@ window.FILM = {
       const names = ['三山', '三川', '三空', '三兵', '三法'];
       names.forEach((n, i) => {
         const a = S.at(0, .3 + i * .25, .6, easeBack), hl = i === 0 ? S.at(1, 0, .6) * (1 - S.at(3, 0, .5)) : i === 1 ? S.at(2, 0, .6) * (1 - S.at(3, 0, .5)) : S.at(3, (i - 2) * .3, .5);
-        K.tag(ctx, 560 + i * 200, 250 - (1 - clamp(a)) * 20, n, { alpha: clamp(a) * (hl > 0 ? 1 : (S.after(1) ? .55 : 1)), color: hl > 0 ? C.goldHi : C.gold, font: F.serif(700, 26) });
+        K.tag(ctx, 560 + i * 200, 250 - (1 - clamp(a)) * 20, n, { alpha: clamp(a) * (hl > 0 ? 1 : 1 - .45 * S.at(1, 0, .5)), color: hl > 0 ? C.goldHi : C.gold, font: F.serif(700, 26) });
       });
       const pair = [[chSANZAN, SANZAN, 1, '三山 · 顶部', C.green, 'H'], [chSANSEN, SANSEN, 2, '三川 · 底部', C.red, 'L']];
       for (const [ch, P, beat, label, col, kind] of pair) {
@@ -883,10 +883,10 @@ window.FILM = {
       // a traffic light that keeps changing its mind
       const tl = S.at(0, .8, .8);
       if (tl > 0) {
-        const x = 960, y = 330, phase = S.after(2) ? 1 : S.after(1) ? 0 : (Math.sin(t * 2) > 0 ? 1 : 0);
+        const x = 960, y = 330, blink = .5 + .5 * Math.sin(t * 2), phase = lerp(lerp(blink, 0, S.at(1, 0, .5)), 1, S.at(2, 0, .5));   // red weight, eased: the lights cross-fade, never snap
         panel(ctx, x - 55, y, 110, 300, { alpha: tl, r: 22, fill: 'rgba(12,10,8,.95)', line: .6 });
-        [[C.red, y + 60, phase === 1], ['#D9A43A', y + 150, false], [C.green, y + 240, phase === 0]].forEach(([col, ly, on]) => {
-          ctx.save(); ctx.globalAlpha *= tl; ctx.fillStyle = on ? col : rgba(col, .16); if (on) { ctx.shadowColor = col; ctx.shadowBlur = 40; }
+        [[C.red, y + 60, phase], ['#D9A43A', y + 150, 0], [C.green, y + 240, 1 - phase]].forEach(([col, ly, on]) => {
+          ctx.save(); ctx.globalAlpha *= tl; ctx.fillStyle = rgba(col, .16 + .84 * on); ctx.shadowColor = col; ctx.shadowBlur = 40 * on;
           ctx.beginPath(); ctx.arc(x, ly, 34, 0, TAU); ctx.fill(); ctx.restore();
         });
         K.text(ctx, '同一颜色 · 不同含义', x, 700, { font: F.serif(700, 24), color: C.goldHi, align: 'center', alpha: tl });

@@ -466,7 +466,7 @@ window.FILM = {
     visual(ctx, S) {
       const ch = chartWIDE, n = WIDE.length, a0 = wideA.length;
       K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      const r = S.at(1, -.2, .01) > 0 ? a0 + S.lin(1, 0, 2.6) * (n - a0) : S.lin(0, 0, 2.2) * a0;
+      const r = S.lin(0, 0, 2.2) * a0 + S.lin(1, 0, 2.6) * (n - a0);
       // shake the camera a touch as the wide candles land
       const shake = r > a0 ? Math.sin(S.t * 31) * 2.5 * (1 - S.at(2, 0, 1)) : 0;
       ctx.save(); ctx.translate(shake, 0);
@@ -508,7 +508,7 @@ window.FILM = {
     visual(ctx, S) {
       const ch = chartCC, n = CC.length, g = 7;
       K.baseline(ctx, BOX.x, BOX.x + BOX.w, BOX.y + BOX.h + 30, { p: S.at(0, 0, 1) });
-      const r = S.after(2) ? g + S.lin(2, .3, .8) * (n - g) : S.lin(0, 0, 3.2) * g;
+      const r = S.lin(0, 0, 3.2) * g + S.lin(2, .3, .8) * (n - g);
       ch.draw(ctx, r, { glow: .4, dim: i => i < g ? 1 - S.at(3, 0, 1) * .45 : 1 });
       const prevHi = Math.max(...CC.slice(0, g).map(k => k.h));
       const la = S.at(2, 0, .8);

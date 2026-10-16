@@ -469,10 +469,10 @@ function drawHeader(h, a, dy = 0) {
   const lw = ctx.measureText(h.label || '模块').width;
   if (h.num != null) K.goldText(ctx, String(h.num), 120 + lw + 14, 157, 52, { align: 'left', glow: .6 });
   if (h.sub) K.text(ctx, h.sub, 121, 190, { font: F.serif(500, 19), color: C.gray, spacing: 2 });
-  if (h.en) K.text(ctx, h.en, 1800, 112, { font: `italic ${F.latin(500, 19)}`, color: C.gray, align: 'right', spacing: .5 });
+  if (h.en) K.text(ctx, h.en, 1800, 96, { font: `italic ${F.latin(500, 19)}`, color: C.gray, align: 'right', spacing: .5 });
   if (h.zh) {
-    K.text(ctx, h.zh, 1780, 148, { font: F.serif(700, 23), color: C.white, align: 'right' });
-    ctx.fillStyle = '#C8343A'; ctx.fillRect(1790, 133, 8, 8);
+    K.text(ctx, h.zh, 1780, 156, { font: F.serif(700, 23), color: C.white, align: 'right' });
+    ctx.fillStyle = '#C8343A'; ctx.fillRect(1790, 139, 9, 9);
   }
   ctx.restore();
 }
@@ -645,8 +645,8 @@ window.seek = function seek(frame) {
   // header: persists when unchanged, otherwise the old one lifts away as the new one settles
   if (A && !sameHeader(A.header, B.header)) {
     const e = easeInOut(p);
-    drawHeader(A.header, 1 - clamp(e * 1.6), -14 * e);
-    drawHeader(B.header, clamp(e * 1.6 - .6), 14 * (1 - e));
+    drawHeader(A.header, 1 - clamp(e * 2.2), -14 * e);            // old header is fully gone before the new one appears: text never overlaps
+    drawHeader(B.header, clamp((e - .5) * 2.2), 14 * (1 - e));
   } else drawHeader(sc.header, 1);
 
   // film in / out
