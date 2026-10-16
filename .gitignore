@@ -16,3 +16,11 @@ kline-video/render.log
 kline-video/bgm.wav
 kline-video/web/pieces/
 kline-video/web/tail/
+videos/*/segs/
+videos/*/segs-test/
+videos/*/stills/
+videos/*/video.mp4
+videos/*/成片/
+videos/*/web/pieces/
+videos/*/bgm.wav
+videos/*/render.log

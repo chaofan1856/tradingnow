@@ -11,6 +11,7 @@
 //   node render.mjs --preview           1080p, fast encode       -> 成片/preview-1080p.mp4 (separate cache)
 //   node render.mjs --stills 3.5,40     PNG-quality JPEG stills at these seconds -> stills/
 //   node render.mjs --timeline          only write timeline.json (for the score)
+//   node render.mjs --shard 2/4         render only quarter 2 of 4 (multi-session rendering, see PIPELINE.md); no stitch
 import { spawn, execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -30,6 +31,8 @@ const WORKERS = parseInt(arg('--workers') || String(Math.max(2, os.cpus().length
 const ONLY = arg('--only')?.split(',');
 const STILLS = arg('--stills')?.split(',').map(Number).filter(Number.isFinite);
 const TIMELINE_ONLY = argv.includes('--timeline');
+const SHARD = arg('--shard')?.split('/').map(Number);      // --shard 2/4 → render only the 2nd of 4 contiguous quarters (for multi-session rendering)
+const STALL_MS = 120000;                                    // a frame that takes longer than this = hung tab → reopen it and redo the chunk
 const SEG_DIR = path.join(DIR, PREVIEW ? 'segs-preview' : 'segs');
 
 /* ---------- browser ---------- */
@@ -80,11 +83,18 @@ async function openPage(cdp) {
   };
   await evalJS('window.ASSETS_READY');
   const shot = async f => {
-    await evalJS(`window.seek(${f})`);
-    const { data } = await S('Page.captureScreenshot', { format: 'jpeg', quality: PREVIEW ? 88 : +(process.env.JPEGQ || 100), optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
-    return Buffer.from(data, 'base64');
+    let timer;
+    const stall = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`stalled on frame ${f}`)), STALL_MS); });
+    try {
+      return await Promise.race([stall, (async () => {
+        await evalJS(`window.seek(${f})`);
+        const { data } = await S('Page.captureScreenshot', { format: 'jpeg', quality: PREVIEW ? 88 : +(process.env.JPEGQ || 100), optimizeForSpeed: true, clip: { x: 0, y: 0, width: W, height: H, scale: 1 } });
+        return Buffer.from(data, 'base64');
+      })()]);
+    } finally { clearTimeout(timer); }
   };
-  return { evalJS, shot };
+  const close = () => cdp.send('Target.closeTarget', { targetId }).catch(() => {});
+  return { evalJS, shot, close };
 }
 
 /* ---------- encoder per chunk ---------- */
@@ -116,7 +126,8 @@ async function main() {
     const first = await openPage(cdp);
     const total = await first.evalJS('window.TOTAL_FRAMES');
     const timeline = await first.evalJS('window.TIMELINE');
-    fs.writeFileSync(path.join(DIR, 'timeline.json'), JSON.stringify({ fps: FPS, frames: total, seconds: total / FPS, scenes: timeline }, null, 1));
+    const title = await first.evalJS('window.FILM.title');
+    fs.writeFileSync(path.join(DIR, 'timeline.json'), JSON.stringify({ title, fps: FPS, frames: total, seconds: total / FPS, scenes: timeline }, null, 1));
     console.log(`film: ${total} frames = ${(total / FPS).toFixed(1)} s, ${timeline.length} scenes, ${DSF === 2 ? '3840×2160' : '1920×1080'}`);
     if (TIMELINE_ONLY) return;
 
@@ -136,34 +147,51 @@ async function main() {
     for (const sc of timeline) for (let a = sc.f0; a < sc.f1; a += CHUNK) chunks.push({ scene: sc.id, a, b: Math.min(a + CHUNK, sc.f1) });
     chunks.forEach((c, i) => { c.file = path.join(SEG_DIR, `c${String(i).padStart(4, '0')}_${c.a}-${c.b}.mp4`); c.key = `${c.a}-${c.b}`; });
     // a chunk is fresh if: same range, file exists, and (it belongs to a scene we're not forcing) and (hash matches OR --only given and scene not listed)
-    const todo = chunks.filter(c => {
+    let todo = chunks.filter(c => {
       const ok = fs.existsSync(c.file) && man[c.key];
       if (ONLY) return ONLY.includes(c.scene) || !ok;
       return !(ok && man[c.key] === hash);
     });
+    if (SHARD) {                                            // contiguous, frame-balanced quarter of the film
+      const [k, n] = SHARD, lo = Math.round(total * (k - 1) / n), hi = Math.round(total * k / n);
+      const mine = new Set(chunks.filter(c => { const mid = (c.a + c.b) / 2; return mid >= lo && mid < hi; }).map(c => c.key));
+      todo = todo.filter(c => mine.has(c.key));
+      console.log(`shard ${k}/${n}: frames ~${lo}-${hi}, ${mine.size} chunks`);
+    }
     console.log(`chunks: ${chunks.length} total, ${todo.length} to render, ${WORKERS} workers`);
 
     const pages = [first]; for (let i = 1; i < Math.min(WORKERS, todo.length); i++) pages.push(await openPage(cdp));
     const t0 = performance.now(); let framesDone = 0; const framesTodo = todo.reduce((s, c) => s + c.b - c.a, 0);
     let next = 0;
-    await Promise.all(pages.map(async pg => {
+    await Promise.all(pages.map(async (pg, w) => {
       while (next < todo.length) {
         const c = todo[next++];
-        const enc = encoder(c.file + '.part.mp4');
-        for (let f = c.a; f < c.b; f++) {
-          await enc.write(await pg.shot(f));
-          if (++framesDone % 150 === 0) {
-            const s = (performance.now() - t0) / 1000, fps = framesDone / s;
-            console.log(`${framesDone}/${framesTodo} frames  ${fps.toFixed(2)} fps  ETA ${((framesTodo - framesDone) / fps / 60).toFixed(1)} min`);
+        for (let attempt = 1; ; attempt++) {
+          const enc = encoder(c.file + '.part.mp4'); let n = 0;
+          try {
+            for (let f = c.a; f < c.b; f++) {
+              await enc.write(await pg.shot(f)); n++;
+              if (++framesDone % 150 === 0) {
+                const s = (performance.now() - t0) / 1000, fps = framesDone / s;
+                console.log(`${framesDone}/${framesTodo} frames  ${fps.toFixed(2)} fps  ETA ${((framesTodo - framesDone) / fps / 60).toFixed(1)} min`);
+              }
+            }
+            await enc.end();
+            break;
+          } catch (e) {                                     // hung or crashed tab: fresh tab, redo this chunk
+            if (attempt >= 4) throw e;
+            console.log(`worker ${w}: ${e.message} — retrying chunk ${c.key} (attempt ${attempt + 1})`);
+            framesDone -= n; enc.end().catch(() => {}); await pg.close();
+            pg = pages[w] = await openPage(cdp);
           }
         }
-        await enc.end();
         fs.renameSync(c.file + '.part.mp4', c.file);
         man[c.key] = hash; fs.writeFileSync(manPath, JSON.stringify(man));
       }
     }));
     console.log(`rendered ${framesTodo} frames in ${((performance.now() - t0) / 60000).toFixed(1)} min`);
 
+    if (SHARD) { console.log('shard done (no stitch)'); return; }
     /* stitch: stream-copy concat (all chunks share encoder settings and start on a keyframe) */
     const list = path.join(SEG_DIR, 'list.txt');
     fs.writeFileSync(list, chunks.map(c => `file '${path.basename(c.file)}'`).join('\n'));
