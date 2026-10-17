@@ -7,6 +7,7 @@ tail fade, plus synthesized one-shot effects listed in the episode's sfx.json, e
      {"type": "thunder",   "t": 16.85}]
 
 types: shatter (glass) · siren (alarm) · heartbeat (lub-dub) · thunder (crack + rumble) · impact (low hit) · whoosh
+       · screech (brake) · cock (gun cocking) · click (trigger)
 
     python3 tools/music.py     → bgm.wav (48 kHz stereo)
 """
@@ -51,7 +52,19 @@ def fx_impact():
 def fx_whoosh():
     L = int(1.0 * SR); t = np.arange(L) / SR; env = np.sin(np.pi * t / 1.0) ** 2
     return np.convolve(R.standard_normal(L), np.ones(30) / 30, 'same') * 6 * env, .25
-FX = dict(shatter=fx_shatter, siren=fx_siren, heartbeat=fx_heartbeat, thunder=fx_thunder, impact=fx_impact, whoosh=fx_whoosh)
+def fx_screech():                                                     # tyre / brake screech: a squealing, falling tone over hiss
+    L = int(2.0 * SR); t = np.arange(L) / SR; f = 2600 - 900 * t / 2.0 + 120 * np.sin(2 * np.pi * 17 * t); ph = 2 * np.pi * np.cumsum(f) / SR
+    env = np.minimum(1, t / .04) * np.exp(-np.maximum(0, t - 1.2) * 5)
+    return (np.sin(ph) * .5 + np.sin(2 * ph) * .2 + hp(R.standard_normal(L)) * .35) * env, .30
+def fx_cock():                                                       # slide racked back and forward: two metallic clacks
+    L = int(.6 * SR); t = np.arange(L) / SR; out = np.zeros(L)
+    for d in (0, .22):
+        u = np.maximum(0, t - d) * (t >= d); out += (hp(R.standard_normal(L)) * np.exp(-u * 60) + np.sin(2 * np.pi * 1900 * u) * np.exp(-u * 40) * .5) * (t >= d)
+    return out, .55
+def fx_click():                                                      # the trigger: one sharp click + a low body
+    L = int(.5 * SR); t = np.arange(L) / SR
+    return hp(R.standard_normal(L)) * np.exp(-t * 120) * 1.2 + np.sin(2 * np.pi * 3200 * t) * np.exp(-t * 90) * .6 + np.sin(2 * np.pi * 70 * t) * np.exp(-t * 20) * .7, .6
+FX = dict(shatter=fx_shatter, siren=fx_siren, heartbeat=fx_heartbeat, thunder=fx_thunder, impact=fx_impact, whoosh=fx_whoosh, screech=fx_screech, cock=fx_cock, click=fx_click)
 
 sfx_path = os.path.join(ROOT, 'sfx.json')
 for e in (json.load(open(sfx_path)) if os.path.exists(sfx_path) else []):

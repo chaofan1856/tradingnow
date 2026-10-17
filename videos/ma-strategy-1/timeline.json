@@ -1,0 +1,104 @@
+{
+ "title": "均线策略（一）",
+ "fps": 60,
+ "frames": 10608,
+ "seconds": 176.8,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "filter",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "wrong",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 12,
+   "f0": 1836,
+   "f1": 2556
+  },
+  {
+   "id": "right",
+   "type": "scene",
+   "start": 42.6,
+   "dur": 25.2,
+   "f0": 2556,
+   "f1": 4068
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 67.8,
+   "dur": 3.6,
+   "f0": 4068,
+   "f1": 4284
+  },
+  {
+   "id": "equil",
+   "type": "scene",
+   "start": 71.4,
+   "dur": 31.8,
+   "f0": 4284,
+   "f1": 6192
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 103.2,
+   "dur": 3.6,
+   "f0": 6192,
+   "f1": 6408
+  },
+  {
+   "id": "brk",
+   "type": "scene",
+   "start": 106.8,
+   "dur": 34,
+   "f0": 6408,
+   "f1": 8448
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 140.8,
+   "dur": 29.5,
+   "f0": 8448,
+   "f1": 10218
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 170.3,
+   "dur": 6.5,
+   "f0": 10218,
+   "f1": 10608
+  }
+ ]
+}

@@ -80,7 +80,7 @@
 - 数据用 K.gen.path / K.gen.seq 构造真实 K 线，确保形态特征（高点渐低、低点渐高等）在图上一眼可见；示意性指标标注「示意」。
 
 ### 音效（sfx.json）
-按讲稿写的音效放在 `sfx.json`，类型：`shatter`（玻璃碎裂）`siren`（警报）`heartbeat`（心跳）`thunder`（雷声）`impact`（重击）`whoosh`。
+按讲稿写的音效放在 `sfx.json`，类型：`shatter`（玻璃碎裂）`siren`（警报）`heartbeat`（心跳）`thunder`（雷声）`impact`（重击）`whoosh` `screech`（刹车）`cock`（上膛）`click`（扣扳机）。
 开场音效对准 hook 大字弹出（t ≈ 0.3）；闪电标题固定加 `{"type":"thunder","t":16.85}`。除此之外只用频道配乐，不加其他音乐。
 
 ### 质检清单（联系表逐帧看）
