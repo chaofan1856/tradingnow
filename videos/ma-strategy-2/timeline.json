@@ -1,0 +1,104 @@
+{
+ "title": "均线策略（二）",
+ "fps": 60,
+ "frames": 10608,
+ "seconds": 176.8,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "cross",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "dcross",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 14,
+   "f0": 1836,
+   "f1": 2676
+  },
+  {
+   "id": "gcross",
+   "type": "scene",
+   "start": 44.6,
+   "dur": 14,
+   "f0": 2676,
+   "f1": 3516
+  },
+  {
+   "id": "rules",
+   "type": "scene",
+   "start": 58.6,
+   "dur": 18,
+   "f0": 3516,
+   "f1": 4596
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 76.6,
+   "dur": 3.6,
+   "f0": 4596,
+   "f1": 4812
+  },
+  {
+   "id": "rev",
+   "type": "scene",
+   "start": 80.2,
+   "dur": 30,
+   "f0": 4812,
+   "f1": 6612
+  },
+  {
+   "id": "cont",
+   "type": "scene",
+   "start": 110.2,
+   "dur": 30.6,
+   "f0": 6612,
+   "f1": 8448
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 140.8,
+   "dur": 29.5,
+   "f0": 8448,
+   "f1": 10218
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 170.3,
+   "dur": 6.5,
+   "f0": 10218,
+   "f1": 10608
+  }
+ ]
+}

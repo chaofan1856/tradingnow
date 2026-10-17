@@ -7,7 +7,7 @@ tail fade, plus synthesized one-shot effects listed in the episode's sfx.json, e
      {"type": "thunder",   "t": 16.85}]
 
 types: shatter (glass) · siren (alarm) · heartbeat (lub-dub) · thunder (crack + rumble) · impact (low hit) · whoosh
-       · screech (brake) · cock (gun cocking) · click (trigger)
+       · screech (brake) · cock (gun cocking) · click (trigger) · jam (gun jam)
 
     python3 tools/music.py     → bgm.wav (48 kHz stereo)
 """
@@ -64,7 +64,12 @@ def fx_cock():                                                       # slide rac
 def fx_click():                                                      # the trigger: one sharp click + a low body
     L = int(.5 * SR); t = np.arange(L) / SR
     return hp(R.standard_normal(L)) * np.exp(-t * 120) * 1.2 + np.sin(2 * np.pi * 3200 * t) * np.exp(-t * 90) * .6 + np.sin(2 * np.pi * 70 * t) * np.exp(-t * 20) * .7, .6
-FX = dict(shatter=fx_shatter, siren=fx_siren, heartbeat=fx_heartbeat, thunder=fx_thunder, impact=fx_impact, whoosh=fx_whoosh, screech=fx_screech, cock=fx_cock, click=fx_click)
+def fx_jam():                                                         # a gun that jams: dry click, then a dead rattle
+    L = int(.9 * SR); t = np.arange(L) / SR; out = hp(R.standard_normal(L)) * np.exp(-t * 140) * 1.1
+    for d in (.16, .21, .27, .34):
+        u = np.maximum(0, t - d); out += hp(R.standard_normal(L)) * np.exp(-u * 90) * .35 * (t >= d)
+    return out + np.sin(2 * np.pi * 900 * t) * np.exp(-t * 60) * .3, .6
+FX = dict(jam=fx_jam, shatter=fx_shatter, siren=fx_siren, heartbeat=fx_heartbeat, thunder=fx_thunder, impact=fx_impact, whoosh=fx_whoosh, screech=fx_screech, cock=fx_cock, click=fx_click)
 
 sfx_path = os.path.join(ROOT, 'sfx.json')
 for e in (json.load(open(sfx_path)) if os.path.exists(sfx_path) else []):
