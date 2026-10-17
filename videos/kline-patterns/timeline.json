@@ -1,0 +1,96 @@
+{
+ "title": "K线形态深度课（一）",
+ "fps": 60,
+ "frames": 10608,
+ "seconds": 176.8,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "rote",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "map",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 4,
+   "f0": 1620,
+   "f1": 1860
+  },
+  {
+   "id": "wbot",
+   "type": "scene",
+   "start": 31,
+   "dur": 26,
+   "f0": 1860,
+   "f1": 3420
+  },
+  {
+   "id": "mtop",
+   "type": "scene",
+   "start": 57,
+   "dur": 28.3,
+   "f0": 3420,
+   "f1": 5118
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 85.3,
+   "dur": 4,
+   "f0": 5118,
+   "f1": 5358
+  },
+  {
+   "id": "bflag",
+   "type": "scene",
+   "start": 89.3,
+   "dur": 30,
+   "f0": 5358,
+   "f1": 7158
+  },
+  {
+   "id": "dflag",
+   "type": "scene",
+   "start": 119.3,
+   "dur": 24.5,
+   "f0": 7158,
+   "f1": 8628
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 143.8,
+   "dur": 26.5,
+   "f0": 8628,
+   "f1": 10218
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 170.3,
+   "dur": 6.5,
+   "f0": 10218,
+   "f1": 10608
+  }
+ ]
+}
