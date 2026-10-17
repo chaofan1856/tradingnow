@@ -28,3 +28,4 @@ videos/*/render-*.log
 videos/render_all.log
 videos/*.log
 videos/*/music_src.wav
+__pycache__/
