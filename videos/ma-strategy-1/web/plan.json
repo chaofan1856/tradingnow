@@ -1,0 +1,157 @@
+{
+ "title": "均线策略（一）",
+ "size": 567517348,
+ "sha": "44f6763a14d16d01a9654dda185b3caa11cf3399214d4eb096395a9e2deefae3",
+ "pages": [
+  {
+   "assets": [
+    {
+     "name": "pg1_a01.mp4",
+     "size": 19922944,
+     "sha": "1ab12b7bf0219dcb7a2d156ce42a2a277648d0f2cbd102036a867f6b8abfe431"
+    },
+    {
+     "name": "pg1_a02.mp4",
+     "size": 19922944,
+     "sha": "8f58e6fd3781ac8d468615e5f3a8208afcd9413eb6c4d3437e1b86ee3dee9bbd"
+    },
+    {
+     "name": "pg1_a03.mp4",
+     "size": 19922944,
+     "sha": "d1101dc6ae82633e3599b12a9b35d28c9956fbf675e298865065a392058324fb"
+    },
+    {
+     "name": "pg1_a04.mp4",
+     "size": 19922944,
+     "sha": "7cb2d078946934beb1878fa51fb8a731e5460876ee5e39c89dd5bced0412f04b"
+    },
+    {
+     "name": "pg1_a05.mp4",
+     "size": 19922944,
+     "sha": "435c3f3dba113c5b569131c12c5a4fd4ac86ff2d197d41e091f3b978137c413e"
+    },
+    {
+     "name": "pg1_a06.mp4",
+     "size": 19922944,
+     "sha": "d9d0ef0f394dbf6de7cd1efe818399a3b09ec5aa6f8dbaafd484a5a9298d1c0d"
+    },
+    {
+     "name": "pg1_a07.mp4",
+     "size": 19922944,
+     "sha": "eb5ccf79e23d0111f191a7e0ec25d160aa9183f8a81c7b6dd82d56c97b513dde"
+    },
+    {
+     "name": "pg1_a08.mp4",
+     "size": 19922944,
+     "sha": "c35f2e77d800a890f35100acd54efe692603763e98c9fbab93b5c8b0acc4bae9"
+    },
+    {
+     "name": "pg1_a09.mp4",
+     "size": 19922944,
+     "sha": "bafc80c5f575ed01039915502fa420793fb2d0b3ff18562486287aba208a83fb"
+    },
+    {
+     "name": "pg1_a10.mp4",
+     "size": 19922944,
+     "sha": "09f74f95a185f7bc219692c65d186a16ae29a9952da7c08a5854581056d9acd1"
+    },
+    {
+     "name": "pg1_a11.mp4",
+     "size": 19922944,
+     "sha": "8e385b8a9c7ffc37f5b045c79aa9f1127aeb158abe94e4d0688319bb121f44a0"
+    },
+    {
+     "name": "pg1_a12.mp4",
+     "size": 19922944,
+     "sha": "3d629e3c852b44681fab606e22e00db7b680b85082687dcc45b66db31e751d66"
+    },
+    {
+     "name": "pg1_a13.mp4",
+     "size": 19922944,
+     "sha": "1e6c54fd2314f84a701f69f5315b6e89fe4bc694aa94f0e2929030794ff631e8"
+    },
+    {
+     "name": "pg1_a14.mp4",
+     "size": 19922944,
+     "sha": "07c5d13f1f705fdf4dcf9e5adba050bee0542dff4a3bc616440987773101cdff"
+    },
+    {
+     "name": "pg1_a15.mp4",
+     "size": 19922944,
+     "sha": "489d1a097f6c45a5f31afe736da014ff60d12bf0d6f52871971711e2b320927f"
+    },
+    {
+     "name": "pg1_a16.mp4",
+     "size": 19922944,
+     "sha": "7a85b07451b81ba8e668cc8d1eda3353608fa15923ad70bface93fd7a9193f2b"
+    },
+    {
+     "name": "pg1_a17.mp4",
+     "size": 19922944,
+     "sha": "bd5ccd202521dbd8b04f7af4bb41ee084bdf9f849353c4cf0ecb338c20c1961f"
+    },
+    {
+     "name": "pg1_a18.mp4",
+     "size": 19922944,
+     "sha": "3dafb559cc9aa610fc85cf3d29d1d9da720e0eaa294c56f56e9e7ef5fd99f629"
+    },
+    {
+     "name": "pg1_a19.mp4",
+     "size": 19922944,
+     "sha": "988d5c6e93175badf14d81d528a4dae5b19a33aa18529715ab223f2eb04462e5"
+    },
+    {
+     "name": "pg1_a20.mp4",
+     "size": 19922944,
+     "sha": "e8fa5ce649089adad0a9029b6638a3ada24ecd5bdced991b7e97893cf5d27535"
+    },
+    {
+     "name": "pg1_a21.mp4",
+     "size": 19922944,
+     "sha": "fa8e9ad35365965cedb4bc59d09b246c9dab96753eb6fa7e6858611f8a735041"
+    },
+    {
+     "name": "pg1_a22.mp4",
+     "size": 19922944,
+     "sha": "7cf0c7b1aeedfcb514d0194fff75fb7be4c0004ff56a8087e26102a458c0c360"
+    },
+    {
+     "name": "pg1_a23.mp4",
+     "size": 19922944,
+     "sha": "61084c99d2181954b94e30ea13ee28bfc262c98dcaaaea9e5b49c1457b8f1a39"
+    },
+    {
+     "name": "pg1_a24.mp4",
+     "size": 19922944,
+     "sha": "b23f6882dde455ad367ddf152eb655969a99a1515920421f4bba4a9286bf7791"
+    },
+    {
+     "name": "pg1_a25.mp4",
+     "size": 19922944,
+     "sha": "e707941455daa8f8a46c185124e80aff46d00dcf2b7dea8dfcacfed40a355c88"
+    },
+    {
+     "name": "pg1_a26.mp4",
+     "size": 19922944,
+     "sha": "54e8f02bdec2320cf5c2e73611bfc6d9c29533721ec6c4f75108d01c634531e8"
+    },
+    {
+     "name": "pg1_a27.mp4",
+     "size": 19922944,
+     "sha": "25b3fbc05a00847ff64526f476a9ffd31cada07c550d6a955ca84ad9cb145c13"
+    },
+    {
+     "name": "pg1_a28.mp4",
+     "size": 19922944,
+     "sha": "1a8bfdc2eb83b8bc120525c8c2af589129b968008d3742f977902347a38b73ef"
+    },
+    {
+     "name": "pg1_a29.mp4",
+     "size": 9674916,
+     "sha": "8dc471fed1c7a69673122a7cd29a04b5983acb37606c359178a9a5e20dfbc9be"
+    }
+   ],
+   "files": []
+  }
+ ]
+}
