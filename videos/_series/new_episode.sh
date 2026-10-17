@@ -6,7 +6,7 @@ SLUG="$1"; TITLE="$2"
 V="$(cd "$(dirname "$0")/.." && pwd)"; SRC="$V/kline-patterns-3"; DST="$V/$SLUG"
 [ -e "$DST" ] && { echo "exists: $DST"; exit 1; }
 mkdir -p "$DST/web"
-cp "$SRC/index.html" "$SRC/render.mjs" "$DST/"
+cp "$SRC/index.html" "$SRC/render.mjs" "$SRC/STYLE_PROMPT.md" "$DST/"
 cp -r "$SRC/tools" "$SRC/assets" "$DST/"
 cp "$V/_series/music.py" "$DST/tools/music.py"
 cp "$SRC/web/page_template.html" "$DST/web/"

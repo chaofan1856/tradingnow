@@ -1,0 +1,182 @@
+{
+ "title": "解构A股的顶层因果与多周期博弈",
+ "size": 665166524,
+ "sha": "f8a1c6407000921f7c16da90032455cd290c2a017779fd2c85e43ed891958dae",
+ "pages": [
+  {
+   "assets": [
+    {
+     "name": "pg1_a01.mp4",
+     "size": 19922944,
+     "sha": "be7550f85a15c75eaad6c6a6de601b068df2db383e9560527120514dce7925e0"
+    },
+    {
+     "name": "pg1_a02.mp4",
+     "size": 19922944,
+     "sha": "ab46a14d2f14f2ad33c26821113174540cb240d5b5ec6a3ade784f5857fb3a80"
+    },
+    {
+     "name": "pg1_a03.mp4",
+     "size": 19922944,
+     "sha": "7cde6c1c459ca89bf583e838350425ecd4ca7fdfab1fc30f9ed469f2d281e2d8"
+    },
+    {
+     "name": "pg1_a04.mp4",
+     "size": 19922944,
+     "sha": "7f9342aa1cf1dbf4a2a6bf9a13c341df1ad0eee040eb21c47f65c6660320a9bf"
+    },
+    {
+     "name": "pg1_a05.mp4",
+     "size": 19922944,
+     "sha": "71939118ee97af449e811cb8a7c91c0a019509c79e74ba209ada37826ba9f95d"
+    },
+    {
+     "name": "pg1_a06.mp4",
+     "size": 19922944,
+     "sha": "2e2317985b47ce584c53a4e0345fd88380ac632e173ff9d0c21f7a390b2128e4"
+    },
+    {
+     "name": "pg1_a07.mp4",
+     "size": 19922944,
+     "sha": "e786919f8e26c40551d1f123f6d090c888a0d0e32a889ff82df73a0f2f43fa47"
+    },
+    {
+     "name": "pg1_a08.mp4",
+     "size": 19922944,
+     "sha": "d3a2395ce6fdd9cd58dd1c58fd8ec137ebdbbca5c564ac6dce70417eaa26de6b"
+    },
+    {
+     "name": "pg1_a09.mp4",
+     "size": 19922944,
+     "sha": "52fd2170eb757106b4c1f127130bc7f432155037839bd49e9609a21e1332def2"
+    },
+    {
+     "name": "pg1_a10.mp4",
+     "size": 19922944,
+     "sha": "c886b4fdfa9e44b08902fcb829c05c65e335fedd9d47e69f986c6a76b933d513"
+    },
+    {
+     "name": "pg1_a11.mp4",
+     "size": 19922944,
+     "sha": "da76393625f7d56ba76a4781f1e7db8a5d55feba1d4fc9f6900d33ba7a9e1616"
+    },
+    {
+     "name": "pg1_a12.mp4",
+     "size": 19922944,
+     "sha": "b7db85fb1cfc9560ec1e43e94b08e110b22aa1ea0e4342646f8be6809db85b67"
+    },
+    {
+     "name": "pg1_a13.mp4",
+     "size": 19922944,
+     "sha": "9a4a23d81bdd573ed6d98ab1d906929abc9a5fcd01e8dffb4b6140f5d0a94f07"
+    },
+    {
+     "name": "pg1_a14.mp4",
+     "size": 19922944,
+     "sha": "df462f7cdac1361c3b88dbdbb448d2840bf8e22588af574b4a774add40d08f12"
+    },
+    {
+     "name": "pg1_a15.mp4",
+     "size": 19922944,
+     "sha": "6007c22121d71298ac34f01fae5f7b59c48db43da635bc993d185796373d5287"
+    },
+    {
+     "name": "pg1_a16.mp4",
+     "size": 19922944,
+     "sha": "e34bd93b9e9c3811261ecddbcc644089c490770783e1150b0b5a332faaab6ce6"
+    },
+    {
+     "name": "pg1_a17.mp4",
+     "size": 19922944,
+     "sha": "6f772b3093dfb0eea5d4f01d4ebc4455cdaeaf36fe7febd99db2214c4dad4521"
+    },
+    {
+     "name": "pg1_a18.mp4",
+     "size": 19922944,
+     "sha": "38d68672642d29d6ea698f1ac4133cc543a6dc2cc796a51ab63595d7db15ff92"
+    },
+    {
+     "name": "pg1_a19.mp4",
+     "size": 19922944,
+     "sha": "638dc025d375bf74940e6594d87c3eb0eded6bfd77de1b49836481b284c37940"
+    },
+    {
+     "name": "pg1_a20.mp4",
+     "size": 19922944,
+     "sha": "ad43bb53945815c9c9eb0713554269c9dfba514150f8eada431cec37f70aac80"
+    },
+    {
+     "name": "pg1_a21.mp4",
+     "size": 19922944,
+     "sha": "79f71739e108943007dd7d45574d65cd56d2bd6eedc98577f1149dcc6ffd1193"
+    },
+    {
+     "name": "pg1_a22.mp4",
+     "size": 19922944,
+     "sha": "4f7328a461705f1dbd3d23042a7907ce49b59750ff6a099c20fb0a192aa382e2"
+    },
+    {
+     "name": "pg1_a23.mp4",
+     "size": 19922944,
+     "sha": "e5371a95dd2e2e6ce4bf031eca24036109fe2c6f047663480044d9fc3123d9d7"
+    },
+    {
+     "name": "pg1_a24.mp4",
+     "size": 19922944,
+     "sha": "ac26e9dae84bbf68c01c57221bd5a9c6d02f56e4dbb14c4d325adfdad1b803c6"
+    },
+    {
+     "name": "pg1_a25.mp4",
+     "size": 19922944,
+     "sha": "384b5c7c57c9cd07ab0c9ca32fbf9f01b0b890fb4aaf569358f3be9bdd9f35d8"
+    },
+    {
+     "name": "pg1_a26.mp4",
+     "size": 19922944,
+     "sha": "8e3c575884586ca8c2975ed7716a3f055f0ff13b65ad87c28caee1c16a44f68c"
+    },
+    {
+     "name": "pg1_a27.mp4",
+     "size": 19922944,
+     "sha": "e695cb1ec6a8b568bcbc12fe0baca7e514e13027dedfbd3f89b2b3d28e0c7454"
+    },
+    {
+     "name": "pg1_a28.mp4",
+     "size": 19922944,
+     "sha": "27895dbd8e9cd789c81b42a8026ae3bac145bf455cfe7bfbcb791b46e9db004e"
+    },
+    {
+     "name": "pg1_a29.mp4",
+     "size": 19922944,
+     "sha": "34cf8f8062b6f4db02e6504241634aa709bd689a8e2b5d4e88c049b6c9b8e565"
+    },
+    {
+     "name": "pg1_a30.mp4",
+     "size": 19922944,
+     "sha": "8b8019af5a611d553d4097fb7d3240e027761f18aff6df60594da70c745dffac"
+    },
+    {
+     "name": "pg1_a31.mp4",
+     "size": 19922944,
+     "sha": "3a5600bf2f5550fc44c90c20c569e7a7e29bd49c39545b231d33bc5971be6afe"
+    },
+    {
+     "name": "pg1_a32.mp4",
+     "size": 19922944,
+     "sha": "21e1790a223fa2ffe82518a91d8801afbcb5691b0c91dce07a17e8cd044a325f"
+    },
+    {
+     "name": "pg1_a33.mp4",
+     "size": 19922944,
+     "sha": "2338e86b384ee92c306b7b429bfac3a0da4477952640594e5f8ab8e0f9a2bd60"
+    },
+    {
+     "name": "pg1_a34.mp4",
+     "size": 7709372,
+     "sha": "dfcec3b622dc05f737449a4b9272f1e2160ffbafc96b98662cd651c9efe93253"
+    }
+   ],
+   "files": []
+  }
+ ]
+}
