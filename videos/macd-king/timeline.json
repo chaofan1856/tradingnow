@@ -1,0 +1,112 @@
+{
+ "title": "技术指标之王-MACD",
+ "fps": 60,
+ "frames": 9540,
+ "seconds": 159,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "breath",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "appel",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 11.2,
+   "f0": 1836,
+   "f1": 2508
+  },
+  {
+   "id": "dif",
+   "type": "scene",
+   "start": 41.8,
+   "dur": 17.6,
+   "f0": 2508,
+   "f1": 3564
+  },
+  {
+   "id": "psych",
+   "type": "scene",
+   "start": 59.4,
+   "dur": 20.4,
+   "f0": 3564,
+   "f1": 4788
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 79.8,
+   "dur": 3.6,
+   "f0": 4788,
+   "f1": 5004
+  },
+  {
+   "id": "aspray",
+   "type": "scene",
+   "start": 83.4,
+   "dur": 25.4,
+   "f0": 5004,
+   "f1": 6528
+  },
+  {
+   "id": "div",
+   "type": "scene",
+   "start": 108.8,
+   "dur": 17.4,
+   "f0": 6528,
+   "f1": 7572
+  },
+  {
+   "id": "quant",
+   "type": "scene",
+   "start": 126.2,
+   "dur": 16.8,
+   "f0": 7572,
+   "f1": 8580
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 143,
+   "dur": 11,
+   "f0": 8580,
+   "f1": 9240
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 154,
+   "dur": 5,
+   "f0": 9240,
+   "f1": 9540
+  }
+ ]
+}
