@@ -1,0 +1,120 @@
+{
+ "title": "构建自己的交易系统",
+ "fps": 60,
+ "frames": 10326,
+ "seconds": 172.1,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "gamble",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "trend",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 14,
+   "f0": 1836,
+   "f1": 2676
+  },
+  {
+   "id": "entry",
+   "type": "scene",
+   "start": 44.6,
+   "dur": 22,
+   "f0": 2676,
+   "f1": 3996
+  },
+  {
+   "id": "risk",
+   "type": "scene",
+   "start": 66.6,
+   "dur": 18.7,
+   "f0": 3996,
+   "f1": 5118
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 85.3,
+   "dur": 3.6,
+   "f0": 5118,
+   "f1": 5334
+  },
+  {
+   "id": "firewall",
+   "type": "scene",
+   "start": 88.9,
+   "dur": 21.3,
+   "f0": 5334,
+   "f1": 6612
+  },
+  {
+   "id": "desens",
+   "type": "scene",
+   "start": 110.2,
+   "dur": 19.8,
+   "f0": 6612,
+   "f1": 7800
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 130,
+   "dur": 3.6,
+   "f0": 7800,
+   "f1": 8016
+  },
+  {
+   "id": "disc",
+   "type": "scene",
+   "start": 133.6,
+   "dur": 23,
+   "f0": 8016,
+   "f1": 9396
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 156.6,
+   "dur": 10.5,
+   "f0": 9396,
+   "f1": 10026
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 167.1,
+   "dur": 5,
+   "f0": 10026,
+   "f1": 10326
+  }
+ ]
+}
