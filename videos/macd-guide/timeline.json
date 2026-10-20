@@ -1,0 +1,120 @@
+{
+ "title": "MACD终极指南",
+ "fps": 60,
+ "frames": 9810,
+ "seconds": 163.5,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "anatomy",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "cross",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 18.6,
+   "f0": 1836,
+   "f1": 2952
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 49.2,
+   "dur": 3.6,
+   "f0": 2952,
+   "f1": 3168
+  },
+  {
+   "id": "div1",
+   "type": "scene",
+   "start": 52.8,
+   "dur": 13,
+   "f0": 3168,
+   "f1": 3948
+  },
+  {
+   "id": "div2",
+   "type": "scene",
+   "start": 65.8,
+   "dur": 13,
+   "f0": 3948,
+   "f1": 4728
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 78.8,
+   "dur": 3.6,
+   "f0": 4728,
+   "f1": 4944
+  },
+  {
+   "id": "s1",
+   "type": "scene",
+   "start": 82.4,
+   "dur": 27.4,
+   "f0": 4944,
+   "f1": 6588
+  },
+  {
+   "id": "s2",
+   "type": "scene",
+   "start": 109.8,
+   "dur": 21.4,
+   "f0": 6588,
+   "f1": 7872
+  },
+  {
+   "id": "s3",
+   "type": "scene",
+   "start": 131.2,
+   "dur": 16.8,
+   "f0": 7872,
+   "f1": 8880
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 148,
+   "dur": 10.5,
+   "f0": 8880,
+   "f1": 9510
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 158.5,
+   "dur": 5,
+   "f0": 9510,
+   "f1": 9810
+  }
+ ]
+}
