@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>占有欲</title>
+<style>
+  @font-face { font-family: "SC"; font-weight: 300; src: url(fonts/noto-sans-sc-chinese-simplified-300-normal.woff2) format("woff2"); }
+  @font-face { font-family: "SC"; font-weight: 500; src: url(fonts/noto-sans-sc-chinese-simplified-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "SC"; font-weight: 900; src: url(fonts/noto-sans-sc-chinese-simplified-900-normal.woff2) format("woff2"); }
+  @font-face { font-family: "InterD"; font-weight: 300; src: url(fonts/InterDisplay-Light.otf); }
+  @font-face { font-family: "InterD"; font-weight: 600; src: url(fonts/InterDisplay-SemiBold.otf); }
+  @font-face { font-family: "InterD"; font-weight: 900; src: url(fonts/InterDisplay-Black.otf); }
+  @font-face { font-family: "Plex"; font-weight: 300; src: url(fonts/ibm-plex-mono-latin-300-normal.woff2) format("woff2"); }
+  html, body { margin: 0; background: #000; overflow: hidden; }
+  canvas#out { display: block; width: 2560px; height: 1440px; }
+  body:not(.render) canvas#out { width: 100vw; height: 56.25vw; }
+</style>
+</head>
+<body>
+<canvas id="out" width="2560" height="1440"></canvas>
+<script type="module">
+import { W, H, setEvents, pulse, prog, clamp, hash, eio, EV } from './js/lib.js';
+import { Post } from './js/post.js';
+import { sIntro, sCity, sDropA, sBreak, sBlack, sTitle, sLock, sMontage, sOutro, cutsAt } from './js/scenes.js';
+
+const FPS = 60, DURATION = 56;
+const mk = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; return c; };
+const cA = mk(), cB = mk();
+const post = new Post(document.getElementById('out'));
+
+// stutter: 15.5–16 replays the 1/32 slice before it, like the audio does
+const cityT = t => (t >= 15.5 && t < 16 ? 15.4375 + ((t - 15.5) % 0.0625) : t);
+const SCENES = [
+  [0, 8, sIntro], [8, 16, (c, t) => sCity(c, cityT(t))], [16, 32, sDropA], [32, 39.5, sBreak], [39.5, 40, sBlack],
+  [40, 44, sTitle], [44, 48, sLock], [48, 52, sMontage], [52, 56.1, sOutro],
+];
+const TRANS = [
+  { from: 15.93, to: 16.1, a: (c, t) => sCity(c, cityT(t)), b: sDropA, type: 1 },
+  { from: 31.75, to: 32.4, a: sDropA, b: sBreak, type: 1 },
+  { from: 43.82, to: 44.12, a: sTitle, b: sLock, type: 2 },
+  { from: 47.88, to: 48.04, a: sLock, b: sMontage, type: 2 },
+];
+const within = (t, a, b) => t >= a && t < b;
+
+function fx(t) {
+  const drop = within(t, 16, 32) || within(t, 40, 52);
+  const kick = pulse('kick', t, 0.1);
+  const imp = pulse('impact', t, 0.22);
+  let glitch = pulse('glitch', t, 0.07) * 0.85;
+  if (within(t, 15.5, 16)) glitch = Math.max(glitch, 0.5);
+  if (within(t, 39.5, 40)) glitch = Math.max(glitch, 0.18);
+  if (within(t, 48, 52)) { const [, at] = cutsAt(t); glitch = Math.max(glitch, Math.exp(-(t - at) / 0.05) * 0.5); }
+  if (within(t, 38, 39.5)) glitch = Math.max(glitch, prog(t, 38.6, 39.5) * 0.25 * (hash(Math.floor(t * 16)) > 0.5 ? 1 : 0.2));
+  let zblur = 0;
+  zblur = Math.max(zblur, Math.sin(Math.PI * prog(t, 7.45, 8.12)) * 1.2);
+  zblur = Math.max(zblur, Math.sin(Math.PI * prog(t, 15.9, 16.16)) * 1.4);
+  zblur = Math.max(zblur, Math.sin(Math.PI * prog(t, 31.7, 32.45)) * 1.0);
+  zblur = Math.max(zblur, prog(t, 38.8, 39.5) * 0.8 * (t < 39.5 ? 1 : 0));
+  zblur = Math.max(zblur, imp * 0.9);
+  const lockF = pulse('lock', t, 0.15);
+  const flash = imp * 0.9 + (drop ? pulse('snare', t, 0.06) * 0.05 : 0);
+  const ang = hash(Math.floor(t * 60)) * Math.PI * 2;
+  const sh = imp * 0.009 + (drop ? kick * 0.0018 : 0) + prog(t, 38, 39.5) * 0.003 * (t < 39.5 ? 1 : 0);
+  return {
+    time: t, glitch, zblur, seed: Math.floor(t * 10),
+    ca: 0.0016 + (drop ? kick * 0.0045 : 0) + imp * 0.01 + prog(t, 38, 39.5) * 0.004 * (t < 39.5 ? 1 : 0),
+    flash: flash + lockF * 0.35, flashCol: lockF > imp ? [1, 0.2, 0.35] : [1, 0.92, 0.96],
+    shake: [Math.cos(ang) * sh, Math.sin(ang) * sh],
+    bloom: drop ? 1.1 : 1.05, thresh: 0.55, barrel: 0.05,
+    fade: clamp(t / 0.35) * (1 - prog(t, 55.55, 56)),
+    scan: 0.05, grain: 0.04, vign: 0.5,
+  };
+}
+
+function draw(fn, canvas, t) {
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.filter = 'none';
+  ctx.fillStyle = '#05030b'; ctx.fillRect(0, 0, W, H);
+  ctx.save(); fn(ctx, t); ctx.restore();
+}
+
+window.renderFrame = t => {
+  const f = fx(t);
+  const tr = TRANS.find(x => t >= x.from && t < x.to);
+  if (tr) {
+    draw(tr.a, cA, t); draw(tr.b, cB, t);
+    f.ttype = tr.type; f.mix = eio(prog(t, tr.from, tr.to));
+    post.render(cA, cB, f);
+  } else {
+    const sc = SCENES.find(([a, b]) => t >= a && t < b) || SCENES[SCENES.length - 1];
+    draw(sc[2], cA, t);
+    f.ttype = 0;
+    post.render(cA, null, f);
+  }
+};
+window.FPS = FPS; window.DURATION = DURATION;
+
+window.ready = (async () => {
+  setEvents(await (await fetch('events.json')).json());
+  const loads = ['300 20px SC', '500 20px SC', '900 20px SC', '300 20px InterD', '600 20px InterD', '900 20px InterD', '300 20px Plex'];
+  await Promise.all(loads.map(f => document.fonts.load(f, '占有欲你我ABC')));
+  await document.fonts.ready;
+  const q = new URLSearchParams(location.search);
+  if (q.has('render')) { document.body.classList.add('render'); return true; }
+  if (q.has('t')) { window.renderFrame(parseFloat(q.get('t'))); return true; }
+  // live preview with audio
+  const audio = new Audio('out/score.wav');
+  document.body.addEventListener('click', () => audio.paused ? audio.play() : audio.pause());
+  const loop = () => { window.renderFrame(audio.currentTime || 0); requestAnimationFrame(loop); };
+  loop();
+  return true;
+})();
+</script>
+</body>
+</html>
