@@ -1,0 +1,112 @@
+{
+ "title": "狙击核心区",
+ "fps": 60,
+ "frames": 9066,
+ "seconds": 151.1,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "wipe",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "whale",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 16.8,
+   "f0": 1836,
+   "f1": 2844
+  },
+  {
+   "id": "costzone",
+   "type": "scene",
+   "start": 47.4,
+   "dur": 17,
+   "f0": 2844,
+   "f1": 3864
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 64.4,
+   "dur": 3.6,
+   "f0": 3864,
+   "f1": 4080
+  },
+  {
+   "id": "steps",
+   "type": "scene",
+   "start": 68,
+   "dur": 21.2,
+   "f0": 4080,
+   "f1": 5352
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 89.2,
+   "dur": 3.6,
+   "f0": 5352,
+   "f1": 5568
+  },
+  {
+   "id": "sniper",
+   "type": "scene",
+   "start": 92.8,
+   "dur": 26.6,
+   "f0": 5568,
+   "f1": 7164
+  },
+  {
+   "id": "calm",
+   "type": "scene",
+   "start": 119.4,
+   "dur": 16.2,
+   "f0": 7164,
+   "f1": 8136
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 135.6,
+   "dur": 10.5,
+   "f0": 8136,
+   "f1": 8766
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 146.1,
+   "dur": 5,
+   "f0": 8766,
+   "f1": 9066
+  }
+ ]
+}

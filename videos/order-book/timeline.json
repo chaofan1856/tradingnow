@@ -1,0 +1,96 @@
+{
+ "title": "盘口密码",
+ "fps": 60,
+ "frames": 8478,
+ "seconds": 141.3,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "shatter",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "spoof",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 27.2,
+   "f0": 1836,
+   "f1": 3468
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 57.8,
+   "dur": 3.6,
+   "f0": 3468,
+   "f1": 3684
+  },
+  {
+   "id": "market",
+   "type": "scene",
+   "start": 61.4,
+   "dur": 22.2,
+   "f0": 3684,
+   "f1": 5016
+  },
+  {
+   "id": "sweep",
+   "type": "scene",
+   "start": 83.6,
+   "dur": 30.6,
+   "f0": 5016,
+   "f1": 6852
+  },
+  {
+   "id": "mean",
+   "type": "scene",
+   "start": 114.2,
+   "dur": 11.6,
+   "f0": 6852,
+   "f1": 7548
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 125.8,
+   "dur": 10.5,
+   "f0": 7548,
+   "f1": 8178
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 136.3,
+   "dur": 5,
+   "f0": 8178,
+   "f1": 8478
+  }
+ ]
+}
