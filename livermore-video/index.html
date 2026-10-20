@@ -1,0 +1,643 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>大师列传 · 杰西·利弗莫尔</title>
+<style>
+@font-face{font-family:'NotoSC';src:url(fonts/noto-sans-sc-chinese-simplified-300-normal.woff2) format('woff2');font-weight:300}
+@font-face{font-family:'NotoSC';src:url(fonts/noto-sans-sc-chinese-simplified-500-normal.woff2) format('woff2');font-weight:500}
+@font-face{font-family:'NotoSC';src:url(fonts/noto-sans-sc-chinese-simplified-900-normal.woff2) format('woff2');font-weight:900}
+@font-face{font-family:'InterD';src:url(fonts/InterDisplay-SemiBold.otf);font-weight:600}
+@font-face{font-family:'InterD';src:url(fonts/InterDisplay-Black.otf);font-weight:900}
+@font-face{font-family:'Plex';src:url(fonts/ibm-plex-mono-latin-300-normal.woff2) format('woff2');font-weight:300}
+*{margin:0;padding:0}
+html,body{width:2560px;height:1440px;overflow:hidden;background:#04050C}
+canvas{display:block}
+</style>
+<script src="timeline.js"></script>
+</head>
+<body>
+<canvas id="c" width="2560" height="1440"></canvas>
+<script>
+/* 大师列传 · 杰西·利弗莫尔 — 58 s, 2560×1440, cyberpunk HUD.
+   Everything is a pure function of time: window.seek(frame) draws that frame.
+   Cuts and pulses come from timeline.js (beat grid of the score + narration cues, made by tools/vo.py). */
+const W = 2560, H = 1440, FPS = 30;
+const TL = window.TIMELINE, BEATS = TL.beats, CUT = TL.cuts;
+window.TOTAL_FRAMES = Math.round(TL.duration * FPS);
+
+const CY = '#19F6FF', MG = '#FF2BD6', YE = '#F9E900', RD = '#FF3B4E', GR = '#3DFFA2', INK = '#04050C', WH = '#E9FBFF';
+const CN = "'NotoSC'", MONO = "'Plex','NotoSC'", DISP = "'InterD','NotoSC'";
+
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+const sc = new OffscreenCanvas(W, H), sx = sc.getContext('2d');   // scene layer (glitched on cuts)
+
+/* ---------- helpers ---------- */
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eo = k => 1 - Math.pow(1 - k, 3);
+const eio = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const cue = k => TL.cues.find(q => q.key === k);
+const lastBeat = t => { let b = -9; for (const x of BEATS) { if (x <= t) b = x; else break; } return b; };
+const beatIndex = t => { let i = -1; for (let j = 0; j < BEATS.length; j++) if (BEATS[j] <= t) i = j; return i; };
+const pulse = (t, k = .14) => Math.exp(-(t - lastBeat(t)) / k);
+const nearBeat = x => BEATS.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a);
+
+// sub-scene cuts inside the bio: on the beat nearest each line's start
+const SUB = {
+  origin: CUT.bio,
+  cycles: nearBeat(cue('v03').start - .1),
+  crash: nearBeat(cue('v04').start - .1),
+  blowup: nearBeat(cue('v05').start - .1),
+  book: nearBeat(cue('v06').start - .1),
+};
+const ALLCUTS = [...Object.values(CUT), SUB.cycles, SUB.crash, SUB.blowup, SUB.book].filter(x => x > 0).sort((a, b) => a - b);
+
+function T(g, s, x, y, o = {}) {
+  g.save();
+  g.font = `${o.w || 500} ${o.size || 40}px ${o.f || CN}`;
+  g.letterSpacing = (o.ls || 0) + 'px';
+  g.textAlign = o.align || 'left'; g.textBaseline = o.base || 'alphabetic';
+  g.globalAlpha *= o.a ?? 1;
+  if (o.glow) { g.shadowColor = o.glow; g.shadowBlur = o.blur ?? 24; }
+  g.fillStyle = o.color || WH;
+  g.fillText(s, x, y);
+  if (o.glow && o.double) g.fillText(s, x, y);
+  g.restore();
+}
+function measure(g, s, o) { g.save(); g.font = `${o.w || 500} ${o.size}px ${o.f || CN}`; g.letterSpacing = (o.ls || 0) + 'px'; const m = g.measureText(s).width; g.restore(); return m; }
+
+function brackets(g, x, y, w, h, len, col, lw = 4, a = 1) {
+  g.save(); g.strokeStyle = col; g.lineWidth = lw; g.globalAlpha *= a; g.shadowColor = col; g.shadowBlur = 14;
+  g.beginPath();
+  g.moveTo(x, y + len); g.lineTo(x, y); g.lineTo(x + len, y);
+  g.moveTo(x + w - len, y); g.lineTo(x + w, y); g.lineTo(x + w, y + len);
+  g.moveTo(x + w, y + h - len); g.lineTo(x + w, y + h); g.lineTo(x + w - len, y + h);
+  g.moveTo(x + len, y + h); g.lineTo(x, y + h); g.lineTo(x, y + h - len);
+  g.stroke(); g.restore();
+}
+// cut-corner HUD panel
+function panel(g, x, y, w, h, o = {}) {
+  const k = o.cut ?? 34;
+  g.save(); g.globalAlpha *= o.a ?? 1;
+  g.beginPath();
+  g.moveTo(x + k, y); g.lineTo(x + w, y); g.lineTo(x + w, y + h - k); g.lineTo(x + w - k, y + h); g.lineTo(x, y + h); g.lineTo(x, y + k); g.closePath();
+  g.fillStyle = o.fill || 'rgba(10,30,48,.55)'; g.fill();
+  g.strokeStyle = o.stroke || CY; g.lineWidth = o.lw || 2.5; g.shadowColor = o.stroke || CY; g.shadowBlur = o.blur ?? 18; g.stroke();
+  g.restore();
+}
+function chip(g, s, x, y, col, o = {}) {
+  const size = o.size || 30, pad = 18, w = measure(g, s, { size, w: o.w || 900, f: o.f || CN, ls: o.ls ?? 4 }) + pad * 2, h = size * 1.55;
+  g.save(); g.globalAlpha *= o.a ?? 1;
+  g.fillStyle = col; g.shadowColor = col; g.shadowBlur = 20;
+  g.beginPath(); g.moveTo(x, y); g.lineTo(x + w, y); g.lineTo(x + w - 14, y + h); g.lineTo(x, y + h); g.closePath(); g.fill();
+  g.restore();
+  T(g, s, x + pad, y + h * .72, { size, w: o.w || 900, color: INK, ls: o.ls ?? 4, f: o.f || CN, a: o.a ?? 1 });
+  return w;
+}
+// typewriter: characters revealed across [a,b]
+const typed = (s, t, a, b) => { const chars = [...s]; return chars.slice(0, Math.round(chars.length * prog(t, a, b))).join(''); };
+
+/* ---------- static background: neon skyline + horizon glow ---------- */
+const bg = new OffscreenCanvas(W, H), bx = bg.getContext('2d');
+(function buildBg() {
+  const gr = bx.createLinearGradient(0, 0, 0, H);
+  gr.addColorStop(0, '#05040F'); gr.addColorStop(.52, '#120A2A'); gr.addColorStop(.62, '#1A0B33'); gr.addColorStop(1, '#03040A');
+  bx.fillStyle = gr; bx.fillRect(0, 0, W, H);
+  const hz = 820;
+  const glow = bx.createRadialGradient(W / 2, hz, 0, W / 2, hz, 1500);
+  glow.addColorStop(0, 'rgba(255,43,214,.30)'); glow.addColorStop(.35, 'rgba(120,40,200,.12)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  bx.fillStyle = glow; bx.fillRect(0, 0, W, H);
+  // two rows of towers
+  for (const [row, base, hmax, col, win] of [[0, hz, 360, '#0B0820', 'rgba(25,246,255,.22)'], [1, hz, 220, '#07061A', 'rgba(255,43,214,.35)']]) {
+    let x = -20, i = row * 500;
+    while (x < W) {
+      const w = 60 + hash(i) * 120, h = 60 + Math.pow(hash(i + 7), 1.6) * hmax;
+      bx.fillStyle = col; bx.fillRect(x, base - h, w, h);
+      for (let wy = base - h + 14; wy < base - 8; wy += 18) for (let wx = x + 8; wx < x + w - 8; wx += 16)
+        if (hash(wx * 3.1 + wy * 7.7 + row) > .82) { bx.fillStyle = win; bx.fillRect(wx, wy, 6, 8); }
+      if (hash(i + 3) > .8) { bx.fillStyle = row ? MG : CY; bx.globalAlpha = .6; bx.fillRect(x + w / 2 - 2, base - h - 40, 4, 40); bx.globalAlpha = 1; }
+      x += w + 6 + hash(i + 11) * 30; i++;
+    }
+  }
+  bx.fillStyle = 'rgba(255,43,214,.75)'; bx.fillRect(0, hz - 2, W, 3);
+})();
+function drawBg(g, t) {
+  g.drawImage(bg, 0, 0);
+  const hz = 820, p = pulse(t, .18);
+  // perspective floor grid, scrolling toward camera
+  g.save();
+  g.beginPath(); g.rect(0, hz, W, H - hz); g.clip();
+  g.fillStyle = 'rgba(4,3,14,.85)'; g.fillRect(0, hz, W, H - hz);
+  g.strokeStyle = MG; g.shadowColor = MG; g.shadowBlur = 12;
+  const scroll = (t * .9) % 1;
+  for (let i = 0; i < 26; i++) {
+    const z = (i + 1 - scroll), y = hz + 900 / z * .55;
+    if (y > H) continue;
+    g.globalAlpha = clamp(.15 + .5 / z) * (.6 + .5 * p); g.lineWidth = 1.5 + 3 / z;
+    g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke();
+  }
+  g.globalAlpha = .38 + .3 * p; g.lineWidth = 2;
+  for (let i = -30; i <= 30; i++) { g.beginPath(); g.moveTo(W / 2 + i * 40, hz); g.lineTo(W / 2 + i * 420, H); g.stroke(); }
+  g.restore();
+  // dim it so content reads
+  g.fillStyle = 'rgba(4,5,12,.42)'; g.fillRect(0, 0, W, H);
+}
+
+/* ---------- hologram bust (stand-in portrait; uses assets/livermore.jpg if present) ---------- */
+const photo = new Image(); let photoOK = false;
+photo.onload = () => photoOK = true; photo.src = 'assets/livermore.jpg';
+const young = new Image(); let youngOK = false;
+young.onload = () => youngOK = true; young.src = 'assets/livermore-young.jpg';
+const logo = new Image(); logo.src = 'assets/logo.png';
+
+function bustPath(g) {        // 400×500 box, head centre (200,150)
+  g.beginPath();
+  g.ellipse(200, 150, 80, 100, 0, 0, Math.PI * 2);
+  g.moveTo(166, 225); g.lineTo(166, 296); g.lineTo(234, 296); g.lineTo(234, 225);
+  g.moveTo(30, 500); g.bezierCurveTo(30, 380, 100, 330, 166, 300); g.lineTo(200, 334); g.lineTo(234, 300);
+  g.bezierCurveTo(300, 330, 370, 380, 370, 500); g.closePath();
+}
+const FACE = [[150, 128], [178, 124], [222, 124], [250, 128], [172, 146], [228, 146], [200, 150], [200, 182], [184, 192], [216, 192], [180, 214], [220, 214], [200, 220], [200, 246], [134, 170], [266, 170], [150, 210], [250, 210], [200, 92]];
+const MESH = [[0, 1], [2, 3], [1, 6], [2, 6], [4, 6], [5, 6], [6, 7], [7, 8], [7, 9], [8, 10], [9, 11], [10, 12], [11, 12], [12, 13], [14, 4], [15, 5], [14, 16], [15, 17], [16, 10], [17, 11], [16, 13], [17, 13], [0, 14], [3, 15], [18, 1], [18, 2], [4, 8], [5, 9]];
+function bust(g, cx, cy, s, t, o = {}) {
+  const col = o.col || CY, a = o.a ?? 1;
+  g.save(); g.globalAlpha *= a;
+  g.translate(cx - 200 * s, cy - 250 * s); g.scale(s, s);
+  const flick = .85 + .15 * Math.sin(t * 37) * Math.sin(t * 11);
+  const img = o.young ? (youngOK ? young : null) : (photoOK ? photo : null);
+  if (img) {
+    g.save(); bustPath(g); g.rect(0, 0, 0, 0);
+    g.beginPath(); g.rect(-20, -20, 440, 540); g.clip();
+    const r = Math.max(440 / img.width, 540 / img.height);
+    g.filter = 'grayscale(1) contrast(1.25) brightness(1.05)';
+    g.drawImage(img, 200 - img.width * r / 2, 250 - img.height * r / 2, img.width * r, img.height * r);
+    g.filter = 'none'; g.globalCompositeOperation = 'color'; g.fillStyle = col; g.globalAlpha = .7; g.fillRect(-20, -20, 440, 540);
+    g.restore();
+    g.save(); g.globalAlpha *= .35; g.fillStyle = INK; for (let y = -20; y < 520; y += 6) g.fillRect(-20, y, 440, 2.5); g.restore();
+    brackets(g, -20, -20, 440, 540, 50, col, 3);
+  } else {
+    // body fill
+    g.save(); bustPath(g); g.clip();
+    const gr = g.createLinearGradient(0, 0, 0, 500);
+    gr.addColorStop(0, 'rgba(25,246,255,.30)'); gr.addColorStop(1, 'rgba(25,246,255,.04)');
+    g.fillStyle = gr; g.fillRect(0, 0, 400, 500);
+    g.globalAlpha = .55 * flick; g.fillStyle = col;
+    for (let y = 0; y < 500; y += 7) g.fillRect(0, y, 400, 1.6);
+    // moving scan band
+    const sy = ((t * 160) % 700) - 100;
+    const band = g.createLinearGradient(0, sy - 60, 0, sy + 10);
+    band.addColorStop(0, 'rgba(25,246,255,0)'); band.addColorStop(1, 'rgba(233,251,255,.75)');
+    g.globalAlpha = .7; g.fillStyle = band; g.fillRect(0, sy - 60, 400, 70);
+    g.restore();
+    // outline + suit details
+    g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 22; g.lineWidth = 3.2 / Math.max(s, .5);
+    g.globalAlpha = a * flick; bustPath(g); g.stroke();
+    g.lineWidth = 2.2 / Math.max(s, .5);
+    g.beginPath();
+    g.moveTo(166, 300); g.lineTo(146, 420); g.lineTo(196, 500);          // lapels
+    g.moveTo(234, 300); g.lineTo(254, 420); g.lineTo(204, 500);
+    g.moveTo(188, 318); g.lineTo(212, 318); g.lineTo(220, 428); g.lineTo(200, 462); g.lineTo(180, 428); g.closePath(); // tie
+    if (o.young) { g.moveTo(112, 92); g.quadraticCurveTo(200, 20, 290, 92); g.lineTo(312, 104); g.lineTo(112, 104); } // cap
+    else { g.moveTo(124, 122); g.quadraticCurveTo(150, 40, 214, 52); g.quadraticCurveTo(272, 58, 280, 128); g.moveTo(170, 58); g.quadraticCurveTo(178, 80, 174, 100); } // slicked hair, side part
+    g.stroke();
+    // face-tracking mesh
+    g.lineWidth = 1.2 / Math.max(s, .5); g.globalAlpha = a * .55;
+    g.beginPath(); for (const [i, j] of MESH) { g.moveTo(...FACE[i]); g.lineTo(...FACE[j]); } g.stroke();
+    g.globalAlpha = a; g.fillStyle = WH; g.shadowColor = WH;
+    for (const [i, [x, y]] of FACE.entries()) { if (hash(i + Math.floor(t * 6)) > .25) { g.beginPath(); g.arc(x, y, 3 / Math.max(s, .5), 0, 7); g.fill(); } }
+  }
+  g.restore();
+}
+function reticle(g, cx, cy, r, t, col = CY, a = 1) {
+  g.save(); g.globalAlpha *= a; g.strokeStyle = col; g.shadowColor = col; g.shadowBlur = 16;
+  g.lineWidth = 2; g.setLineDash([6, 14]); g.beginPath(); g.arc(cx, cy, r, 0, 7); g.stroke(); g.setLineDash([]);
+  g.lineWidth = 5;
+  for (let k = 0; k < 3; k++) { const s = t * .7 + k * 2.094; g.beginPath(); g.arc(cx, cy, r + 26, s, s + .7); g.stroke(); }
+  g.lineWidth = 2; g.globalAlpha *= .6;
+  for (let k = 0; k < 4; k++) { const s = -t * .4 + k * 1.571; g.beginPath(); g.arc(cx, cy, r + 60, s, s + .25); g.stroke(); }
+  g.restore();
+}
+
+/* ---------- scenes (draw into sx, local time lt) ---------- */
+function sceneCover(g, t) {
+  const lt = t;
+  // portrait right
+  const pa = eo(prog(lt, BEATS[0] - .2, BEATS[1]));
+  reticle(g, 1880, 640, 330, lt, CY, pa);
+  bust(g, 1880, 660, 1.18, lt, { a: pa });
+  T(g, 'SUBJECT // JESSE L. LIVERMORE', 1500, 1070, { size: 30, f: MONO, w: 300, color: CY, ls: 3, a: pa });
+  T(g, '1877 — 1940  ·  MATCH 98.7%', 1500, 1114, { size: 30, f: MONO, w: 300, color: WH, ls: 3, a: pa * .8 });
+  // title
+  const c1 = prog(lt, BEATS[0], BEATS[0] + .25);
+  chip(g, '大师列传', 230, 360, YE, { size: 44, a: c1 });
+  T(g, 'MASTERS OF THE MARKET · EP.01', 520, 410, { size: 30, f: MONO, w: 300, color: YE, ls: 4, a: c1 * .9 });
+  const c2 = prog(lt, BEATS[1], BEATS[1] + .12);
+  const jit = lt < BEATS[1] + .35 ? (hash(Math.floor(lt * 30)) - .5) * 30 : 0;
+  if (c2 > 0) {
+    T(g, '杰西·利弗莫尔', 222 + jit + 8, 640, { size: 200, w: 900, color: MG, a: c2 * .8 });
+    T(g, '杰西·利弗莫尔', 222 - jit - 8, 640, { size: 200, w: 900, color: CY, a: c2 * .8 });
+    T(g, '杰西·利弗莫尔', 222, 640, { size: 200, w: 900, color: WH, glow: CY, blur: 30, a: c2 });
+  }
+  const c3 = eo(prog(lt, BEATS[3], BEATS[3] + .4));
+  g.save(); g.fillStyle = CY; g.shadowColor = CY; g.shadowBlur = 16; g.fillRect(230, 700, 1040 * c3, 5); g.restore();
+  T(g, '投机之王  ·  股票大作手', 230, 810, { size: 76, w: 500, color: WH, ls: 10, a: eo(prog(lt, BEATS[3] + .1, BEATS[4])) });
+  T(g, 'JESSE LAURISTON LIVERMORE', 232, 880, { size: 34, f: MONO, w: 300, color: MG, ls: 8, a: eo(prog(lt, BEATS[4], BEATS[5])) });
+  // spec readouts
+  const rows = [['BORN', '1877 · MASSACHUSETTS'], ['ENTRY', 'AGE 14 · BOSTON'], ['STYLE', 'TREND / TAPE READING']];
+  rows.forEach(([k, v], i) => {
+    const a = prog(lt, BEATS[5] + i * .25, BEATS[5] + i * .25 + .2);
+    T(g, k, 232, 980 + i * 52, { size: 28, f: MONO, w: 300, color: CY, ls: 4, a });
+    T(g, typed(v, lt, BEATS[5] + i * .25, BEATS[5] + i * .25 + .5), 420, 980 + i * 52, { size: 28, f: MONO, w: 300, color: WH, ls: 3, a });
+  });
+}
+
+function sceneOrigin(g, t) {           // age 14, chalking prices on the quotation board
+  const lt = t - SUB.origin;
+  const cw1 = chip(g, 'FILE 01 · 起点', 230, 200, CY, { size: 34 });
+  T(g, 'BOSTON 1891 · PAINE, WEBBER & CO.', 230 + cw1 + 40, 244, { size: 30, f: MONO, w: 300, color: CY, ls: 4 });
+  // quotation board
+  const bx0 = 230, by0 = 320, bw = 1360, bh = 760;
+  panel(g, bx0, by0, bw, bh, { a: eo(prog(lt, 0, .3)), fill: 'rgba(6,26,30,.7)' });
+  T(g, '老式股票报价板  QUOTATION BOARD', bx0 + 50, by0 + 70, { size: 34, w: 500, color: YE, ls: 4 });
+  const sym = ['ATCHISON', 'BURLINGTON', 'ERIE', 'LACKAWANNA', 'N.Y. CENTRAL', 'READING', 'SUGAR', 'WESTERN UNION'];
+  const cols = ['OPEN', '10:00', '11:00', '12:00', '1:00', '2:00'];
+  cols.forEach((s, j) => T(g, s, bx0 + 420 + j * 150, by0 + 140, { size: 26, f: MONO, w: 300, color: CY, ls: 2, align: 'center' }));
+  const total = sym.length * cols.length, shown = Math.floor(prog(lt, .25, 6.6) * total);
+  sym.forEach((s, i) => {
+    const y = by0 + 205 + i * 66;
+    g.save(); g.fillStyle = 'rgba(25,246,255,.06)'; if (i % 2) g.fillRect(bx0 + 30, y - 44, bw - 60, 60); g.restore();
+    T(g, s, bx0 + 50, y, { size: 30, f: MONO, w: 300, color: WH, ls: 2 });
+    cols.forEach((_, j) => {
+      const n = j * sym.length + i; if (n >= shown) return;
+      const base = 30 + hash(i * 9) * 80, v = base + (hash(i * 13 + j) - .45) * 6;
+      const frac = ['', '⅛', '¼', '⅜', '½', '⅝', '¾', '⅞'][Math.floor(hash(n) * 8)];
+      const up = j === 0 || hash(i * 13 + j) > hash(i * 13 + j - 1);
+      const fresh = n === shown - 1;
+      T(g, Math.floor(v) + frac, bx0 + 420 + j * 150, y, { size: 34, f: MONO, w: 300, align: 'center', color: fresh ? YE : (up ? GR : RD), glow: fresh ? YE : null, blur: 18 });
+    });
+  });
+  // chalk cursor
+  const cur = Math.max(0, shown - 1), ci = cur % sym.length, cj = Math.floor(cur / sym.length);
+  if (lt > .25 && lt < 6.7) brackets(g, bx0 + 420 + cj * 150 - 66, by0 + 205 + ci * 66 - 46, 132, 62, 14, YE, 3);
+  // young bust
+  const pa = eo(prog(lt, .1, .5));
+  reticle(g, 2040, 650, 260, lt, CY, pa * .8);
+  bust(g, 2040, 670, .95, lt, { young: true, a: pa });
+  [['AGE', '14'], ['ROLE', '报价员 BOARD BOY'], ['EDGE', 'PRICE · NOT TIPS']].forEach(([k, v], i) => {
+    const a = prog(lt, .6 + i * .3, .8 + i * .3);
+    panel(g, 1720, 960 + i * 70, 660, 56, { cut: 14, a, blur: 8, lw: 1.5 });
+    T(g, k, 1746, 999 + i * 70, { size: 26, f: MONO, w: 300, color: CY, ls: 3, a });
+    T(g, v, 1900, 999 + i * 70, { size: 28, w: 500, color: WH, a });
+  });
+  // "no insider tips" stamp on the second line
+  const c2 = cue('v02'), sa = prog(t, c2.start + .3, c2.start + .5);
+  if (sa > 0) {
+    g.save(); g.translate(1310, 450); g.rotate(-.12); g.globalAlpha = sa;
+    g.strokeStyle = RD; g.lineWidth = 6; g.shadowColor = RD; g.shadowBlur = 20; g.strokeRect(-190, -60, 380, 110);
+    T(g, '内幕消息 ✕', 0, 18, { size: 56, w: 900, color: RD, align: 'center', glow: RD });
+    g.restore();
+    const ta = prog(t, c2.start + 1.6, c2.start + 2);
+    chip(g, '只看价格趋势 ▲', 1240, 560, GR, { size: 40, a: ta });
+  }
+}
+
+function sceneCycles(g, t) {           // four rises, four ruins
+  const lt = t - SUB.cycles, d = SUB.crash - SUB.cycles;
+  chip(g, 'FILE 02 · 四起四落', 230, 200, MG, { size: 34 });
+  // ticker tape
+  const tape = '  ▲ U.S. STEEL 112¼   ▼ ANACONDA 54⅜   ▲ BETHLEHEM 87½   ▼ UNION PACIFIC 141   ▲ CHRYSLER 68¾   ▼ RADIO 101⅛   ▲ GENERAL MOTORS 74½   ';
+  panel(g, 230, 280, 2100, 80, { cut: 18, fill: 'rgba(30,8,40,.7)', stroke: MG });
+  g.save(); g.beginPath(); g.rect(250, 280, 2060, 80); g.clip();
+  const tw = measure(g, tape, { size: 34, f: MONO, w: 300, ls: 2 }), off = (lt * 420) % tw;
+  for (let k = -1; k < 3; k++) T(g, tape, 250 - off + k * tw, 333, { size: 34, f: MONO, w: 300, color: YE, ls: 2 });
+  g.restore();
+  // equity curve
+  const x0 = 300, x1 = 2260, y0 = 1100, y1 = 450;
+  panel(g, 230, 400, 2100, 760, { fill: 'rgba(6,16,30,.6)' });
+  g.save(); g.strokeStyle = 'rgba(25,246,255,.12)'; g.lineWidth = 1;
+  for (let i = 0; i <= 6; i++) { const y = lerp(y0, y1, i / 6); g.beginPath(); g.moveTo(x0, y); g.lineTo(x1, y); g.stroke(); }
+  g.restore();
+  const K = [.08, .55, .06, .72, .07, .86, .05, .97, .03];
+  const P = []; for (let i = 0; i < K.length - 1; i++) for (let s = 0; s < 24; s++) {
+    const k = s / 24, up = K[i + 1] > K[i];
+    const e = up ? Math.pow(k, 1.6) : 1 - Math.pow(1 - k, 4);
+    P.push(lerp(K[i], K[i + 1], e) + (hash(i * 50 + s) - .5) * .02 * (up ? 1 : .3));
+  }
+  P.push(K[K.length - 1]);
+  const n = Math.floor(eio(prog(lt, .1, d - .2)) * (P.length - 1)) + 1;
+  const px = i => lerp(x0, x1, i / (P.length - 1)), py = v => lerp(y0, y1, v);
+  g.save(); g.lineWidth = 6; g.lineJoin = 'round';
+  for (let i = 1; i < n; i++) {
+    const up = P[i] >= P[i - 1]; g.strokeStyle = up ? GR : RD; g.shadowColor = g.strokeStyle; g.shadowBlur = 18;
+    g.beginPath(); g.moveTo(px(i - 1), py(P[i - 1])); g.lineTo(px(i), py(P[i])); g.stroke();
+  }
+  g.restore();
+  let rises = 0, ruins = 0;
+  for (let i = 1; i < K.length; i++) {
+    const idx = i * 24; if (idx >= n) break;
+    const up = K[i] > K[i - 1]; up ? rises++ : ruins++;
+    const x = px(idx), y = py(K[i]);
+    if (up) { T(g, '▲ 崛起 ' + rises, x, y - 34, { size: 36, w: 900, color: GR, align: 'center', glow: GR }); }
+    else { T(g, '✕ 破产 ' + ruins, x, y + 70, { size: 36, w: 900, color: RD, align: 'center', glow: RD }); }
+  }
+  T(g, `崛起 ×${rises}   破产 ×${ruins}`, 2260, 520, { size: 54, w: 900, color: WH, align: 'right', glow: MG, blur: 20 });
+}
+
+// DJIA 1929, approximate closes (illustrative)
+const DJ = (() => {
+  const key = [[0, 333], [16, 350], [40, 380], [42, 381], [53, 362], [62, 329], [67, 352], [73, 333], [76, 305], [77, 299], [78, 301], [79, 260], [80, 230], [82, 273], [86, 232], [91, 198], [98, 245]];
+  const out = []; let prev = key[0][1];
+  for (let d = 0; d <= 98; d++) {
+    let j = 0; while (key[j + 1] && key[j + 1][0] < d) j++;
+    const [da, va] = key[j], [db, vb] = key[j + 1] || key[j];
+    const v = db === da ? va : lerp(va, vb, (d - da) / (db - da));
+    const close = v + (hash(d * 3.3) - .5) * 6, open = prev;
+    const hi = Math.max(open, close) + hash(d * 5.1) * 7, lo = Math.min(open, close) - hash(d * 7.9) * 7;
+    out.push({ open, close, hi, lo }); prev = close;
+  }
+  return out;
+})();
+function sceneCrash(g, t) {
+  const lt = t - SUB.crash, d = SUB.blowup - SUB.crash;
+  const cw3 = chip(g, 'FILE 03 · 1929 大崩盘', 230, 200, YE, { size: 34 });
+  T(g, 'DJIA  1929.07 — 1929.11（示意）', 230 + cw3 + 40, 244, { size: 30, f: MONO, w: 300, color: YE, ls: 3 });
+  panel(g, 230, 300, 2100, 860, { fill: 'rgba(6,14,28,.62)' });
+  const x0 = 320, x1 = 2240, lo = 180, hi = 400, y0 = 1110, y1 = 360;
+  const X = i => lerp(x0, x1, i / (DJ.length - 1)), Y = v => lerp(y0, y1, (v - lo) / (hi - lo));
+  g.save(); g.strokeStyle = 'rgba(25,246,255,.12)'; g.lineWidth = 1;
+  for (let v = 200; v <= 400; v += 50) { g.beginPath(); g.moveTo(x0, Y(v)); g.lineTo(x1, Y(v)); g.stroke(); T(g, String(v), x0 - 20, Y(v) + 10, { size: 24, f: MONO, w: 300, color: CY, align: 'right', a: .7 }); }
+  g.restore();
+  const n = Math.floor(prog(lt, .05, d * .82) * DJ.length);
+  const cw = (x1 - x0) / DJ.length * .62;
+  for (let i = 0; i < n; i++) {
+    const k = DJ[i], up = k.close >= k.open, col = up ? GR : RD, x = X(i);
+    g.save(); g.strokeStyle = col; g.fillStyle = col; g.shadowColor = col; g.shadowBlur = i === n - 1 ? 26 : 8;
+    g.lineWidth = 2; g.beginPath(); g.moveTo(x, Y(k.hi)); g.lineTo(x, Y(k.lo)); g.stroke();
+    const top = Y(Math.max(k.open, k.close)), bot = Y(Math.min(k.open, k.close));
+    g.fillRect(x - cw / 2, top, cw, Math.max(3, bot - top));
+    g.restore();
+  }
+  // annotations as the chart reaches them
+  const at = i => n > i;
+  if (at(42)) {
+    T(g, 'SEP 03 · 381.17 顶点', X(42), Y(381) - 50, { size: 32, f: CN, w: 500, color: WH, align: 'center' });
+  }
+  if (at(50)) {
+    const x = X(50), y = Y(DJ[50].hi) - 20;
+    g.save(); g.fillStyle = YE; g.shadowColor = YE; g.shadowBlur = 24;
+    g.beginPath(); g.moveTo(x - 26, y - 50); g.lineTo(x + 26, y - 50); g.lineTo(x, y); g.closePath(); g.fill(); g.restore();
+    chip(g, 'SHORT ▼ 提前做空', x + 50, y - 60, YE, { size: 34 });
+  }
+  if (at(80)) {
+    T(g, 'OCT 29 黑色星期二', X(80), Y(230) + 110, { size: 38, w: 900, color: RD, align: 'center', glow: RD });
+  }
+  if (at(91)) T(g, 'NOV 13 · 198.69', X(91), Y(198) + 60, { size: 30, f: MONO, w: 300, color: RD, align: 'center' });
+  // P&L counter
+  const pa = prog(lt, d * .45, d * .9);
+  if (pa > 0) {
+    panel(g, 1560, 360, 700, 170, { stroke: GR, fill: 'rgba(4,30,20,.75)', a: prog(lt, d * .45, d * .5) });
+    T(g, 'SHORT P&L', 1600, 420, { size: 28, f: MONO, w: 300, color: GR, ls: 4 });
+    const v = Math.floor(eo(pa) * 100);
+    T(g, `+$${v},000,000`, 1600, 500, { size: 64, f: DISP, w: 900, color: WH, glow: GR, ls: 2 });
+  }
+}
+
+function sceneBlowup(g, t) {           // hubris → margin call
+  const lt = t - SUB.blowup, d = SUB.book - SUB.blowup;
+  const p = pulse(t, .2);
+  g.save(); g.fillStyle = `rgba(255,30,60,${.10 + .14 * p})`; g.fillRect(0, 0, W, H); g.restore();
+  // hazard stripes top & bottom
+  for (const y of [176, 1120]) {
+    g.save(); g.beginPath(); g.rect(0, y, W, 34); g.clip(); g.fillStyle = 'rgba(249,233,0,.85)'; g.fillRect(0, y, W, 34);
+    g.fillStyle = INK; const o = (lt * 200) % 80; for (let x = -80; x < W + 80; x += 80) { g.beginPath(); g.moveTo(x + o, y); g.lineTo(x + o + 40, y); g.lineTo(x + o + 6, y + 34); g.lineTo(x + o - 34, y + 34); g.fill(); }
+    g.restore();
+  }
+  chip(g, 'FILE 04 · WARNING', 230, 240, RD, { size: 34 });
+  // leverage gauge
+  panel(g, 230, 330, 1000, 340, { stroke: RD, fill: 'rgba(40,6,12,.7)' });
+  T(g, 'LEVERAGE  仓位杠杆', 270, 400, { size: 32, w: 500, color: RD, ls: 3 });
+  const fill = eo(prog(lt, .1, 1.6));
+  for (let i = 0; i < 16; i++) {
+    const on = i / 16 < fill, over = i >= 11;
+    g.save(); g.fillStyle = on ? (over ? RD : YE) : 'rgba(255,255,255,.08)'; if (on) { g.shadowColor = g.fillStyle; g.shadowBlur = 16; }
+    g.fillRect(270 + i * 58, 450, 44, 110); g.restore();
+  }
+  T(g, fill > .7 ? 'OVERLOAD ■ 重仓' : 'LOADING…', 270, 625, { size: 40, w: 900, color: fill > .7 ? RD : YE, glow: RD, a: .6 + .4 * Math.sin(lt * 20) ** 2 });
+  // hubris tag
+  const ha = prog(lt, .9, 1.1);
+  panel(g, 230, 720, 1000, 330, { stroke: MG, fill: 'rgba(36,6,40,.7)', a: ha });
+  T(g, 'EMOTION SCAN', 270, 790, { size: 28, f: MONO, w: 300, color: MG, ls: 4, a: ha });
+  T(g, '傲慢 HUBRIS', 270, 900, { size: 92, w: 900, color: WH, glow: MG, a: ha });
+  T(g, 'DETECTED · 数次', 270, 990, { size: 34, f: MONO, w: 300, color: MG, ls: 4, a: ha });
+  // big 爆仓
+  const ba = prog(lt, 2.2, 2.35);
+  if (ba > 0) {
+    const j = lt < 2.9 ? (hash(Math.floor(lt * 30)) - .5) * 40 : (hash(Math.floor(lt * 8)) - .5) * 8;
+    const x = 1820, y = 820;
+    T(g, '爆仓', x + j + 14, y, { size: 380, w: 900, color: CY, align: 'center', a: ba * .7 });
+    T(g, '爆仓', x - j - 14, y, { size: 380, w: 900, color: MG, align: 'center', a: ba * .7 });
+    T(g, '爆仓', x, y, { size: 380, w: 900, color: RD, align: 'center', glow: RD, blur: 50, a: ba });
+    T(g, 'MARGIN CALL · LIQUIDATED', x, y + 120, { size: 48, f: MONO, w: 300, color: WH, align: 'center', ls: 8, a: ba });
+  } else {
+    // equity line sliding down
+    const k = prog(lt, .2, 2.2);
+    g.save(); g.strokeStyle = RD; g.lineWidth = 6; g.shadowColor = RD; g.shadowBlur = 20; g.beginPath();
+    for (let i = 0; i <= 60 * k; i++) { const x = 1400 + i * 14, y = 520 + Math.pow(i / 60, 2.2) * 520 + (hash(i) - .5) * 30; i ? g.lineTo(x, y) : g.moveTo(x, y); }
+    g.stroke(); g.restore();
+  }
+}
+
+function sceneBook(g, t) {
+  const lt = t - SUB.book;
+  chip(g, 'FILE 05 · 传世著作', 230, 200, CY, { size: 34 });
+  const cx = 1700, cy = 690;
+  const ang = Math.sin(lt * .8) * .35 - .15, sxk = Math.cos(ang), appear = eo(prog(lt, 0, .5));
+  reticle(g, cx, cy, 420, lt, CY, .7 * appear);
+  g.save(); g.translate(cx, cy); g.scale(sxk * appear, appear);
+  const bw = 520, bh = 720;
+  // spine depth
+  g.fillStyle = 'rgba(25,246,255,.25)'; g.fillRect(-bw / 2 - 40 * Math.sign(ang), -bh / 2 + 10, 40, bh - 20);
+  const gr = g.createLinearGradient(-bw / 2, -bh / 2, bw / 2, bh / 2);
+  gr.addColorStop(0, 'rgba(18,40,64,.95)'); gr.addColorStop(1, 'rgba(36,10,48,.95)');
+  g.fillStyle = gr; g.shadowColor = CY; g.shadowBlur = 40; g.fillRect(-bw / 2, -bh / 2, bw, bh);
+  g.shadowBlur = 0; g.strokeStyle = CY; g.lineWidth = 4; g.strokeRect(-bw / 2 + 24, -bh / 2 + 24, bw - 48, bh - 48);
+  T(g, 'REMINISCENCES', 0, -200, { size: 46, f: DISP, w: 900, color: WH, align: 'center', ls: 4 });
+  T(g, 'OF A', 0, -146, { size: 32, f: DISP, w: 600, color: CY, align: 'center', ls: 8 });
+  T(g, 'STOCK OPERATOR', 0, -90, { size: 46, f: DISP, w: 900, color: WH, align: 'center', ls: 4 });
+  g.fillStyle = MG; g.fillRect(-120, -40, 240, 4);
+  T(g, '股票大作手', 0, 60, { size: 72, w: 900, color: YE, align: 'center', glow: YE, blur: 18 });
+  T(g, '回忆录', 0, 150, { size: 72, w: 900, color: YE, align: 'center', glow: YE, blur: 18 });
+  T(g, '1923', 0, 290, { size: 34, f: MONO, w: 300, color: CY, align: 'center', ls: 10 });
+  g.restore();
+  const a = prog(lt, .6, .9);
+  T(g, '《股票大作手回忆录》', 230, 560, { size: 84, w: 900, color: WH, glow: CY, a });
+  T(g, 'REMINISCENCES OF A STOCK OPERATOR · 1923', 236, 630, { size: 30, f: MONO, w: 300, color: CY, ls: 3, a });
+  chip(g, '交易者必读经典', 230, 700, YE, { size: 48, a: prog(lt, 1.2, 1.4) });
+  T(g, '★★★★★  MUST READ', 236, 860, { size: 40, f: MONO, w: 300, color: YE, ls: 6, a: prog(lt, 1.5, 1.8) });
+}
+
+function sceneQuotes(g, t, start, items, label) {
+  const lt = t - start;
+  chip(g, '经典语录', 230, 230, YE, { size: 40 });
+  T(g, label, 520, 278, { size: 30, f: MONO, w: 300, color: YE, ls: 4 });
+  const n = items.length;
+  items.forEach(([key, no], i) => {
+    const q = cue(key), y = n === 1 ? 470 : 380 + i * 360, h = n === 1 ? 460 : 300;
+    const a = eo(prog(t, q.start - .45, q.start - .1));
+    if (a <= 0) return;
+    const slide = (1 - a) * 120;
+    g.save(); g.translate(slide, 0);
+    const warn = n === 1;
+    panel(g, 230, y, 2100, h, { fill: warn ? 'rgba(60,20,30,.55)' : 'rgba(200,250,255,.10)', stroke: warn ? RD : CY, a });
+    if (warn) { g.save(); g.globalAlpha = a; g.fillStyle = RD; g.shadowColor = RD; g.shadowBlur = 20; g.fillRect(230, y, 14, h); g.restore(); }
+    T(g, `QUOTE_${no} // J.L.LIVERMORE`, 290, y + 62, { size: 26, f: MONO, w: 300, color: warn ? RD : CY, ls: 4, a });
+    const txt = typed(q.text, t, q.start, q.start + (q.end - q.start) * .8);
+    const size = warn ? 104 : 84, ty = y + (warn ? 280 : 190);
+    T(g, '▶', 290, ty, { size: size * .7, w: 900, color: MG, glow: MG, a });
+    T(g, txt, 290 + size * .95, ty, { size, w: 900, color: WH, glow: CY, blur: 16, a });
+    const caret = t < q.end && Math.floor(t * 4) % 2 === 0;
+    if (caret) { const w = measure(g, txt, { size, w: 900 }); g.save(); g.fillStyle = CY; g.globalAlpha = a; g.fillRect(290 + size * .95 + w + 8, ty - size * .82, size * .1, size * .95); g.restore(); }
+    T(g, '—— 杰西·利弗莫尔', 2280, y + h - 40, { size: 32, w: 500, color: warn ? YE : CY, align: 'right', a: a * prog(t, q.end - .3, q.end) });
+    g.restore();
+  });
+}
+
+function sceneEnd(g, t) {
+  const lt = t - CUT.end;
+  const p = pulse(t, .2);
+  reticle(g, W / 2, 640, 520 + p * 14, lt, CY, eo(prog(lt, 0, .5)) * .8);
+  reticle(g, W / 2, 640, 380, -lt * 1.3, MG, eo(prog(lt, .2, .7)) * .6);
+  if (logo.complete && logo.naturalWidth) {
+    const lw = 1400, lh = lw * logo.naturalHeight / logo.naturalWidth;
+    const reveal = eo(prog(lt, .3, 1.1));
+    g.save(); g.beginPath(); g.rect(W / 2 - lw / 2 - 20, 640 - lh / 2 - 20, (lw + 40) * reveal, lh + 40); g.clip();
+    g.shadowColor = CY; g.shadowBlur = 30 + 30 * p;
+    g.drawImage(logo, W / 2 - lw / 2, 640 - lh / 2, lw, lh);
+    g.restore();
+    if (reveal < 1) { g.save(); g.fillStyle = CY; g.shadowColor = CY; g.shadowBlur = 30; g.fillRect(W / 2 - lw / 2 - 20 + (lw + 40) * reveal, 640 - lh / 2 - 40, 6, lh + 80); g.restore(); }
+  }
+  g.save(); g.globalAlpha = prog(lt, 1.1, 1.5); const band = g.createLinearGradient(0, 850, 0, 1030);
+  band.addColorStop(0, 'rgba(4,5,12,0)'); band.addColorStop(.3, 'rgba(4,5,12,.85)'); band.addColorStop(.7, 'rgba(4,5,12,.85)'); band.addColorStop(1, 'rgba(4,5,12,0)');
+  g.fillStyle = band; g.fillRect(0, 850, W, 180); g.restore();
+  T(g, '大师列传  ·  MASTERS OF THE MARKET', W / 2, 920, { size: 48, w: 500, color: WH, align: 'center', ls: 8, a: prog(lt, 1.2, 1.5) });
+  T(g, 'EP.01  杰西·利弗莫尔  ·  投机之王', W / 2, 990, { size: 34, f: MONO, w: 300, color: YE, align: 'center', ls: 6, a: prog(lt, 1.6, 1.9) });
+}
+
+/* ---------- persistent chrome ---------- */
+function chrome(g, t) {
+  const p = pulse(t, .14), o = 10 * p;
+  brackets(g, 40 - o, 30 - o, W - 80 + 2 * o, H - 150 + 2 * o, 90, CY, 4, .75);
+  // top right readout
+  const s = Math.floor(t), f = Math.floor((t - s) * FPS);
+  const rec = Math.floor(t * 2) % 2 === 0;
+  g.save(); g.fillStyle = RD; g.globalAlpha = rec ? 1 : .25; g.shadowColor = RD; g.shadowBlur = 14; g.beginPath(); g.arc(1980, 92, 12, 0, 7); g.fill(); g.restore();
+  T(g, `REC  00:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`, 2006, 104, { size: 32, f: MONO, w: 300, color: WH, ls: 3 });
+  T(g, 'ARCHIVE // WALL ST. 1877—1940', 2490, 150, { size: 24, f: MONO, w: 300, color: CY, ls: 3, align: 'right', a: .8 });
+  // beat meter
+  const bi = beatIndex(t);
+  for (let i = 0; i < 24; i++) {
+    const h = 8 + 40 * p * (.4 + .6 * hash(i + bi * 31)) + 6 * hash(i * 7 + Math.floor(t * 12));
+    g.save(); g.fillStyle = i % 4 === (bi % 4 + 4) % 4 ? MG : CY; g.globalAlpha = .75; g.fillRect(2300 + i * 8, 1252 - h, 5, h); g.restore();
+  }
+  // left ruler
+  g.save(); g.strokeStyle = CY; g.globalAlpha = .45; g.lineWidth = 2;
+  for (let i = 0; i < 30; i++) { const y = 300 + i * 30, l = i % 5 ? 14 : 30; g.beginPath(); g.moveTo(70, y); g.lineTo(70 + l, y); g.stroke(); }
+  const my = 300 + ((t / TL.duration) * 870); g.fillStyle = YE; g.globalAlpha = 1; g.beginPath(); g.moveTo(108, my); g.lineTo(126, my - 10); g.lineTo(126, my + 10); g.fill();
+  g.restore();
+}
+function subtitle(g, t) {
+  for (const q of TL.cues) {
+    if (q.scene !== 'bio') continue;
+    const a = Math.min(prog(t, q.start - .12, q.start + .05), 1 - prog(t, q.end + .1, q.end + .25));
+    if (a <= 0) continue;
+    const size = 54, w = measure(g, q.text, { size, w: 500, ls: 2 }) + 90, x = W / 2 - w / 2, y = 1176;
+    panel(g, x, y, w, 88, { cut: 18, fill: 'rgba(4,8,18,.82)', stroke: CY, a, blur: 10, lw: 2 });
+    g.save(); g.globalAlpha = a; g.fillStyle = MG; g.fillRect(x, y + 14, 6, 60); g.restore();
+    T(g, q.text, W / 2, y + 63, { size, w: 500, color: WH, align: 'center', ls: 2, a });
+  }
+}
+function watermark(g, t) {
+  if (!(logo.complete && logo.naturalWidth)) return;
+  const w = 400, h = w * logo.naturalHeight / logo.naturalWidth;
+  g.save(); g.globalAlpha = .9 * (1 - prog(t, CUT.end, CUT.end + .4));
+  g.shadowColor = 'rgba(25,246,255,.6)'; g.shadowBlur = 14;
+  g.drawImage(logo, 90, 66, w, h); g.restore();
+}
+function disclaimer(g) {
+  g.save(); g.fillStyle = 'rgba(2,3,8,.92)'; g.fillRect(0, H - 96, W, 96);
+  g.fillStyle = CY; g.globalAlpha = .7; g.fillRect(0, H - 96, W, 2); g.restore();
+  T(g, 'DISCLAIMER', 90, H - 36, { size: 24, f: MONO, w: 300, color: YE, ls: 4 });
+  T(g, '仅人物历史科普，不构成任何投资建议，市场有风险', W / 2, H - 34, { size: 40, w: 500, color: 'rgba(233,251,255,.92)', align: 'center', ls: 4 });
+}
+
+/* ---------- cut transition: glitch slices + RGB split ---------- */
+function composite(g, t) {
+  let since = 9; for (const x of ALLCUTS) if (x <= t) since = t - x;
+  const G = .3, k = since < G ? 1 - since / G : 0;
+  const p = pulse(t, .12), z = 1 + .006 * p;
+  g.save(); g.translate(W / 2, H / 2); g.scale(z, z); g.translate(-W / 2, -H / 2);
+  if (k <= 0) { g.drawImage(sc, 0, 0); g.restore(); return; }
+  const seed = Math.floor(t * FPS);
+  g.globalAlpha = .55; g.globalCompositeOperation = 'lighter';
+  g.drawImage(sc, -22 * k, 0); g.drawImage(sc, 22 * k, 0);
+  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  let y = 0;
+  while (y < H) {
+    const h = 20 + hash(seed + y) * 110, dx = (hash(seed * 3 + y) - .5) * 160 * k * (hash(y + seed * 7) > .4 ? 1 : 0);
+    g.drawImage(sc, 0, y, W, h, dx, y, W, h); y += h;
+  }
+  g.restore();
+  g.save(); g.globalAlpha = .5 * k;
+  for (let i = 0; i < 5; i++) { g.fillStyle = i % 2 ? MG : CY; g.fillRect(0, hash(seed + i * 9) * H, W, 4 + hash(i + seed) * 14); }
+  g.restore();
+}
+
+/* ---------- film grain + scanlines (static) ---------- */
+const scan = new OffscreenCanvas(W, H), scx = scan.getContext('2d');
+(function () {
+  scx.fillStyle = 'rgba(0,0,0,.16)'; for (let y = 0; y < H; y += 4) scx.fillRect(0, y, W, 1.5);
+  const v = scx.createRadialGradient(W / 2, H / 2, H * .45, W / 2, H / 2, H * 1.05);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)'); scx.fillStyle = v; scx.fillRect(0, 0, W, H);
+})();
+
+function draw(t) {
+  drawBg(ctx, t);
+  sx.clearRect(0, 0, W, H);
+  if (t < CUT.bio) sceneCover(sx, t);
+  else if (t < SUB.cycles) sceneOrigin(sx, t);
+  else if (t < SUB.crash) sceneCycles(sx, t);
+  else if (t < SUB.blowup) sceneCrash(sx, t);
+  else if (t < SUB.book) sceneBlowup(sx, t);
+  else if (t < CUT.q12) sceneBook(sx, t);
+  else if (t < CUT.q34) sceneQuotes(sx, t, CUT.q12, [['q1', '01'], ['q2', '02']], 'CLASSIC QUOTES · 01—02');
+  else if (t < CUT.q5) sceneQuotes(sx, t, CUT.q34, [['q3', '03'], ['q4', '04']], 'CLASSIC QUOTES · 03—04');
+  else if (t < CUT.end) sceneQuotes(sx, t, CUT.q5, [['q5', '05']], 'CLASSIC QUOTES · 05 · 铁律');
+  else sceneEnd(sx, t);
+  composite(ctx, t);
+  chrome(ctx, t);
+  subtitle(ctx, t);
+  watermark(ctx, t);
+  disclaimer(ctx);
+  ctx.drawImage(scan, 0, 0);
+  // beat flash
+  const fl = pulse(t, .08) * .06; if (fl > .002) { ctx.fillStyle = `rgba(233,251,255,${fl})`; ctx.fillRect(0, 0, W, H); }
+}
+
+window.seek = f => draw(f / FPS);
+window.ASSETS_READY = Promise.all([
+  ...['500 40px NotoSC', '900 40px NotoSC', '300 40px NotoSC', '600 40px InterD', '900 40px InterD', '300 40px Plex'].map(s => document.fonts.load(s, '大师A1')),
+  new Promise(r => { if (logo.complete) r(); else { logo.onload = r; logo.onerror = r; } }),
+  new Promise(r => setTimeout(r, 300)),    // let the optional photos resolve or fail
+]).then(() => draw(0));
+
+if (location.hash === '#play') {
+  const t0 = performance.now();
+  const loop = () => { draw(((performance.now() - t0) / 1000) % TL.duration); requestAnimationFrame(loop); };
+  window.ASSETS_READY.then(loop);
+}
+</script>
+</body>
+</html>
