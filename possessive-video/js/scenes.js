@@ -1166,7 +1166,7 @@ export function sLock(ctx, t) {
 const MONT = ['eye', '你', 'heart', '我', 'lock', 'MINE', 'city', '占', 'eye', '有', 'heart', '欲', 'lock', '你', 'eye', '我', 'heart', '占', 'MINE', '欲'];
 export function cutsAt(t) {
   // returns [index, cutStart, cutLen]
-  if (t < 50) { const i = Math.floor((t - 48) / 0.5); return [i, 48 + i * 0.5, 0.5]; }
+  if (t < 50) { const i = Math.max(0, Math.floor((t - 48) / 0.5)); return [i, 48 + i * 0.5, 0.5]; }
   if (t < 51) { const i = Math.floor((t - 50) / 0.25); return [4 + i, 50 + i * 0.25, 0.25]; }
   const i = Math.floor((t - 51) / 0.125); return [8 + i, 51 + i * 0.125, 0.125];
 }

@@ -1,0 +1,215 @@
+<title>占有欲</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Noto+Sans+SC:wght@300;900&display=swap">
+<style>
+  /* Layout: one centered column — title plate, the film in a HUD frame, save bar, cue sheet. Single dark look by choice. */
+  :root {
+    --bg: #07040d;
+    --panel: #110a1c;
+    --line: #2b1d3d;
+    --fg: #ece8f7;
+    --muted: #9a92b3;
+    --red: #ff1744;
+    --cyan: #00e5f0;
+    --magenta: #ff2bd6;
+    --display: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --ui: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--ui);
+    font-size: 15px;
+    line-height: 1.55;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-block: 28px 56px;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 48px 48px;
+    background-position: center -1px;
+  }
+  main { max-width: 1120px; margin: 0 auto; display: grid; gap: 22px; }
+  header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; }
+  h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(44px, 9vw, 92px);
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-shadow: -3px 0 var(--magenta), 3px 0 var(--cyan), 0 0 28px rgba(255, 23, 68, 0.55);
+  }
+  .en { font-size: 13px; letter-spacing: 0.5em; color: var(--muted); margin-top: 10px; text-transform: uppercase; }
+  .spec { display: flex; flex-wrap: wrap; gap: 6px; font-variant-numeric: tabular-nums; }
+  .spec span {
+    border: 1px solid var(--line); background: var(--panel);
+    padding: 3px 10px; font-size: 12px; letter-spacing: 0.08em; color: var(--cyan);
+  }
+  .frame { position: relative; padding: 10px; }
+  .frame::before, .frame::after, .frame > .c3, .frame > .c4 {
+    content: ""; position: absolute; width: 26px; height: 26px; border: 2px solid var(--cyan); pointer-events: none;
+  }
+  .frame::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .frame::after { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .frame > .c3 { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .frame > .c4 { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .screen { position: relative; aspect-ratio: 16 / 9; max-width: 100%; background: #000; overflow: hidden; }
+  .screen img, .screen video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+  .loading {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 10px 14px;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    font-size: 13px; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; color: var(--fg);
+  }
+  .bar { height: 3px; background: rgba(255, 255, 255, 0.12); margin-top: 6px; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--red); box-shadow: 0 0 10px var(--red); transition: width 0.2s; }
+  .save { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+  button {
+    font: 600 16px/1 var(--ui); letter-spacing: 0.12em;
+    color: var(--bg); background: var(--red);
+    border: 0; padding: 15px 26px; cursor: pointer;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+    box-shadow: 0 0 22px rgba(255, 23, 68, 0.45);
+  }
+  button:hover { background: #ff4d6d; }
+  button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 4px; }
+  button:disabled { background: var(--line); color: var(--muted); cursor: default; box-shadow: none; }
+  #status { color: var(--muted); font-size: 14px; min-width: 0; }
+  #status.ok { color: var(--cyan); }
+  #status.err { color: var(--red); }
+  h2 { margin: 0 0 10px; font-size: 13px; font-weight: 600; letter-spacing: 0.3em; color: var(--magenta); text-transform: uppercase; }
+  .cues { overflow-x: auto; border: 1px solid var(--line); background: var(--panel); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { font-weight: 600; font-size: 12px; letter-spacing: 0.14em; color: var(--muted); }
+  td:first-child { font-variant-numeric: tabular-nums; color: var(--cyan); white-space: nowrap; }
+  td .zh { font-family: var(--display); font-weight: 300; }
+  footer { color: var(--muted); font-size: 13px; max-width: 70ch; }
+  @media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<main>
+  <header>
+    <div>
+      <h1>占有欲</h1>
+      <div class="en">Possessive · 原创配乐 · 赛博朋克动态影像</div>
+    </div>
+    <div class="spec" aria-label="视频规格">
+      <span>00:56</span><span>2560×1440 2K</span><span>60 FPS</span><span>H.264 / AAC</span><span id="size">MP4</span>
+    </div>
+  </header>
+
+  <div class="frame">
+    <div class="screen">
+      <img id="poster" src="poster.jpg" alt="《占有欲》画面：霓虹红色的标题字">
+      <video id="video" controls playsinline preload="auto" hidden></video>
+      <div class="loading" id="loading">
+        <span id="loadtext">正在载入视频…</span>
+        <div class="bar"><i id="bar"></i></div>
+      </div>
+    </div>
+    <span class="c3"></span><span class="c4"></span>
+  </div>
+
+  <div class="save">
+    <button id="save" type="button" disabled>保存视频 MP4</button>
+    <div id="status">载入完成后即可播放和保存。</div>
+  </div>
+
+  <section>
+    <h2>分镜 · 卡点表</h2>
+    <div class="cues">
+      <table>
+        <thead><tr><th>时间</th><th>画面</th><th>声音</th></tr></thead>
+        <tbody>
+          <tr><td>0:00–0:08</td><td><span class="zh">心电图弯成一只眼睛，虹膜锁定，镜头穿过瞳孔</span></td><td>心跳、八音盒、滤波铺底、上升音效</td></tr>
+          <tr><td>0:08–0:16</td><td><span class="zh">雨夜霓虹城市，监视 HUD 追踪“你”，每拍获取一条数据</span></td><td>四拍底鼓，16 分贝斯渐开，1/32 卡顿</td></tr>
+          <tr><td>0:16–0:32</td><td><span class="zh">你 / 只能看我 / 只属于我 / MINE 逐拍落下，心被线框牢笼锁住</span></td><td>第一段 Drop：超锯齿主旋律，门限军鼓</td></tr>
+          <tr><td>0:32–0:40</td><td><span class="zh">玻璃盒里的心，慢雨；我不是爱你，我是想拥有你；黑场</span></td><td>人声合成铺底、钟琴主旋律、军鼓滚奏、硬切</td></tr>
+          <tr><td>0:40–0:52</td><td><span class="zh">占 · 有 · 欲 碎片拼合；锁扣在“咔”声上合上；快切蒙太奇</span></td><td>第二段 Drop：旋律升八度、琶音、锁扣声</td></tr>
+          <tr><td>0:52–0:56</td><td><span class="zh">眼睛回归，片名，闭眼化成一条直线</span></td><td>重击、终止和弦、心跳、锁扣</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>音乐由代码逐采样合成（D 小调，120 BPM，Dm–B♭–Gm–A），画面每一帧由同一份节拍事件驱动，所以每个切点都落在鼓点上。</footer>
+</main>
+
+<script>
+  const PARTS = /*PARTS*/[];
+  const TOTAL = /*TOTAL*/0;
+  const FILENAME = '占有欲_2K60.mp4';
+  const $ = id => document.getElementById(id);
+  let blob = null;
+
+  $('size').textContent = (TOTAL / 1048576).toFixed(0) + ' MB';
+
+  async function load() {
+    const bufs = [];
+    let got = 0;
+    for (const p of PARTS) {
+      const res = await fetch(p);
+      if (!res.ok) throw new Error(p + ' ' + res.status);
+      const reader = res.body.getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        bufs.push(value);
+        got += value.byteLength;
+        const pct = Math.min(100, (got / TOTAL) * 100);
+        $('bar').style.width = pct + '%';
+        $('loadtext').textContent = `正在载入视频… ${pct.toFixed(0)}%`;
+      }
+    }
+    blob = new Blob(bufs, { type: 'video/mp4' });
+    const v = $('video');
+    v.src = URL.createObjectURL(blob);
+    v.poster = 'poster.jpg';
+    v.hidden = false;
+    $('poster').hidden = true;
+    $('loading').hidden = true;
+    $('save').disabled = false;
+    $('status').textContent = '点击播放（有声音），或保存到本地。';
+  }
+
+  load().catch(e => {
+    $('loadtext').textContent = '视频载入失败，请刷新页面重试。';
+    $('status').textContent = '载入失败：' + e.message;
+    $('status').className = 'err';
+  });
+
+  let downloads = null;
+  const ready = window.claude?.use ? window.claude.use('downloads').then(d => (downloads = d)).catch(() => null) : Promise.resolve(null);
+
+  $('save').addEventListener('click', async () => {
+    if (!blob) return;
+    await ready;
+    const st = $('status');
+    if (!downloads) {
+      st.className = 'err';
+      st.textContent = '当前视图不支持保存文件。请在 claude.ai 中打开此页面再保存。';
+      return;
+    }
+    $('save').disabled = true;
+    st.className = '';
+    st.textContent = '请在弹出的确认框中选择保存…';
+    try {
+      await downloads.save({ filename: FILENAME, data: blob });
+      st.className = 'ok';
+      st.textContent = '已保存：' + FILENAME;
+    } catch (e) {
+      const code = e?.code;
+      st.className = code === 'declined' ? '' : 'err';
+      st.textContent = code === 'declined' ? '已取消保存。' : code === 'rate_limited' ? '已有一个保存确认框，请先处理它。' : '保存失败（' + (code || e?.message) + '），请稍后再试。';
+    } finally {
+      $('save').disabled = false;
+    }
+  });
+</script>
