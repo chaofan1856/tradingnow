@@ -1,0 +1,112 @@
+{
+ "title": "看透图表的真相",
+ "fps": 60,
+ "frames": 9486,
+ "seconds": 158.1,
+ "scenes": [
+  {
+   "id": "hook",
+   "type": "scene",
+   "start": 0,
+   "dur": 6,
+   "f0": 0,
+   "f1": 360
+  },
+  {
+   "id": "chaos",
+   "type": "scene",
+   "start": 6,
+   "dur": 10.7,
+   "f0": 360,
+   "f1": 1002
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 16.7,
+   "dur": 10.3,
+   "f0": 1002,
+   "f1": 1620
+  },
+  {
+   "id": "ch1",
+   "type": "scene",
+   "start": 27,
+   "dur": 3.6,
+   "f0": 1620,
+   "f1": 1836
+  },
+  {
+   "id": "struct",
+   "type": "scene",
+   "start": 30.6,
+   "dur": 22.2,
+   "f0": 1836,
+   "f1": 3168
+  },
+  {
+   "id": "ch2",
+   "type": "scene",
+   "start": 52.8,
+   "dur": 3.6,
+   "f0": 3168,
+   "f1": 3384
+  },
+  {
+   "id": "mtf",
+   "type": "scene",
+   "start": 56.4,
+   "dur": 22,
+   "f0": 3384,
+   "f1": 4704
+  },
+  {
+   "id": "ch3",
+   "type": "scene",
+   "start": 78.4,
+   "dur": 3.6,
+   "f0": 4704,
+   "f1": 4920
+  },
+  {
+   "id": "case",
+   "type": "scene",
+   "start": 82,
+   "dur": 27.6,
+   "f0": 4920,
+   "f1": 6576
+  },
+  {
+   "id": "result",
+   "type": "scene",
+   "start": 109.6,
+   "dur": 16.8,
+   "f0": 6576,
+   "f1": 7584
+  },
+  {
+   "id": "trail",
+   "type": "scene",
+   "start": 126.4,
+   "dur": 16.2,
+   "f0": 7584,
+   "f1": 8556
+  },
+  {
+   "id": "phil",
+   "type": "scene",
+   "start": 142.6,
+   "dur": 10.5,
+   "f0": 8556,
+   "f1": 9186
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 153.1,
+   "dur": 5,
+   "f0": 9186,
+   "f1": 9486
+  }
+ ]
+}
