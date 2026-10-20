@@ -1,0 +1,254 @@
+<title>K线18种终极形态 原片 1/1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one dark "screening room" column — what this page does, the step(s), then specs and the upload kit. */
+:root{
+  --bg:#0A0A0C; --panel:#121216; --line:#2A2620; --fg:#ECE6D9; --muted:#958D7F;
+  --gold:#C9A25A; --gold-hi:#F1D597; --red:#E5484D; --green:#1FA36A;
+  --serif:'Noto Serif SC','Songti SC','STSong',serif; --latin:'Cormorant Garamond',Georgia,serif; --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.7}
+.wrap{max-width:980px;margin:0 auto;padding-block:32px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+.brand{font-family:var(--latin);letter-spacing:.32em;text-transform:uppercase;font-size:.8rem;color:var(--gold)}
+h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:900;line-height:1.15;margin:.2em 0 .1em;text-wrap:balance;
+  background:linear-gradient(180deg,#FBEBC0,#E2BE73 45%,#B8893C 75%,#7A5A24);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:0}
+.screen{position:relative;border:1px solid var(--line);background:#000;aspect-ratio:16/9;max-width:100%;overflow:hidden}
+.screen img{width:100%;height:100%;object-fit:contain;display:block}
+.badge{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:.75rem;color:var(--gold-hi);border:1px solid rgba(201,162,90,.6);padding:2px 8px;background:rgba(0,0,0,.55)}
+.steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.step{border:1px solid var(--line);background:var(--panel);padding:18px;display:grid;gap:12px;align-content:start;min-width:0}
+.step.here{border-color:var(--gold)}
+.step .n{font-family:var(--latin);color:var(--gold);letter-spacing:.2em;font-size:.8rem}
+.step h3{margin:0;font-size:1.15rem}
+.step p{margin:0;color:var(--muted);font-size:.92rem}
+.step a{color:var(--gold-hi)}
+button,.file{font:inherit;cursor:pointer;border-radius:3px}
+.primary{justify-self:start;background:linear-gradient(180deg,#E9C47A,#B88A3E);color:#1A1408;border:0;padding:12px 24px;font-weight:900;font-size:1.05rem;letter-spacing:.05em}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.primary:focus-visible,.ghost:focus-visible,.file:focus-within{outline:2px solid var(--gold-hi);outline-offset:3px}
+.file{display:inline-flex;justify-self:start;border:1px solid var(--gold);color:var(--gold-hi);padding:10px 18px}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 16px}
+.ghost:hover{border-color:var(--gold)}
+.bar{height:6px;background:#000;border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-hi));transition:width .2s}
+.status{font-family:var(--mono);font-size:.85rem;color:var(--muted);min-height:1.4em;margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.specs div{background:var(--panel);padding:14px 16px;min-width:0}
+.specs dt{font-size:.75rem;color:var(--muted);letter-spacing:.08em}
+.specs dd{margin:0;font-family:var(--mono);font-size:.92rem;overflow-wrap:anywhere}
+h2{font-size:1.3rem;font-weight:900;margin:0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 small{font-family:var(--latin);font-weight:500;color:var(--muted);letter-spacing:.2em;font-size:.8rem;text-transform:uppercase}
+section{display:grid;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+pre{margin:0;max-height:380px;overflow:auto;background:var(--panel);border:1px solid var(--line);padding:16px;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:#D8D0C0}
+.hint{color:var(--muted);font-size:.9rem;margin:0}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+<div class="wrap">
+  <header>
+    <div class="brand">TradingNow · 2K 60fps Master</div>
+    <h1>K线18种终极形态</h1>
+    <p class="sub">2K 60fps 原片 · 第 1 / 1 步</p>
+  </header>
+  <div class="screen"><img src="poster.jpg" alt="《K线18种终极形态》画面"><span class="badge">3840 × 2160 · 60fps</span></div>
+  <div class="steps"><div class="step here"><span class="n">STEP 1 / 1</span><h3>保存第 1 段</h3><p>得到一个完整的 MP4，可直接上传 YouTube。</p><button class="primary" id="go">保存完整原片</button><div class="bar" aria-hidden="true"><i id="fill"></i></div><p class="status" id="status" role="status">点按钮开始下载，全部校验通过后弹出保存窗口。</p></div></div>
+  <dl class="specs">
+    <div><dt>分辨率</dt><dd>3840 × 2160</dd></div><div><dt>帧率</dt><dd>60 fps</dd></div>
+    <div><dt>时长</dt><dd>2 分 40 秒</dd></div><div><dt>视频</dt><dd>H.264 High · CRF 12</dd></div>
+    <div><dt>音频</dt><dd>AAC 384 kbps</dd></div><div><dt>完整文件</dt><dd>574.1 MB</dd></div>
+  </dl>
+  <section aria-labelledby="yt-h"><h2 id="yt-h">YouTube 发布信息 <small>Upload kit</small></h2>
+<pre id="yt-title">K线18种终极形态速查｜反转 9 种 + 延续 9 种，一支视频看透多空底层逻辑（2K60）</pre><pre id="yt-desc">散户记形态，主力看动能。万变不离其宗，K线核心形态只有 18 种，本质都是主力资金在红绿交锋中的能量留痕。一支视频速查全部 18 种终极形态——趋势反转 9 种（双顶/双底、三重顶/三重底、头肩顶/头肩底、圆弧顶/圆弧底、V形反转）与趋势延续 9 种（上升/下降旗形、上升/下降通道、矩形箱体、对称/上升/下降三角形、扩散喇叭形）。
+
+00:00 散户记形态，主力看动能
+00:06 核心形态只有 18 种
+00:16 明辨红绿之相，顺行数字之流
+00:27 趋势反转形态 · 9 种
+00:31 双顶 vs 双底
+00:42 三重顶 vs 三重底
+00:53 头肩顶 vs 头肩底
+01:04 圆弧顶 vs 圆弧底
+01:15 V形反转
+01:25 趋势延续形态 · 9 种
+01:29 上升旗形
+01:49 下降旗形 · 上升通道
+01:58 下降通道 · 矩形箱体
+02:07 对称三角形 · 上升三角形
+02:16 下降三角形 · 扩散喇叭形
+02:24 18 种形态速查总览
+
+内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。
+
+#K线形态 #技术分析 #头肩顶 #三角形整理 #TradingNow</pre>
+<div class="row"><button class="ghost" data-copy="yt-title">复制标题</button><button class="ghost" data-copy="yt-desc">复制简介</button></div></section>
+<section aria-labelledby="pr-h"><h2 id="pr-h">同风格视频提示词 <small>Reusable prompt</small></h2>
+<p class="hint">把整段发给 Claude，只改最后的「视频标题」「目标时长」「知识点」，就能做出同样风格的视频。</p>
+<pre id="prompt">你是 TradingNow 频道的动效导演 + 前端工程师。仓库 chaofan1856/tradingnow 里的 kline-video/ 是我们的
+“知识视频引擎”，《K线与动能博弈》就是用它做的。请用同一套引擎，做一支新视频。
+
+## 0. 工作方式（必须遵守）
+1. 复制 kline-video/ 为新目录 videos/&lt;英文短名&gt;/（保留 index.html、render.mjs、build.sh、tools/），
+   只重写 script.js。index.html 是风格引擎，除非为新视觉组件追加 K.xxx 工具函数，否则不要改它的样式常量。
+2. 先跑 `node render.mjs --timeline` 看总时长，再用 `node render.mjs --stills 秒,秒,...` 抽 15~20 帧
+   拼成联系表亲自检查：无文字重叠、无元素出画、无元素压到左上水印/标题栏/右上书名区、字幕区(y≥880)只放字幕。
+   发现问题就改，直到每一帧都干净，再正式渲染。
+3. 正式渲染：`./build.sh`（4K 3840×2160 / 60fps / H.264 High CRF12 tune grain / AAC 384k，分段并行渲染），分段并行 + 缓存；
+   改了某几个场景只需 `./build.sh --only 场景id,场景id`。
+4. 渲染完成后：提交并推送到我指定的分支；把成片做成可下载网页（分片上传，浏览器端合并为原画质 mp4）。
+
+## 1. 视觉风格（固定，不得更改）
+- 画布：1920×1080 逻辑坐标 ×2 = 4K 60fps；黑色颗粒底：近黑暖色 + 像素级胶片颗粒 + 石材般低频斑驳 + 稀疏亮颗粒，
+  中心暖光、40px 金色点阵网格、强暗角；其上常驻缓慢扫动的金色体积光束与漂浮金色散景（bokeh）。
+- 全片一层金色微尘粒子（420 颗、三层视差漂浮，转场时带拖尾），贯穿所有场景。
+- 左上角水印：频道 Logo 原图 assets/logo.png（不得重绘或改动），位置 (120,34)，高约 31px，透明度 .88，全片常驻（片尾 Logo 页除外）。
+- 左上标题栏：“模块”+ 金色渐变大数字，下方灰色小字副标题；右上：英文斜体小字 + 《中文书名式标题》+ 红色小方块。
+  同一模块内标题栏保持不动，跨模块时旧的上移淡出、新的下移落位。
+- 字体：思源宋体 Noto Serif SC（500/700/900）为主；英文用 Cormorant Garamond；logo 字用 Inter Display SemiBold。
+- 色彩语义（中国市场）：红 #E5484D = 多头/上涨/阳线；绿 #1FA36A = 空头/下跌/阴线；
+  金 #C9A25A / 高光金 #F1D597 = 重点、标注、点阵线；正文暖白 #ECE6D9；次要灰 #8C8578。
+- 全部文字按 1.75 倍放大（引擎 FS），保证手机一眼可读；字幕左对齐 x=160，第一行基线 y=880，两行时向下排，宋体 700 48×1.75px（深色描边），逐字上浮淡入；英文单词不拆行；标记语法
+  {金色重点}  [红色/多头]  &lt;绿色/空头&gt;，每行不超过 ~34 字。
+- 标注风格：金色虚线引线、金色圆环标记（可脉冲）、括号 bracket / 竖括号 vbrace、描边小标签 tag、
+  点阵曲线 dotted（参考风格里的“粒子线”）、底部金色刻度基线 baseline。
+- 章节卡：MODULE · 0N 字距小字 → 壹/贰/叁 金色渐变大字（缓慢缩放呼吸）→ 中心生长的金线+亮点 →
+  章节标题自遮罩中升起 → 英文大写字距 → 灰色副标题。
+- 片头：冷开场（金色价格点阵流入并凝聚成K线）→ 标题卡（金色渐变大标题 + 英文小字 + 扫光 + 金线）。
+- 片尾：要点回顾（壹贰叁三行）→ TradingNow logo 页 + 视频标题（不加“完”） + 风险提示
+  “内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。”
+
+## 2. 动效规范（Motion）
+- 绝不硬切、绝不黑场：场景之间重叠 1.1s，用转场合成：
+  &#x27;zoom&#x27;(穿越推进，默认) / [&#x27;push&#x27;,1](视差横推，同模块内连续讲解) / &#x27;sweep&#x27;(金光斜扫，进入章节卡)
+  / [&#x27;iris&#x27;,[x,y]](金环圆形展开，进入新篇章正文) / &#x27;dissolve&#x27;(总结段)。
+- 每个场景都有缓慢镜头运动 camera {z0,z1,x0,x1,y0,y1}（推近 3%~8%、平移 ≤60px），画面永不静止。
+- 元素出场：easeOut / expo / 回弹 easeBack；K线逐根生长（实体先长、影线后伸）；
+  线条按进度绘制；标签延迟 0.2~0.4s 跟随；同屏同时运动的主体 ≤3 个。
+- 视觉节拍与字幕绑定：S.at(行号, 延迟, 时长) —— 讲到哪句，画面就动到哪。
+- 一切都是帧号的纯函数（不用 Math.random / Date），seed 固定的 K.rng / K.gen 生成数据。
+
+## 3. 声音
+- 配乐由 tools/score.py 原创合成并按时间线自动对齐：D 小调弦乐铺底 + 钢琴分解和弦 + 心跳低频脉冲
+  （越到后段越紧）+ 章节卡上的上升音效/低频重击/闪光音 + 每次转场的轻微 whoosh。
+- 不使用任何第三方音乐或音效素材（避免 YouTube Content ID）。
+
+## 4. 节奏与时长
+- 每行字幕时长 = max(2.2s, 字数×0.13 + 0.95)s；场景前留 0.7s，后留 0.6s。
+- 结构：冷开场(~6s) → 标题(5s) → 导言 → [章节卡(4.2s) → 若干知识场景] × N → 回顾 → 片尾(5.5s)。
+- 总时长控制在【目标时长】以内；超了就精简字幕措辞（不删知识点）或调 FILM.timing。
+
+## 5. script.js 写法
+window.FILM = { title, transition: 1.1, subtitle:{x:220,y:912,size:42,maxW:1480}, scenes:[ ... ] }
+场景对象：{ id, header?, lines?, visual(ctx,S,K), tr?, camera?, dur?, subY?, noWatermark? }
+可用工具（index.html 中的 K）：
+  K.text / K.goldText / K.rich / K.candle / new K.Chart(candles,box,{lo,hi,body}).draw(ctx,reveal,{dim,glow,color})
+  K.gen.path(价格拐点数组,{per,noise,wick,seed}) → {candles,swings} ；K.gen.seq(起点,[[实体,上影,下影],...])
+  K.dotted / K.dash / K.line / K.rule / K.arrow / K.marker / K.bracket / K.vbrace / K.tag / K.baseline / K.watermark
+  K.C 色板，K.F 字体，K.clamp/lerp/easeOut/easeInOut/expo/rng/rgba/mix
+标准图表区 BOX = {x:260,y:250,w:1400,h:500}（字幕区以上，左右留白避开标题栏）。
+每个知识点都要有专门设计的可视化（K线图、示意动画、对比面板、流程、数轴……），
+不能只有字幕；需要新图形时在 script.js 内用 ctx + K 自行绘制，保持同一套线宽、发光和配色。
+
+## 6. 交付清单
+1) videos/&lt;短名&gt;/成片/&lt;标题&gt;_4K60.mp4（3840×2160 60fps，&lt;目标时长&gt;）
+2) 15~20 帧联系表自检通过
+3) 提交 + 推送
+4) 下载网页（原画质，分片合并）链接
+5) 一段 YouTube 标题/简介/标签建议
+
+==================== 只需要改下面两处 ====================
+【视频标题】：（例：成交量与价格的共振）
+【目标时长】：（例：5 分钟以内）
+【知识点】：
+（把你的讲稿/知识点原文粘贴在这里，可以带 📌 🧱 📈 ⚡ 等小标题和分层要点。
+ Claude 会自动：拆成导言 + 若干模块；每个模块一张章节卡；每个要点一个可视化场景；
+ 把关键名词标成金色、多头相关标红、空头相关标绿。）</pre>
+<div class="row"><button class="ghost" data-copy="prompt">复制提示词</button><button class="ghost" id="save-md">保存为 .md 文件</button></div></section>
+</div>
+<script>
+const K = 1, N = 1, TITLE = "K线18种终极形态";
+const OWN = [{"url": "/_blob/a21b548848a9a62e73833a5546e5a45c", "size": 19922944, "sha": "1df55942cc5183168c7d9690a638ab249bf271f615f0dd838b83cf8a872e4653"}, {"url": "/_blob/3a99fe19092b22a623f7104463d5bac3", "size": 19922944, "sha": "7b47960d14d09ca8cef41a6a301150d01c4b21744060ef3d01ad8ffcd6be7a42"}, {"url": "/_blob/c7ad737cacaa3ca9b1fe3b7f9aad27b9", "size": 19922944, "sha": "ac4282d21718328c2cc11275b76a715f6be68997615f8cd00e1f5eca359c93c9"}, {"url": "/_blob/107ae991845be3c2e41c54d72b6739b2", "size": 19922944, "sha": "d4a66dd145a28419b263f754e2943a12c11a84dd99572304eb4719bb51d26e97"}, {"url": "/_blob/633abd2c8efb96db3203bcb2e5a53207", "size": 19922944, "sha": "8ab0132a11752f11bffd1931e7ebdc7a7d62782d4fb0e0db265bff4450d8ee5f"}, {"url": "/_blob/b03e000831467576f10d2a772294db2c", "size": 19922944, "sha": "52a8f7e11def1ad82f38ee152aeab488679fd8edc218c342fbcc9c26374be571"}, {"url": "/_blob/d0294a900f63b9cb05484dca6596c9f4", "size": 19922944, "sha": "e32ac60805d86d19452a64731be84ae023e01f505049f63712a0d78e315d3410"}, {"url": "/_blob/237d97309fe97d4474432828e57acbf9", "size": 19922944, "sha": "d18031c84c0eb7383961a213e5791b9a8a1a17a0b91d48d8583fb4784c87a4dc"}, {"url": "/_blob/df81381ac85f1c11e0f8542820758408", "size": 19922944, "sha": "6d10e3d5f3322134108d0f341045cab3513f2aaf41901da9e5d2b5d3689ba349"}, {"url": "/_blob/7ebd31a7c3a5aa067b1fb69aa846c88e", "size": 19922944, "sha": "594590603b1e77529a7f339540e0d4578132b14f619a6e0f60fa0cda704fed5e"}, {"url": "/_blob/4fc6da95d973989c70ebc955ac5c03b3", "size": 19922944, "sha": "d426c3d4cb17b9e6cadf886dcc10f984034a59c632aac5d19e752bc81cbf3d1b"}, {"url": "/_blob/52012b93fd9b01e08b96152dcf7c1136", "size": 19922944, "sha": "fb6b63924e48f775c03ba050057a1f4a896f6a3db10d501583971fe1f056b220"}, {"url": "/_blob/1b775f9efc67527a46bd3be273ac69ca", "size": 19922944, "sha": "dc9de7ac9384ff86a1bc1ae8d5a186e10f4ea639a1f242a69a0e7a3150b823c3"}, {"url": "/_blob/775695c6ae157cdb41302d08633428d2", "size": 19922944, "sha": "a040120b38c365ea267075c6abc313b1979da42721365bc942cf773ffb200402"}, {"url": "/_blob/762d43467da0ec27b21bd32ec1795ba2", "size": 19922944, "sha": "442aebe1fe367c15ef8bdf62d4daa17269e2a7191612503d3ce3fef35ec765fc"}, {"url": "/_blob/2b9b35a7416e140d32fcf53755cce7fe", "size": 19922944, "sha": "4c1747c45858e1364dadb7d1d599877f89d653d34b6f221f60d926d6207d3935"}, {"url": "/_blob/52457b90f38194dc14078d3759943336", "size": 19922944, "sha": "7f920466c8c4d4c54b68a57da7cd437c003b7616f8ae8ed29e834d6981db6880"}, {"url": "/_blob/b5cd927d396c688633f21c1744e5873e", "size": 19922944, "sha": "fd38846c5f4888cdb11ed3b43e86c6afbd29ddd3a45453cbe2a5f778ee43c08c"}, {"url": "/_blob/ff24db8eefafa033902b0f7cea78b0c4", "size": 19922944, "sha": "9260d9e02aef50ccc577a0341b5ac7b9b8bf21b9546d9a0208c4aa877a4d4b92"}, {"url": "/_blob/bf9f3e129bfc3fd1a13bcd6323789a72", "size": 19922944, "sha": "4168b00bc5fc41f2f9961d3bae9aa475f89a946faad4498a3883ee7cfaa212d0"}, {"url": "/_blob/ffc68987935322419875944024a82b14", "size": 19922944, "sha": "4e17b9dca00cb23eadcae6d33a468992a1d16b630d7427a7e56ff2567e9a888d"}, {"url": "/_blob/b94b99962fb2beffd8645301aa63bf7b", "size": 19922944, "sha": "c87f2f79064b2e654fb9366972737ff01da8bb721057487e7bc389696e905751"}, {"url": "/_blob/30d5f7f9b3aee27b344d702398af84a8", "size": 19922944, "sha": "312214030232436ec2b1cc063eeb4da500cb146075802a7078c4069daa708a17"}, {"url": "/_blob/ce42b24b41f9399c6b5173951c64988d", "size": 19922944, "sha": "e95c888e15a03bf3cfb7cc423f6ad14fa294ce3d06651ec7b150c97bb71f650b"}, {"url": "/_blob/db2641a4f253123d147919bf95680dd2", "size": 19922944, "sha": "5248104b4d9440839097d28ceb85de80c1729ccd380ce73839dbfe88f2007c71"}, {"url": "/_blob/299533d4987cda13738f3e3fceeb5a4e", "size": 19922944, "sha": "8b697672ce69da3040c61448b1691ffeb15b1d64807af1432a328fe9ac0c8db5"}, {"url": "/_blob/188cc31781ca720beb63479e72d43a0f", "size": 19922944, "sha": "ac451c896c5de5bc45322e4958ac77bd60c0207caeb697391f9378aa3ec60ae7"}, {"url": "/_blob/eba684bd6d539aed20619bcd6193b26a", "size": 19922944, "sha": "219b86ba7e755a18012d0691d79dede8bd5bc88444fb8dedef0eb1ceed3363de"}, {"url": "/_blob/7b06e81d89c9c2085742920be4e159c5", "size": 19922944, "sha": "582f96d88925a9ea3596ab78a905095f095934fde4841fa9ac1c4bf2cacc4669"}, {"url": "/_blob/d09c95c5198e3afc3de40f69f4f1dd34", "size": 19922944, "sha": "b183b77bae818f6b6de216cac0fd521fcd3433af1f21f55138971ec1488a0f7a"}, {"url": "/_blob/e2cc796b8bdd58251162b8b487f96ac5", "size": 4258063, "sha": "4f30055e30e0b7de237036c813cef07d3fc1159b593cc3d3a4a37994b7edfa3f"}];            // pieces served by this page, in byte order: [{url,size,sha}]
+const PRIOR = [];        // pieces of every earlier page (to check the chosen file): [{size,sha}]
+const FULL = 601946383;
+const NAME = k => k === N ? `${TITLE}_2K60.mp4` : `${TITLE}_2K60_前${k}段（共${N}段）.mp4`;
+const $ = id => document.getElementById(id);
+const st = (msg, cls = '') => { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; };
+const mb = n => (n / 1048576).toFixed(1);
+const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+const sha = async blob => hex(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+const priorSize = PRIOR.reduce((s, p) => s + p.size, 0), endSize = priorSize + OWN.reduce((s, p) => s + p.size, 0);
+const got = []; let prev = null, out = null;
+
+async function fetchOwn() {
+  let done = priorSize + got.reduce((s, b) => s + b.size, 0);
+  for (let i = got.length; i < OWN.length; i++) {
+    const p = OWN[i]; let ok = null;
+    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+      try {
+        const r = await fetch(p.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+        const rd = r.body.getReader(), parts = []; let n = 0;
+        for (;;) { const { done: d, value } = await rd.read(); if (d) break; parts.push(value); n += value.length;
+          $('fill').style.width = ((done + n) / endSize * 100).toFixed(2) + '%';
+          st(`正在下载 ${mb(done + n)} / ${mb(endSize)} MB（本页第 ${i + 1}/${OWN.length} 块）`); }
+        const b = new Blob(parts);
+        if (b.size !== p.size || await sha(b) !== p.sha) throw new Error('校验不符');
+        ok = b;
+      } catch (e) { if (attempt === 3) throw new Error(`第 ${i + 1} 块下载失败（${e.message}），再点一次按钮会从这里继续。`); }
+    }
+    got.push(ok); done += ok.size;
+  }
+}
+
+async function offer(name, blob) {
+  const dl = await window.claude?.use?.('downloads');
+  if (!dl) { st('当前视图不支持保存文件，请在电脑浏览器的 claude.ai 中打开本页。', 'err'); return; }
+  try {
+    await dl.save({ filename: name, data: blob });
+    st(K === N ? `已保存完整原片 ${name}（${mb(FULL)} MB，每一块都已校验）。之前保存的分段文件可以删除了。`
+               : `已保存 ${name}（${mb(endSize)} MB）。下一步：打开第 ${K + 1} 步网页。`, 'ok');
+  } catch (e) {
+    if (e?.code === 'declined') st('已取消保存。再点一次按钮即可保存，不用重新下载。');
+    else if (e?.code === 'too_large') st('这个应用一次保存不了这么大的文件，请改用电脑浏览器打开本页。', 'err');
+    else if (e?.code === 'rate_limited') st('已经有一个保存窗口打开了，请先处理它。');
+    else st('保存失败：' + (e?.message || e?.code || e), 'err');
+  }
+}
+
+const pick = $('pick');
+if (pick) pick.addEventListener('change', async ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  $('go').disabled = true; prev = null;
+  if (f.size !== priorSize) { st(`选中的文件是 ${mb(f.size)} MB，应为 ${mb(priorSize)} MB。请选择上一步保存的「${NAME(K - 1)}」。`, 'err'); return; }
+  let off = 0;
+  for (let i = 0; i < PRIOR.length; i++) {
+    st(`正在核对上一步的文件 ${i + 1}/${PRIOR.length}…`);
+    if (await sha(f.slice(off, off + PRIOR[i].size)) !== PRIOR[i].sha) { st(`上一步的文件第 ${i + 1} 块与原片不一致，请回到上一步网页重新保存。`, 'err'); return; }
+    off += PRIOR[i].size;
+  }
+  prev = f; st('上一步的文件核对通过。点按钮继续。', 'ok'); $('go').disabled = false;
+});
+
+$('go').addEventListener('click', async () => {
+  if (K > 1 && !prev) return;
+  $('go').disabled = true;
+  try {
+    if (!out) { await fetchOwn(); out = new Blob(K > 1 ? [prev, ...got] : got, { type: 'video/mp4' }); }
+    if (out.size !== endSize) throw new Error('合成后的大小不对，请刷新页面重试。');
+    st('全部校验通过，正在打开保存窗口…', 'ok');
+    await offer(NAME(K), out);
+  } catch (e) { st(e.message, 'err'); }
+  $('go').disabled = false;
+});
+
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  const el = $(b.dataset.copy), old = b.textContent;
+  try { await navigator.clipboard.writeText(el.textContent); b.textContent = '已复制'; }
+  catch { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = '已选中，请按 Ctrl/⌘+C'; }
+  setTimeout(() => b.textContent = old, 1800);
+}));
+const md = $('save-md');
+if (md) md.addEventListener('click', async () => { const dl = await window.claude?.use?.('downloads'); if (!dl) return; try { await dl.save({ filename: 'TradingNow_视频提示词.md', data: $('prompt').textContent }); } catch {} });
+</script>
