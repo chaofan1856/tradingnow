@@ -6,6 +6,6 @@ my-stock-video/stills/
 my-stock-video/成片/*.mp4
 my-stock-video/render.log
 possessive-video/out/*
-!possessive-video/out/占有欲.mp4
+!possessive-video/out/占有欲_2K60.mp4
 !possessive-video/out/poster.jpg
 possessive-video/tools/__pycache__/
