@@ -1,0 +1,248 @@
+<title>构建自己的交易系统 原片 1/1</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one dark "screening room" column — what this page does, the step(s), then specs and the upload kit. */
+:root{
+  --bg:#0A0A0C; --panel:#121216; --line:#2A2620; --fg:#ECE6D9; --muted:#958D7F;
+  --gold:#C9A25A; --gold-hi:#F1D597; --red:#E5484D; --green:#1FA36A;
+  --serif:'Noto Serif SC','Songti SC','STSong',serif; --latin:'Cormorant Garamond',Georgia,serif; --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.7}
+.wrap{max-width:980px;margin:0 auto;padding-block:32px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+.brand{font-family:var(--latin);letter-spacing:.32em;text-transform:uppercase;font-size:.8rem;color:var(--gold)}
+h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:900;line-height:1.15;margin:.2em 0 .1em;text-wrap:balance;
+  background:linear-gradient(180deg,#FBEBC0,#E2BE73 45%,#B8893C 75%,#7A5A24);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:0}
+.screen{position:relative;border:1px solid var(--line);background:#000;aspect-ratio:16/9;max-width:100%;overflow:hidden}
+.screen img{width:100%;height:100%;object-fit:contain;display:block}
+.badge{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:.75rem;color:var(--gold-hi);border:1px solid rgba(201,162,90,.6);padding:2px 8px;background:rgba(0,0,0,.55)}
+.steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.step{border:1px solid var(--line);background:var(--panel);padding:18px;display:grid;gap:12px;align-content:start;min-width:0}
+.step.here{border-color:var(--gold)}
+.step .n{font-family:var(--latin);color:var(--gold);letter-spacing:.2em;font-size:.8rem}
+.step h3{margin:0;font-size:1.15rem}
+.step p{margin:0;color:var(--muted);font-size:.92rem}
+.step a{color:var(--gold-hi)}
+button,.file{font:inherit;cursor:pointer;border-radius:3px}
+.primary{justify-self:start;background:linear-gradient(180deg,#E9C47A,#B88A3E);color:#1A1408;border:0;padding:12px 24px;font-weight:900;font-size:1.05rem;letter-spacing:.05em}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.primary:focus-visible,.ghost:focus-visible,.file:focus-within{outline:2px solid var(--gold-hi);outline-offset:3px}
+.file{display:inline-flex;justify-self:start;border:1px solid var(--gold);color:var(--gold-hi);padding:10px 18px}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 16px}
+.ghost:hover{border-color:var(--gold)}
+.bar{height:6px;background:#000;border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-hi));transition:width .2s}
+.status{font-family:var(--mono);font-size:.85rem;color:var(--muted);min-height:1.4em;margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.specs div{background:var(--panel);padding:14px 16px;min-width:0}
+.specs dt{font-size:.75rem;color:var(--muted);letter-spacing:.08em}
+.specs dd{margin:0;font-family:var(--mono);font-size:.92rem;overflow-wrap:anywhere}
+h2{font-size:1.3rem;font-weight:900;margin:0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 small{font-family:var(--latin);font-weight:500;color:var(--muted);letter-spacing:.2em;font-size:.8rem;text-transform:uppercase}
+section{display:grid;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+pre{margin:0;max-height:380px;overflow:auto;background:var(--panel);border:1px solid var(--line);padding:16px;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:#D8D0C0}
+.hint{color:var(--muted);font-size:.9rem;margin:0}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+<div class="wrap">
+  <header>
+    <div class="brand">TradingNow · 2K 60fps Master</div>
+    <h1>构建自己的交易系统</h1>
+    <p class="sub">2K 60fps 原片 · 第 1 / 1 步</p>
+  </header>
+  <div class="screen"><img src="poster.jpg" alt="《构建自己的交易系统》画面"><span class="badge">3840 × 2160 · 60fps</span></div>
+  <div class="steps"><div class="step here"><span class="n">STEP 1 / 1</span><h3>保存第 1 段</h3><p>得到一个完整的 MP4，可直接上传 YouTube。</p><button class="primary" id="go">保存完整原片</button><div class="bar" aria-hidden="true"><i id="fill"></i></div><p class="status" id="status" role="status">点按钮开始下载，全部校验通过后弹出保存窗口。</p></div></div>
+  <dl class="specs">
+    <div><dt>分辨率</dt><dd>3840 × 2160</dd></div><div><dt>帧率</dt><dd>60 fps</dd></div>
+    <div><dt>时长</dt><dd>2 分 52 秒</dd></div><div><dt>视频</dt><dd>H.264 High · CRF 12</dd></div>
+    <div><dt>音频</dt><dd>AAC 384 kbps</dd></div><div><dt>完整文件</dt><dd>583.5 MB</dd></div>
+  </dl>
+  <section aria-labelledby="yt-h"><h2 id="yt-h">YouTube 发布信息 <small>Upload kit</small></h2>
+<pre id="yt-title">构建自己的交易系统｜计划 · 风控 · 纪律：持续盈利的三大支柱（2K60）</pre><pre id="yt-desc">为什么你总是一买就跌，一卖就涨？长期亏钱的根本原因不是运气不好，而是缺少一套完整的交易系统。一支视频手把手搭建三大支柱：铁血计划（看趋势 · 等回调至 0.5–0.618 黄金区 · 均线共振 + 放量突破入场 · 2 倍 ATR 止损 + 2:1 止盈）、资金防火墙（亏 10% 回本只需 11.11%，亏 50% 回本必须 100%；只看百分比，给情绪脱敏）、铁血纪律（不一致的决策必然导致不一致的成绩）。
+
+00:00 为什么你总是一买就跌，一卖就涨？
+00:06 没有系统，就是在赌博
+00:16 交易系统三大支柱：计划 · 风控 · 纪律
+00:27 第一张图：铁血计划——看趋势
+00:44 等回调 · 抓入场
+01:06 控生死：ATR 止损与 2:1 止盈
+01:25 第二张图：资金防火墙——A先生 vs B先生
+01:50 情绪脱敏：只看百分比
+02:10 第三张图：铁血纪律
+02:36 结尾：计划你的交易，交易你的计划
+
+内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。
+
+#交易系统 #风险管理 #交易纪律 #技术分析 #TradingNow</pre>
+<div class="row"><button class="ghost" data-copy="yt-title">复制标题</button><button class="ghost" data-copy="yt-desc">复制简介</button></div></section>
+<section aria-labelledby="pr-h"><h2 id="pr-h">同风格视频提示词 <small>Reusable prompt</small></h2>
+<p class="hint">把整段发给 Claude，只改最后的「视频标题」「目标时长」「知识点」，就能做出同样风格的视频。</p>
+<pre id="prompt">你是 TradingNow 频道的动效导演 + 前端工程师。仓库 chaofan1856/tradingnow 里的 kline-video/ 是我们的
+“知识视频引擎”，《K线与动能博弈》就是用它做的。请用同一套引擎，做一支新视频。
+
+## 0. 工作方式（必须遵守）
+1. 复制 kline-video/ 为新目录 videos/&lt;英文短名&gt;/（保留 index.html、render.mjs、build.sh、tools/），
+   只重写 script.js。index.html 是风格引擎，除非为新视觉组件追加 K.xxx 工具函数，否则不要改它的样式常量。
+2. 先跑 `node render.mjs --timeline` 看总时长，再用 `node render.mjs --stills 秒,秒,...` 抽 15~20 帧
+   拼成联系表亲自检查：无文字重叠、无元素出画、无元素压到左上水印/标题栏/右上书名区、字幕区(y≥880)只放字幕。
+   发现问题就改，直到每一帧都干净，再正式渲染。
+3. 正式渲染：`./build.sh`（4K 3840×2160 / 60fps / H.264 High CRF12 tune grain / AAC 384k，分段并行渲染），分段并行 + 缓存；
+   改了某几个场景只需 `./build.sh --only 场景id,场景id`。
+4. 渲染完成后：提交并推送到我指定的分支；把成片做成可下载网页（分片上传，浏览器端合并为原画质 mp4）。
+
+## 1. 视觉风格（固定，不得更改）
+- 画布：1920×1080 逻辑坐标 ×2 = 4K 60fps；黑色颗粒底：近黑暖色 + 像素级胶片颗粒 + 石材般低频斑驳 + 稀疏亮颗粒，
+  中心暖光、40px 金色点阵网格、强暗角；其上常驻缓慢扫动的金色体积光束与漂浮金色散景（bokeh）。
+- 全片一层金色微尘粒子（420 颗、三层视差漂浮，转场时带拖尾），贯穿所有场景。
+- 左上角水印：频道 Logo 原图 assets/logo.png（不得重绘或改动），位置 (120,34)，高约 31px，透明度 .88，全片常驻（片尾 Logo 页除外）。
+- 左上标题栏：“模块”+ 金色渐变大数字，下方灰色小字副标题；右上：英文斜体小字 + 《中文书名式标题》+ 红色小方块。
+  同一模块内标题栏保持不动，跨模块时旧的上移淡出、新的下移落位。
+- 字体：思源宋体 Noto Serif SC（500/700/900）为主；英文用 Cormorant Garamond；logo 字用 Inter Display SemiBold。
+- 色彩语义（中国市场）：红 #E5484D = 多头/上涨/阳线；绿 #1FA36A = 空头/下跌/阴线；
+  金 #C9A25A / 高光金 #F1D597 = 重点、标注、点阵线；正文暖白 #ECE6D9；次要灰 #8C8578。
+- 全部文字按 1.75 倍放大（引擎 FS），保证手机一眼可读；字幕左对齐 x=160，第一行基线 y=880，两行时向下排，宋体 700 48×1.75px（深色描边），逐字上浮淡入；英文单词不拆行；标记语法
+  {金色重点}  [红色/多头]  &lt;绿色/空头&gt;，每行不超过 ~34 字。
+- 标注风格：金色虚线引线、金色圆环标记（可脉冲）、括号 bracket / 竖括号 vbrace、描边小标签 tag、
+  点阵曲线 dotted（参考风格里的“粒子线”）、底部金色刻度基线 baseline。
+- 章节卡：MODULE · 0N 字距小字 → 壹/贰/叁 金色渐变大字（缓慢缩放呼吸）→ 中心生长的金线+亮点 →
+  章节标题自遮罩中升起 → 英文大写字距 → 灰色副标题。
+- 片头：冷开场（金色价格点阵流入并凝聚成K线）→ 标题卡（金色渐变大标题 + 英文小字 + 扫光 + 金线）。
+- 片尾：要点回顾（壹贰叁三行）→ TradingNow logo 页 + 视频标题（不加“完”） + 风险提示
+  “内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。”
+
+## 2. 动效规范（Motion）
+- 绝不硬切、绝不黑场：场景之间重叠 1.1s，用转场合成：
+  &#x27;zoom&#x27;(穿越推进，默认) / [&#x27;push&#x27;,1](视差横推，同模块内连续讲解) / &#x27;sweep&#x27;(金光斜扫，进入章节卡)
+  / [&#x27;iris&#x27;,[x,y]](金环圆形展开，进入新篇章正文) / &#x27;dissolve&#x27;(总结段)。
+- 每个场景都有缓慢镜头运动 camera {z0,z1,x0,x1,y0,y1}（推近 3%~8%、平移 ≤60px），画面永不静止。
+- 元素出场：easeOut / expo / 回弹 easeBack；K线逐根生长（实体先长、影线后伸）；
+  线条按进度绘制；标签延迟 0.2~0.4s 跟随；同屏同时运动的主体 ≤3 个。
+- 视觉节拍与字幕绑定：S.at(行号, 延迟, 时长) —— 讲到哪句，画面就动到哪。
+- 一切都是帧号的纯函数（不用 Math.random / Date），seed 固定的 K.rng / K.gen 生成数据。
+
+## 3. 声音
+- 配乐由 tools/score.py 原创合成并按时间线自动对齐：D 小调弦乐铺底 + 钢琴分解和弦 + 心跳低频脉冲
+  （越到后段越紧）+ 章节卡上的上升音效/低频重击/闪光音 + 每次转场的轻微 whoosh。
+- 不使用任何第三方音乐或音效素材（避免 YouTube Content ID）。
+
+## 4. 节奏与时长
+- 每行字幕时长 = max(2.2s, 字数×0.13 + 0.95)s；场景前留 0.7s，后留 0.6s。
+- 结构：冷开场(~6s) → 标题(5s) → 导言 → [章节卡(4.2s) → 若干知识场景] × N → 回顾 → 片尾(5.5s)。
+- 总时长控制在【目标时长】以内；超了就精简字幕措辞（不删知识点）或调 FILM.timing。
+
+## 5. script.js 写法
+window.FILM = { title, transition: 1.1, subtitle:{x:220,y:912,size:42,maxW:1480}, scenes:[ ... ] }
+场景对象：{ id, header?, lines?, visual(ctx,S,K), tr?, camera?, dur?, subY?, noWatermark? }
+可用工具（index.html 中的 K）：
+  K.text / K.goldText / K.rich / K.candle / new K.Chart(candles,box,{lo,hi,body}).draw(ctx,reveal,{dim,glow,color})
+  K.gen.path(价格拐点数组,{per,noise,wick,seed}) → {candles,swings} ；K.gen.seq(起点,[[实体,上影,下影],...])
+  K.dotted / K.dash / K.line / K.rule / K.arrow / K.marker / K.bracket / K.vbrace / K.tag / K.baseline / K.watermark
+  K.C 色板，K.F 字体，K.clamp/lerp/easeOut/easeInOut/expo/rng/rgba/mix
+标准图表区 BOX = {x:260,y:250,w:1400,h:500}（字幕区以上，左右留白避开标题栏）。
+每个知识点都要有专门设计的可视化（K线图、示意动画、对比面板、流程、数轴……），
+不能只有字幕；需要新图形时在 script.js 内用 ctx + K 自行绘制，保持同一套线宽、发光和配色。
+
+## 6. 交付清单
+1) videos/&lt;短名&gt;/成片/&lt;标题&gt;_4K60.mp4（3840×2160 60fps，&lt;目标时长&gt;）
+2) 15~20 帧联系表自检通过
+3) 提交 + 推送
+4) 下载网页（原画质，分片合并）链接
+5) 一段 YouTube 标题/简介/标签建议
+
+==================== 只需要改下面两处 ====================
+【视频标题】：（例：成交量与价格的共振）
+【目标时长】：（例：5 分钟以内）
+【知识点】：
+（把你的讲稿/知识点原文粘贴在这里，可以带 📌 🧱 📈 ⚡ 等小标题和分层要点。
+ Claude 会自动：拆成导言 + 若干模块；每个模块一张章节卡；每个要点一个可视化场景；
+ 把关键名词标成金色、多头相关标红、空头相关标绿。）</pre>
+<div class="row"><button class="ghost" data-copy="prompt">复制提示词</button><button class="ghost" id="save-md">保存为 .md 文件</button></div></section>
+</div>
+<script>
+const K = 1, N = 1, TITLE = "构建自己的交易系统";
+const OWN = [{"url": "/_blob/15746cdeab61d0ab110c163860dd61f7", "size": 19922944, "sha": "69ff6d28c4898714ac5b49f04ff346e2f412a6f89dd4ff9a9fa146b15fcc8023"}, {"url": "/_blob/0dfc27292a00dabfdff6037424bf5f60", "size": 19922944, "sha": "81744923789e220b2563d0bb95774293f4845a55a4135a44cee81b5dd28576ae"}, {"url": "/_blob/316a5f99bb4bfbc1975b202cf12f4431", "size": 19922944, "sha": "aa84e2fab243d4065706f967397043ff1c4bf97ce39f38586ce318b4a12bd1b9"}, {"url": "/_blob/67e86fdce5d7ad6ceb1b2f4fbde18d2f", "size": 19922944, "sha": "ea8fe048695b229be95261d920df9e22cc076bad9670b91ba52471af45d3cba1"}, {"url": "/_blob/662d51aa82947bb4397082f2720beea6", "size": 19922944, "sha": "b7a047821ff9318620554c4db964b5f4adb6eab0485633230c0c662951febe0b"}, {"url": "/_blob/cffcf8426f05a4d86959fd8d621c4c05", "size": 19922944, "sha": "0a257e0c91dffa6434ee6f201ffe9448cdfdd2eba44873e4aa9f45813455d04a"}, {"url": "/_blob/3d9b0f40643ffd4b16f40040612417cc", "size": 19922944, "sha": "70f623a826d484533162ba1874fce6388392ce933b4a3ae001b8fbb0be8a2ad2"}, {"url": "/_blob/f89345c49b07fb633563f909740842cd", "size": 19922944, "sha": "70884193529778b7c73f1e853527ed6b4a6ac2040057fc15a8bb03df3a09ef9e"}, {"url": "/_blob/f06025c8fe3c5c523e9f7ff94aacac95", "size": 19922944, "sha": "f00d08dc1a04498b5881d8b9c4e55e6fc67e5f60650998169c0ac0ed7f680fc7"}, {"url": "/_blob/5e923cde5550cc5803af4f231c49089a", "size": 19922944, "sha": "d50eaebf56f82d0e69de819be225372bb5c64a53011fce85e572cdf8706550bc"}, {"url": "/_blob/2c640cca5c01c3b2a9f43bb73fbd6753", "size": 19922944, "sha": "46a3b5e320d6d41312a1df2981d5c915f85051cb1e1921e90db35966fd60913f"}, {"url": "/_blob/762c6931a21144b47671acc94bf48059", "size": 19922944, "sha": "95581c5a6cdcaae2ff3c24f4dbdbd651337ad9d1e7766b11cdbc916ee937856d"}, {"url": "/_blob/8610bba653eff52a7ad1ad4d1e52602f", "size": 19922944, "sha": "f8fdbf743da5b9184f3c28eb5ff1cd86c084f6fddc5e6d142eb1077e024287aa"}, {"url": "/_blob/9d9898ab5d3ebd661df1131eb43bf229", "size": 19922944, "sha": "3d2df8181cd59b82e3f36f27a9eb65a3e81e58ecf50188bfc40cbfa205bde2c1"}, {"url": "/_blob/81ee99005dfec8167cbd01ce65e9680d", "size": 19922944, "sha": "f3cbcb7218823be8fa986da18b4486b1ee184961ca24f27c31542e124307ef27"}, {"url": "/_blob/11e4e5c19a598392c882db954ddd148b", "size": 19922944, "sha": "f83ca5efa67d5e30abe6f99a2cdf3e10265fb0641c24d2945864aaee4611d2cc"}, {"url": "/_blob/f1a15eee8222e3c090f16f3e8086a056", "size": 19922944, "sha": "ff10f90c98edd842ff842677d1994064bf019a900248458c25312c3ab125d9b8"}, {"url": "/_blob/2eb83f1748fd2e5c46036829993fc27d", "size": 19922944, "sha": "1dcc4bedcf259a10dce9d896bdbcd2ba0aba4fc7b44839e2b19473f045544094"}, {"url": "/_blob/7e868726e091a03ec5d4d49ee67696c9", "size": 19922944, "sha": "64edbd087a561847190561019b30e615aaf9bc936635a0dce967d24b41806c40"}, {"url": "/_blob/41d158d964346c941307f039dc32ea6a", "size": 19922944, "sha": "e45d59b04e5d776babf42a81063e5b2a2a7d29da0b5945a77c887983efb77e0c"}, {"url": "/_blob/64234d51a5e835d687d14bc49acd0dc8", "size": 19922944, "sha": "b078b47357ed4359ce2a0d8ca2df02b20dad7758014edf7bf1123bfb8f7e946b"}, {"url": "/_blob/9cfe47b1c531bd799dd55b614f9400e0", "size": 19922944, "sha": "76442fd111ac3e8672ecceb2717e71725206b31112e271453edc0770ff6d0a13"}, {"url": "/_blob/174df65893f54e2718f263fd50152db6", "size": 19922944, "sha": "b8d0f926c4560c7010fc07af3199bf62e7144a353152fa1418c1ef5da560de75"}, {"url": "/_blob/1214d9185c6734f984fa2449c2e35d7e", "size": 19922944, "sha": "f7ef94bc77be4831f702ab091b038be1495f4787bff3d2e7bf7749d00896add1"}, {"url": "/_blob/a26fbadc94573278750816c4b13f6dda", "size": 19922944, "sha": "21a4e09a09c94a36c79296ebd328e481ec242f642eadcea15ee6b04306498091"}, {"url": "/_blob/d229a1f645d19d0b19557d344d091eb1", "size": 19922944, "sha": "d685b0835bb193a83d663b0e5fc9fdc1616e7f2266a1be5af21f0e01dcc881f6"}, {"url": "/_blob/998ac12a968300d42f84bb6bebc46bf9", "size": 19922944, "sha": "9f7c3d22684a06c0bd3bf5821f8e9560510b47d7cb58e27a06717730705662a1"}, {"url": "/_blob/a2fe3d941f6460756ac21f7db22e6a7a", "size": 19922944, "sha": "d30b8094bf0a31a2b5d33eae163b8fe51b5abf3865e7f219672b0db428a9a0fb"}, {"url": "/_blob/144aa3dc33c224139c1c1640290e7a53", "size": 19922944, "sha": "f8f5fdaf346bcedd1097a1d32e4c1bae173dd86b5dc1f514bb676e6c9d916c1f"}, {"url": "/_blob/cc5a4561688f5d4470f428db6611a61e", "size": 19922944, "sha": "51f24226adcb9be3ba8103e7bf019dda650579de1b8140d400cbaa1d8bd89644"}, {"url": "/_blob/f5fbd10142a92d924e75d83194fce79c", "size": 14140707, "sha": "7673c6e649a4545153e23f730824b036fed713457fd2253433a6fbb3ef12991b"}];            // pieces served by this page, in byte order: [{url,size,sha}]
+const PRIOR = [];        // pieces of every earlier page (to check the chosen file): [{size,sha}]
+const FULL = 611829027;
+const NAME = k => k === N ? `${TITLE}_2K60.mp4` : `${TITLE}_2K60_前${k}段（共${N}段）.mp4`;
+const $ = id => document.getElementById(id);
+const st = (msg, cls = '') => { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; };
+const mb = n => (n / 1048576).toFixed(1);
+const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+const sha = async blob => hex(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+const priorSize = PRIOR.reduce((s, p) => s + p.size, 0), endSize = priorSize + OWN.reduce((s, p) => s + p.size, 0);
+const got = []; let prev = null, out = null;
+
+async function fetchOwn() {
+  let done = priorSize + got.reduce((s, b) => s + b.size, 0);
+  for (let i = got.length; i < OWN.length; i++) {
+    const p = OWN[i]; let ok = null;
+    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+      try {
+        const r = await fetch(p.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+        const rd = r.body.getReader(), parts = []; let n = 0;
+        for (;;) { const { done: d, value } = await rd.read(); if (d) break; parts.push(value); n += value.length;
+          $('fill').style.width = ((done + n) / endSize * 100).toFixed(2) + '%';
+          st(`正在下载 ${mb(done + n)} / ${mb(endSize)} MB（本页第 ${i + 1}/${OWN.length} 块）`); }
+        const b = new Blob(parts);
+        if (b.size !== p.size || await sha(b) !== p.sha) throw new Error('校验不符');
+        ok = b;
+      } catch (e) { if (attempt === 3) throw new Error(`第 ${i + 1} 块下载失败（${e.message}），再点一次按钮会从这里继续。`); }
+    }
+    got.push(ok); done += ok.size;
+  }
+}
+
+async function offer(name, blob) {
+  const dl = await window.claude?.use?.('downloads');
+  if (!dl) { st('当前视图不支持保存文件，请在电脑浏览器的 claude.ai 中打开本页。', 'err'); return; }
+  try {
+    await dl.save({ filename: name, data: blob });
+    st(K === N ? `已保存完整原片 ${name}（${mb(FULL)} MB，每一块都已校验）。之前保存的分段文件可以删除了。`
+               : `已保存 ${name}（${mb(endSize)} MB）。下一步：打开第 ${K + 1} 步网页。`, 'ok');
+  } catch (e) {
+    if (e?.code === 'declined') st('已取消保存。再点一次按钮即可保存，不用重新下载。');
+    else if (e?.code === 'too_large') st('这个应用一次保存不了这么大的文件，请改用电脑浏览器打开本页。', 'err');
+    else if (e?.code === 'rate_limited') st('已经有一个保存窗口打开了，请先处理它。');
+    else st('保存失败：' + (e?.message || e?.code || e), 'err');
+  }
+}
+
+const pick = $('pick');
+if (pick) pick.addEventListener('change', async ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  $('go').disabled = true; prev = null;
+  if (f.size !== priorSize) { st(`选中的文件是 ${mb(f.size)} MB，应为 ${mb(priorSize)} MB。请选择上一步保存的「${NAME(K - 1)}」。`, 'err'); return; }
+  let off = 0;
+  for (let i = 0; i < PRIOR.length; i++) {
+    st(`正在核对上一步的文件 ${i + 1}/${PRIOR.length}…`);
+    if (await sha(f.slice(off, off + PRIOR[i].size)) !== PRIOR[i].sha) { st(`上一步的文件第 ${i + 1} 块与原片不一致，请回到上一步网页重新保存。`, 'err'); return; }
+    off += PRIOR[i].size;
+  }
+  prev = f; st('上一步的文件核对通过。点按钮继续。', 'ok'); $('go').disabled = false;
+});
+
+$('go').addEventListener('click', async () => {
+  if (K > 1 && !prev) return;
+  $('go').disabled = true;
+  try {
+    if (!out) { await fetchOwn(); out = new Blob(K > 1 ? [prev, ...got] : got, { type: 'video/mp4' }); }
+    if (out.size !== endSize) throw new Error('合成后的大小不对，请刷新页面重试。');
+    st('全部校验通过，正在打开保存窗口…', 'ok');
+    await offer(NAME(K), out);
+  } catch (e) { st(e.message, 'err'); }
+  $('go').disabled = false;
+});
+
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  const el = $(b.dataset.copy), old = b.textContent;
+  try { await navigator.clipboard.writeText(el.textContent); b.textContent = '已复制'; }
+  catch { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = '已选中，请按 Ctrl/⌘+C'; }
+  setTimeout(() => b.textContent = old, 1800);
+}));
+const md = $('save-md');
+if (md) md.addEventListener('click', async () => { const dl = await window.claude?.use?.('downloads'); if (!dl) return; try { await dl.save({ filename: 'TradingNow_视频提示词.md', data: $('prompt').textContent }); } catch {} });
+</script>

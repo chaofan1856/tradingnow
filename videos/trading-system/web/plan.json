@@ -1,0 +1,167 @@
+{
+ "title": "构建自己的交易系统",
+ "size": 611829027,
+ "sha": "e08db068ffd803fee68d664edf43554e49ddd8923fc587a66944d44abd6eb81a",
+ "pages": [
+  {
+   "assets": [
+    {
+     "name": "pg1_a01.mp4",
+     "size": 19922944,
+     "sha": "69ff6d28c4898714ac5b49f04ff346e2f412a6f89dd4ff9a9fa146b15fcc8023"
+    },
+    {
+     "name": "pg1_a02.mp4",
+     "size": 19922944,
+     "sha": "81744923789e220b2563d0bb95774293f4845a55a4135a44cee81b5dd28576ae"
+    },
+    {
+     "name": "pg1_a03.mp4",
+     "size": 19922944,
+     "sha": "aa84e2fab243d4065706f967397043ff1c4bf97ce39f38586ce318b4a12bd1b9"
+    },
+    {
+     "name": "pg1_a04.mp4",
+     "size": 19922944,
+     "sha": "ea8fe048695b229be95261d920df9e22cc076bad9670b91ba52471af45d3cba1"
+    },
+    {
+     "name": "pg1_a05.mp4",
+     "size": 19922944,
+     "sha": "b7a047821ff9318620554c4db964b5f4adb6eab0485633230c0c662951febe0b"
+    },
+    {
+     "name": "pg1_a06.mp4",
+     "size": 19922944,
+     "sha": "0a257e0c91dffa6434ee6f201ffe9448cdfdd2eba44873e4aa9f45813455d04a"
+    },
+    {
+     "name": "pg1_a07.mp4",
+     "size": 19922944,
+     "sha": "70f623a826d484533162ba1874fce6388392ce933b4a3ae001b8fbb0be8a2ad2"
+    },
+    {
+     "name": "pg1_a08.mp4",
+     "size": 19922944,
+     "sha": "70884193529778b7c73f1e853527ed6b4a6ac2040057fc15a8bb03df3a09ef9e"
+    },
+    {
+     "name": "pg1_a09.mp4",
+     "size": 19922944,
+     "sha": "f00d08dc1a04498b5881d8b9c4e55e6fc67e5f60650998169c0ac0ed7f680fc7"
+    },
+    {
+     "name": "pg1_a10.mp4",
+     "size": 19922944,
+     "sha": "d50eaebf56f82d0e69de819be225372bb5c64a53011fce85e572cdf8706550bc"
+    },
+    {
+     "name": "pg1_a11.mp4",
+     "size": 19922944,
+     "sha": "46a3b5e320d6d41312a1df2981d5c915f85051cb1e1921e90db35966fd60913f"
+    },
+    {
+     "name": "pg1_a12.mp4",
+     "size": 19922944,
+     "sha": "95581c5a6cdcaae2ff3c24f4dbdbd651337ad9d1e7766b11cdbc916ee937856d"
+    },
+    {
+     "name": "pg1_a13.mp4",
+     "size": 19922944,
+     "sha": "f8fdbf743da5b9184f3c28eb5ff1cd86c084f6fddc5e6d142eb1077e024287aa"
+    },
+    {
+     "name": "pg1_a14.mp4",
+     "size": 19922944,
+     "sha": "3d2df8181cd59b82e3f36f27a9eb65a3e81e58ecf50188bfc40cbfa205bde2c1"
+    },
+    {
+     "name": "pg1_a15.mp4",
+     "size": 19922944,
+     "sha": "f3cbcb7218823be8fa986da18b4486b1ee184961ca24f27c31542e124307ef27"
+    },
+    {
+     "name": "pg1_a16.mp4",
+     "size": 19922944,
+     "sha": "f83ca5efa67d5e30abe6f99a2cdf3e10265fb0641c24d2945864aaee4611d2cc"
+    },
+    {
+     "name": "pg1_a17.mp4",
+     "size": 19922944,
+     "sha": "ff10f90c98edd842ff842677d1994064bf019a900248458c25312c3ab125d9b8"
+    },
+    {
+     "name": "pg1_a18.mp4",
+     "size": 19922944,
+     "sha": "1dcc4bedcf259a10dce9d896bdbcd2ba0aba4fc7b44839e2b19473f045544094"
+    },
+    {
+     "name": "pg1_a19.mp4",
+     "size": 19922944,
+     "sha": "64edbd087a561847190561019b30e615aaf9bc936635a0dce967d24b41806c40"
+    },
+    {
+     "name": "pg1_a20.mp4",
+     "size": 19922944,
+     "sha": "e45d59b04e5d776babf42a81063e5b2a2a7d29da0b5945a77c887983efb77e0c"
+    },
+    {
+     "name": "pg1_a21.mp4",
+     "size": 19922944,
+     "sha": "b078b47357ed4359ce2a0d8ca2df02b20dad7758014edf7bf1123bfb8f7e946b"
+    },
+    {
+     "name": "pg1_a22.mp4",
+     "size": 19922944,
+     "sha": "76442fd111ac3e8672ecceb2717e71725206b31112e271453edc0770ff6d0a13"
+    },
+    {
+     "name": "pg1_a23.mp4",
+     "size": 19922944,
+     "sha": "b8d0f926c4560c7010fc07af3199bf62e7144a353152fa1418c1ef5da560de75"
+    },
+    {
+     "name": "pg1_a24.mp4",
+     "size": 19922944,
+     "sha": "f7ef94bc77be4831f702ab091b038be1495f4787bff3d2e7bf7749d00896add1"
+    },
+    {
+     "name": "pg1_a25.mp4",
+     "size": 19922944,
+     "sha": "21a4e09a09c94a36c79296ebd328e481ec242f642eadcea15ee6b04306498091"
+    },
+    {
+     "name": "pg1_a26.mp4",
+     "size": 19922944,
+     "sha": "d685b0835bb193a83d663b0e5fc9fdc1616e7f2266a1be5af21f0e01dcc881f6"
+    },
+    {
+     "name": "pg1_a27.mp4",
+     "size": 19922944,
+     "sha": "9f7c3d22684a06c0bd3bf5821f8e9560510b47d7cb58e27a06717730705662a1"
+    },
+    {
+     "name": "pg1_a28.mp4",
+     "size": 19922944,
+     "sha": "d30b8094bf0a31a2b5d33eae163b8fe51b5abf3865e7f219672b0db428a9a0fb"
+    },
+    {
+     "name": "pg1_a29.mp4",
+     "size": 19922944,
+     "sha": "f8f5fdaf346bcedd1097a1d32e4c1bae173dd86b5dc1f514bb676e6c9d916c1f"
+    },
+    {
+     "name": "pg1_a30.mp4",
+     "size": 19922944,
+     "sha": "51f24226adcb9be3ba8103e7bf019dda650579de1b8140d400cbaa1d8bd89644"
+    },
+    {
+     "name": "pg1_a31.mp4",
+     "size": 14140707,
+     "sha": "7673c6e649a4545153e23f730824b036fed713457fd2253433a6fbb3ef12991b"
+    }
+   ],
+   "files": []
+  }
+ ]
+}
