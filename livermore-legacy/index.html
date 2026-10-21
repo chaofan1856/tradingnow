@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>华尔街唯一的投机之王 · 杰西·利弗莫尔</title>
+<style>
+@font-face{font-family:'SerifSC';src:url(fonts/noto-serif-sc-chinese-simplified-400-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:'SerifSC';src:url(fonts/noto-serif-sc-chinese-simplified-600-normal.woff2) format('woff2');font-weight:600}
+@font-face{font-family:'SerifSC';src:url(fonts/noto-serif-sc-chinese-simplified-900-normal.woff2) format('woff2');font-weight:900}
+@font-face{font-family:'Corm';src:url(fonts/cormorant-garamond-latin-300-normal.woff2) format('woff2');font-weight:300}
+@font-face{font-family:'Corm';src:url(fonts/cormorant-garamond-latin-500-normal.woff2) format('woff2');font-weight:500}
+@font-face{font-family:'SansSC';src:url(fonts/noto-sans-sc-chinese-simplified-300-normal.woff2) format('woff2');font-weight:300}
+*{margin:0;padding:0}
+html,body{width:2560px;height:1440px;overflow:hidden;background:#0C0A08}
+canvas{display:block}
+</style>
+<!-- optional: window.PHOTO_FRAMING = { portrait: { fx, fy, eyeX, eyeY } } -->
+<script src="assets/photos/framing.js"></script>
+</head>
+<body>
+<canvas id="c" width="2560" height="1440"></canvas>
+<script>
+/* 华尔街唯一的投机之王 · 杰西·利弗莫尔 — 58 s, 2560×1440, no narration.
+   Look: a 1920s archive — monochrome photographs under slow push-ins, film grain and gate weave,
+   serif type in cream and gold ink, a lifetime ruler 1877→1940 that travels with the story.
+   Shots change on the score's beats with soft cross-dissolves. window.seek(frame) draws one frame. */
+const W = 2560, H = 1440, FPS = 30, DUR = 58;
+window.TOTAL_FRAMES = DUR * FPS;
+
+// beat grid of the score (librosa beat_track, ~103 BPM)
+const BEATS = [0.91, 1.49, 2.07, 2.65, 3.25, 3.81, 4.41, 4.99, 5.57, 6.15, 6.76, 7.34, 7.92, 8.5, 9.1, 9.68, 10.26, 10.87,
+  11.47, 12.05, 12.63, 13.24, 13.82, 14.42, 15.14, 15.74, 16.32, 16.93, 17.53, 18.16, 18.78, 19.37, 19.97, 20.55, 21.11,
+  21.66, 22.22, 22.78, 23.34, 23.89, 24.43, 24.96, 25.5, 26.1, 26.7, 27.28, 27.84, 28.44, 29.02, 29.61, 30.19, 30.77,
+  31.37, 31.93, 32.53, 33.11, 33.72, 34.3, 34.88, 35.46, 36.06, 36.64, 37.24, 37.83, 38.41, 38.99, 39.57, 40.15, 40.73,
+  41.29, 41.87, 42.45, 43.03, 43.61, 44.19, 44.74, 45.35, 45.91, 46.49, 47.07, 47.65, 48.23, 48.81, 49.37, 49.97, 50.53,
+  51.11, 51.69, 52.27, 52.85, 53.43, 53.99, 54.57, 55.15, 55.73, 56.31, 56.89, 57.49];
+
+const CREAM = '#EFE6D2', GOLD = '#C9A45C', GOLD_HI = '#E7C987', INK = '#0C0A08', RUST = '#B4553F', DIM = 'rgba(239,230,210,.62)';
+const SERIF = "'SerifSC'", LAT = "'Corm','SerifSC'", SANS = "'SansSC'";
+
+const c = document.getElementById('c'), ctx = c.getContext('2d');
+const bufA = new OffscreenCanvas(W, H), ga = bufA.getContext('2d');
+const bufB = new OffscreenCanvas(W, H), gb = bufB.getContext('2d');
+
+/* ---------- helpers ---------- */
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const eo = k => 1 - Math.pow(1 - k, 3);
+const eio = k => k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+const smooth = k => k * k * (3 - 2 * k);
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+const fadeIO = (t, a, b, f = .35) => Math.min(prog(t, a, a + f), 1 - prog(t, b - f, b));
+
+function T(g, s, x, y, o = {}) {
+  g.save();
+  g.font = `${o.w || 600} ${o.size || 40}px ${o.f || SERIF}`;
+  g.letterSpacing = (o.ls || 0) + 'px';
+  g.textAlign = o.align || 'left'; g.textBaseline = 'alphabetic';
+  g.globalAlpha *= o.a ?? 1;
+  if (o.shadow !== false) { g.shadowColor = 'rgba(0,0,0,.65)'; g.shadowBlur = o.blur ?? 18; }
+  g.fillStyle = o.color || CREAM;
+  g.fillText(s, x, y);
+  g.restore();
+}
+function measure(g, s, o) { g.save(); g.font = `${o.w || 600} ${o.size}px ${o.f || SERIF}`; g.letterSpacing = (o.ls || 0) + 'px'; const m = g.measureText(s).width; g.restore(); return m; }
+// per-character reveal: each glyph rises and sharpens in, staggered — reads as ink settling
+function reveal(g, s, x, y, t, t0, o = {}) {
+  const chars = [...s], st = o.stagger ?? .035, dur = o.dur ?? .55;
+  let w = 0; const ws = chars.map(ch => { const m = measure(g, ch, o); return m; });
+  const total = ws.reduce((a, b) => a + b, 0);
+  let cx = o.align === 'center' ? x - total / 2 : o.align === 'right' ? x - total : x;
+  chars.forEach((ch, i) => {
+    const k = eo(prog(t, t0 + i * st, t0 + i * st + dur));
+    if (k > 0) T(g, ch, cx, y + (1 - k) * (o.size || 40) * .35, { ...o, align: 'left', a: (o.a ?? 1) * k });
+    cx += ws[i];
+  });
+  return total;
+}
+function rule(g, x, y, w, k, col = GOLD, a = 1) {
+  g.save(); g.globalAlpha *= a; g.fillStyle = col; g.fillRect(x, y, w * eio(k), 2); g.restore();
+}
+
+/* ---------- photographs (assets/photos/*.jpg) → toned once, cached ---------- */
+const PHOTOS = {};
+function loadPhoto(key, tone) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => {
+      const cv = new OffscreenCanvas(im.naturalWidth, im.naturalHeight), x = cv.getContext('2d');
+      x.filter = tone || 'grayscale(1) sepia(.28) contrast(1.12) brightness(.92)';
+      x.drawImage(im, 0, 0);
+      PHOTOS[key] = cv; res();
+    };
+    im.onerror = () => res();
+    im.src = `assets/photos/${key}.jpg`;
+  });
+}
+// framing per photo: focus point (0–1) the push-in centres on, and the eye point for the final close-up
+const FRAME = window.PHOTO_FRAMING || {};
+const fr = k => Object.assign({ fx: .5, fy: .4, eyeX: .5, eyeY: .3 }, FRAME[k] || {});
+// cover-fit photo, scaled by z around its focus point, offset by (px,py) screen px
+function photo(g, key, z, px = 0, py = 0, o = {}) {
+  const im = PHOTOS[key]; if (!im) return false;
+  const f = fr(key), fx = o.fx ?? f.fx, fy = o.fy ?? f.fy;
+  const box = o.box || [0, 0, W, H];
+  const base = Math.max(box[2] / im.width, box[3] / im.height) * z;
+  const dw = im.width * base, dh = im.height * base;
+  // place the focus point at the box centre, then clamp so the image always covers the box
+  let x = box[0] + box[2] / 2 - fx * dw + px, y = box[1] + box[3] / 2 - fy * dh + py;
+  x = Math.min(box[0], Math.max(box[0] + box[2] - dw, x)); y = Math.min(box[1], Math.max(box[1] + box[3] - dh, y));
+  g.save(); g.beginPath(); g.rect(...box); g.clip();
+  g.globalAlpha *= o.a ?? 1; g.drawImage(im, x, y, dw, dh); g.restore();
+  return true;
+}
+function missing(g, label, box = [0, 0, W, H]) {   // shown only while a photo hasn't been supplied
+  g.save(); g.strokeStyle = 'rgba(201,164,92,.35)'; g.lineWidth = 2; g.setLineDash([10, 12]);
+  g.strokeRect(box[0] + 30, box[1] + 30, box[2] - 60, box[3] - 60); g.restore();
+  T(g, label, box[0] + box[2] / 2, box[1] + box[3] / 2, { size: 34, w: 400, color: 'rgba(201,164,92,.6)', align: 'center' });
+}
+
+/* ---------- textures: dark paper, grain frames, vignette ---------- */
+const paper = new OffscreenCanvas(W, H), px_ = paper.getContext('2d');
+(function () {
+  const gr = px_.createRadialGradient(W * .45, H * .42, 100, W / 2, H / 2, W * .75);
+  gr.addColorStop(0, '#1F1A14'); gr.addColorStop(.6, '#15110D'); gr.addColorStop(1, '#0A0806');
+  px_.fillStyle = gr; px_.fillRect(0, 0, W, H);
+  for (let i = 0; i < 9000; i++) {
+    const x = hash(i) * W, y = hash(i + .5) * H, l = 6 + hash(i + .3) * 40, a = hash(i + .7) * 6.28;
+    px_.strokeStyle = `rgba(${hash(i + .9) > .5 ? '239,230,210' : '0,0,0'},${.015 + hash(i + .2) * .03})`;
+    px_.lineWidth = 1; px_.beginPath(); px_.moveTo(x, y); px_.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); px_.stroke();
+  }
+})();
+const GRAIN = Array.from({ length: 6 }, (_, n) => {
+  const cv = new OffscreenCanvas(640, 360), x = cv.getContext('2d'), id = x.createImageData(640, 360);
+  for (let i = 0; i < id.data.length; i += 4) { const v = hash(i * .37 + n * 977) * 255; id.data[i] = id.data[i + 1] = id.data[i + 2] = v; id.data[i + 3] = 255; }
+  x.putImageData(id, 0, 0); return cv;
+});
+const vign = new OffscreenCanvas(W, H);
+(function () {
+  const x = vign.getContext('2d'), v = x.createRadialGradient(W / 2, H * .48, H * .38, W / 2, H * .5, H * 1.08);
+  v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.78)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
+})();
+
+/* ---------- reusable compositions ---------- */
+function quoteCard(g, lt, lines, o = {}) {
+  const x = o.x ?? 330, y = o.y ?? 560, size = o.size ?? 92, t0 = o.t0 ?? .25;
+  const a = o.a ?? 1;
+  T(g, '“', x - 40, y - size * .55, { size: size * 2.6, f: LAT, w: 500, color: GOLD, a: a * eo(prog(lt, t0 - .2, t0 + .3)), shadow: false });
+  lines.forEach((s, i) => reveal(g, s, x + 70, y + 120 + i * size * 1.45, lt, t0 + .15 + i * .45, { size, w: 600, color: CREAM, a }));
+  const ry = y + 120 + (lines.length - 1) * size * 1.45 + 80;
+  rule(g, x + 72, ry, 160, prog(lt, t0 + .6, t0 + 1.4), GOLD, a);
+  T(g, '杰西·利弗莫尔', x + 260, ry + 18, { size: 52, w: 400, color: GOLD, ls: 6, a: a * prog(lt, t0 + 1, t0 + 1.5) });
+}
+function tickerTape(g, y, lt, speed = 220, a = .55) {
+  const s = '  U.S. STEEL 112¼  +1½     ANACONDA 54½  −¾     BETHLEHEM 87½  +2     UNION PACIFIC 141  −1¼     RADIO 101¼  +3½     GENERAL MOTORS 74½  −½     CHRYSLER 68¾  +1     ';
+  const size = 46, tw = measure(g, s, { size, f: LAT, w: 500, ls: 3 }), off = (lt * speed) % tw;
+  g.save(); g.globalAlpha *= a;
+  g.fillStyle = 'rgba(239,230,210,.07)'; g.fillRect(0, y - 58, W, 80);
+  g.fillStyle = 'rgba(201,164,92,.5)'; g.fillRect(0, y - 58, W, 1.5); g.fillRect(0, y + 22, W, 1.5);
+  for (let k = -1; k < 3; k++) T(g, s, -off + k * tw, y, { size, f: LAT, w: 500, color: GOLD_HI, ls: 3, shadow: false });
+  g.restore();
+}
+// gold-ink line chart on the paper
+function inkLine(g, pts, box, k, col = GOLD_HI, lw = 5) {
+  const [x0, y0, w, h] = box, n = Math.max(2, Math.floor(pts.length * k));
+  g.save(); g.strokeStyle = col; g.lineWidth = lw; g.lineJoin = 'round'; g.lineCap = 'round';
+  g.shadowColor = 'rgba(231,201,135,.35)'; g.shadowBlur = 14;
+  g.beginPath();
+  for (let i = 0; i < n; i++) { const X = x0 + w * i / (pts.length - 1), Y = y0 + h * (1 - pts[i]); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+  g.stroke();
+  const i = n - 1; g.fillStyle = col; g.beginPath(); g.arc(x0 + w * i / (pts.length - 1), y0 + h * (1 - pts[i]), 9, 0, 7); g.fill();
+  g.restore();
+}
+function rain(g, t, a = 1, n = 520) {
+  g.save(); g.globalAlpha *= a; g.strokeStyle = 'rgba(220,226,232,.28)'; g.lineWidth = 1.6;
+  g.beginPath();
+  for (let i = 0; i < n; i++) {
+    const sp = 1900 + hash(i) * 900, len = 40 + hash(i + .4) * 70;
+    const x = (hash(i + .1) * (W + 400) - 200 + t * 180) % (W + 200) - 100;
+    const y = ((hash(i + .2) * (H + 200)) + t * sp) % (H + 200) - 100;
+    g.moveTo(x, y); g.lineTo(x - len * .18, y - len);
+  }
+  g.stroke(); g.restore();
+}
+
+/* ---------- shots ---------- */
+const S = [];
+const shot = (start, end, draw) => S.push({ start, end, draw });
+
+// ① 0–10.26  portrait + title + "speculation is as old as the hills"
+shot(0, 10.26, (g, lt) => {
+  g.drawImage(paper, 0, 0);
+  const z = lerp(1.04, 1.16, smooth(lt / 10.26));
+  const box = [1180, 0, 1380, H];
+  if (!photo(g, 'portrait', z, 0, 0, { box })) missing(g, '肖像：assets/photos/portrait.jpg', box);
+  // blend the photo's left edge into the paper
+  const gr = g.createLinearGradient(1180, 0, 1700, 0); gr.addColorStop(0, '#15110D'); gr.addColorStop(1, 'rgba(21,17,13,0)');
+  g.fillStyle = gr; g.fillRect(1180, 0, 520, H);
+  T(g, 'JESSE LIVERMORE  ·  1877 — 1940', 240, 320, { size: 50, f: LAT, w: 500, color: GOLD, ls: 8, a: prog(lt, .5, 1.2) });
+  reveal(g, '杰西·利弗莫尔', 230, 520, lt, .91, { size: 170, w: 900, color: CREAM, stagger: .06, dur: .8 });
+  rule(g, 240, 590, 880, prog(lt, 1.49, 2.6));
+  reveal(g, '华尔街投机之王', 240, 700, lt, 1.6, { size: 78, w: 600, color: GOLD_HI, ls: 18, stagger: .07 });
+  // the quote, from beat 3.81
+  const qa = prog(lt, 3.6, 4.1);
+  T(g, '“', 200, 900, { size: 180, f: LAT, w: 500, color: GOLD, a: qa * .9, shadow: false });
+  reveal(g, '华尔街没有新事物，', 290, 900, lt, 3.81, { size: 80, w: 600 });
+  reveal(g, '因为投机像山岳一样古老。”', 290, 1015, lt, 4.6, { size: 80, w: 600 });
+});
+
+// ② 10.26–30.19  the life: $5 at fourteen, four ruins and four comebacks, "sitting"
+shot(10.26, 14.42, (g, lt) => {           // 14, five dollars, a bucket shop slip
+  g.drawImage(paper, 0, 0);
+  if (PHOTOS.bucketshop) photo(g, 'bucketshop', lerp(1.05, 1.14, lt / 4.2), lerp(30, -30, lt / 4.2), 0, { a: .75 });
+  else {
+    // a period trading slip, drifting
+    g.save(); g.translate(1720 + lt * 14, 700); g.rotate(-.07 + lt * .008);
+    g.fillStyle = '#D9CCAE'; g.shadowColor = 'rgba(0,0,0,.6)'; g.shadowBlur = 50; g.fillRect(-420, -300, 840, 600); g.shadowBlur = 0;
+    g.strokeStyle = '#6B5A3E'; g.lineWidth = 3; g.strokeRect(-392, -272, 784, 544);
+    T(g, 'BOSTON  ·  1891', 0, -190, { size: 40, f: LAT, w: 500, color: '#3D3222', align: 'center', ls: 10, shadow: false });
+    T(g, 'TRADING SLIP', 0, -110, { size: 72, f: LAT, w: 500, color: '#2A2218', align: 'center', ls: 8, shadow: false });
+    g.fillStyle = '#6B5A3E'; g.fillRect(-300, -70, 600, 2);
+    [['STOCK', 'BURLINGTON'], ['QTY', '10 SH.'], ['MARGIN', '$5.00']].forEach(([k, v], i) => {
+      T(g, k, -300, 10 + i * 80, { size: 40, f: LAT, w: 500, color: '#5A4A32', ls: 4, shadow: false });
+      T(g, v, 300, 10 + i * 80, { size: 46, f: LAT, w: 500, color: '#2A2218', align: 'right', ls: 2, shadow: false });
+    });
+    g.restore();
+  }
+  reveal(g, '14岁', 300, 720, lt, .2, { size: 300, w: 900, color: GOLD_HI, stagger: .1, dur: .7 });
+  reveal(g, '5美金入市', 320, 880, lt, .8, { size: 96, w: 600, color: CREAM, ls: 12, stagger: .07 });
+});
+shot(14.42, 18.78, (g, lt) => {           // ruin
+  g.drawImage(paper, 0, 0);
+  if (!photo(g, 'wallst', lerp(1.12, 1.03, lt / 4.4), 0, 0, { a: .8 })) {
+    for (let r = 0; r < 7; r++) tickerTape(g, 260 + r * 150, lt + r * 3.1, 160 + r * 25, .35 + .08 * (r % 3));
+  }
+  g.fillStyle = 'rgba(12,10,8,.45)'; g.fillRect(0, 0, W, H);
+  reveal(g, '四次破产', W / 2, 760, lt, .25, { size: 220, w: 900, color: CREAM, align: 'center', stagger: .12, dur: .7 });
+  // a single rust ink stroke through it
+  g.save(); g.strokeStyle = RUST; g.lineWidth = 12; g.lineCap = 'round'; g.globalAlpha = .9;
+  const k = eio(prog(lt, 1.4, 2.1)); g.beginPath(); g.moveTo(W / 2 - 470, 690); g.lineTo(W / 2 - 470 + 940 * k, 690 + 20 * k); g.stroke(); g.restore();
+});
+shot(18.78, 23.34, (g, lt) => {           // ...and four comebacks
+  g.drawImage(paper, 0, 0);
+  const pts = []; const K = [.15, .62, .1, .72, .12, .84, .08, .95, .3, .78];
+  for (let i = 0; i < K.length - 1; i++) for (let s = 0; s < 14; s++) { const k = s / 14, up = K[i + 1] > K[i]; pts.push(lerp(K[i], K[i + 1], up ? smooth(k) : 1 - Math.pow(1 - k, 3)) + (hash(i * 30 + s) - .5) * .015); }
+  pts.push(K[K.length - 1]);
+  const box = [260, 260, 2040, 560];
+  g.save(); g.strokeStyle = 'rgba(239,230,210,.08)'; g.lineWidth = 1; for (let i = 0; i <= 5; i++) { g.beginPath(); g.moveTo(260, 260 + i * 112); g.lineTo(2300, 260 + i * 112); g.stroke(); } g.restore();
+  inkLine(g, pts, box, eio(prog(lt, .1, 3.6)));
+  reveal(g, '四次破产，四次东山再起', W / 2, 1020, lt, .3, { size: 104, w: 900, color: CREAM, align: 'center', ls: 6, stagger: .06 });
+});
+shot(23.34, 30.19, (g, lt) => {           // "money is made by sitting"
+  g.drawImage(paper, 0, 0);
+  if (PHOTOS.portrait) {
+    photo(g, 'portrait', lerp(1.5, 1.62, lt / 6.85), 0, 0, { box: [1500, 0, 1060, H], a: .55 });
+    const gr = g.createLinearGradient(1500, 0, 2000, 0); gr.addColorStop(0, '#15110D'); gr.addColorStop(1, 'rgba(21,17,13,0)');
+    g.fillStyle = gr; g.fillRect(1500, 0, 500, H);
+  }
+  tickerTape(g, 1020, lt, 120, .4);
+  quoteCard(g, lt, ['钱是坐着赚来的，', '而不是靠操作赚来的。'], { y: 440, size: 104, t0: .4 });
+});
+
+// ③ 30.19–45.35  1929
+shot(30.19, 35.46, (g, lt) => {
+  g.drawImage(paper, 0, 0);
+  if (!photo(g, 'crash1929', lerp(1.04, 1.15, lt / 5.27), lerp(-40, 40, lt / 5.27), 0, { a: .85 })) {
+    T(g, '1929', W / 2, 1000, { size: 760, f: LAT, w: 500, color: 'rgba(239,230,210,.06)', align: 'center', shadow: false });
+  }
+  g.fillStyle = 'rgba(12,10,8,.5)'; g.fillRect(0, 0, W, H);
+  reveal(g, '1929', W / 2, 700, lt, .15, { size: 300, f: LAT, w: 500, color: GOLD_HI, align: 'center', ls: 30, stagger: .1 });
+  rule(g, W / 2 - 300, 770, 600, prog(lt, .8, 1.5));
+  reveal(g, '做空美国', W / 2, 920, lt, .9, { size: 120, w: 900, color: CREAM, align: 'center', ls: 30, stagger: .1 });
+});
+const DJ = (() => {   // DJIA 1929 shape (illustrative): climb to Sep peak, Oct collapse
+  const key = [[0, .52], [.4, .9], [.45, .93], [.55, .8], [.68, .7], [.74, .45], [.78, .2], [.84, .38], [.92, .12], [1, .2]], out = [];
+  for (let i = 0; i <= 120; i++) { const x = i / 120; let j = 0; while (key[j + 1] && key[j + 1][0] < x) j++; const [a, va] = key[j], [b, vb] = key[j + 1] || key[j]; out.push((b === a ? va : lerp(va, vb, (x - a) / (b - a))) + (hash(i) - .5) * .03); }
+  return out;
+})();
+shot(35.46, 40.15, (g, lt) => {
+  g.drawImage(paper, 0, 0);
+  if (PHOTOS.desk) photo(g, 'desk', lerp(1.05, 1.12, lt / 4.7), 0, 0, { a: .7 });
+  const box = [1240, 300, 1080, 560];
+  T(g, 'DOW JONES  ·  1929', 1240, 262, { size: 48, f: LAT, w: 500, color: GOLD, ls: 8, a: prog(lt, 0, .4) });
+  inkLine(g, DJ, box, eio(prog(lt, .1, 2.6)), RUST, 5);
+  // the fortune, counting up
+  const v = Math.floor(eo(prog(lt, .6, 3)) * 100000000);
+  T(g, '$' + v.toLocaleString('en-US'), 280, 640, { size: 150, f: LAT, w: 500, color: GOLD_HI, ls: 4, a: prog(lt, .4, .8) });
+  rule(g, 290, 700, 820, prog(lt, 1, 1.8));
+  reveal(g, '一天狂赚 1亿美金！', 290, 840, lt, 1.4, { size: 104, w: 900, color: CREAM, stagger: .06 });
+});
+shot(40.15, 45.35, (g, lt) => {
+  g.drawImage(paper, 0, 0);
+  tickerTape(g, 1040, lt + 20, 120, .35);
+  quoteCard(g, lt, ['在明智的交易者看来，', '没有牛市也没有熊市，', '只有正确的方向。'], { y: 410, size: 94, t0: .3 });
+});
+
+// ④ 45.35–58  ruin by human nature; rain; the eyes
+shot(45.35, 51.11, (g, lt) => {
+  g.drawImage(paper, 0, 0);
+  const box = [0, 0, W, H];
+  if (!photo(g, 'rain', lerp(1.02, 1.1, lt / 5.76), 0, 0, { a: .9 })) {
+    if (!photo(g, 'portrait', lerp(1.15, 1.25, lt / 5.76), 0, 0, { box: [1100, 0, 1460, H], a: .55 })) missing(g, '肖像：assets/photos/portrait.jpg', [1100, 0, 1460, H]);
+  }
+  if (!PHOTOS.rain) { const e = g.createLinearGradient(1100, 0, 1600, 0); e.addColorStop(0, '#15110D'); e.addColorStop(1, 'rgba(21,17,13,0)'); g.fillStyle = e; g.fillRect(1100, 0, 500, H); }
+  g.fillStyle = 'rgba(16,20,26,.45)'; g.fillRect(0, 0, W, H);   // cold, rain-grey
+  rain(g, 45.35 + lt, .9);
+  reveal(g, '毁灭于人性', 300, 640, lt, .3, { size: 140, w: 900, color: CREAM, ls: 16, stagger: .1, dur: .8 });
+  reveal(g, '永恒于历史', 420, 840, lt, 1.3, { size: 140, w: 900, color: GOLD_HI, ls: 16, stagger: .1, dur: .8 });
+});
+shot(51.11, 58, (g, lt) => {
+  const t = 51.11 + lt;
+  g.fillStyle = INK; g.fillRect(0, 0, W, H);
+  const f = fr('portrait');
+  // slow push that becomes a close-up on the eyes
+  const k = smooth(prog(t, 51.11, 57.6));
+  const z = lerp(1.0, 2.4, Math.pow(k, 1.6));
+  const col = [W / 2 - 760, 0, 1520, H];
+  const ok = photo(g, 'portrait', z, 0, 0, { box: col, fx: lerp(f.fx, f.eyeX, k), fy: lerp(f.fy, f.eyeY, k), a: lerp(.5, .95, k) });
+  if (!ok) missing(g, '肖像：assets/photos/portrait.jpg', col);
+  for (const [x0, x1] of [[col[0], col[0] + 380], [col[0] + col[2], col[0] + col[2] - 380]]) {
+    const e = g.createLinearGradient(x0, 0, x1, 0); e.addColorStop(0, INK); e.addColorStop(1, 'rgba(12,10,8,0)');
+    g.fillStyle = e; g.fillRect(Math.min(x0, x1), 0, 380, H);
+  }
+  g.fillStyle = `rgba(12,10,8,${.55 * (1 - prog(t, 54.8, 56.2))})`; g.fillRect(0, 0, W, H);
+  rain(g, t, 1 - prog(t, 52, 54.5));
+  const q1 = fadeIO(t, 51.3, 55.2, .5), q2 = fadeIO(t, 52.6, 55.4, .5);
+  T(g, '“我的一生是一场失败。”', W / 2, 520, { size: 88, w: 600, color: DIM, align: 'center', ls: 4, a: q1 });
+  reveal(g, '你能战胜市场，', W / 2, 760, t, 52.6, { size: 112, w: 900, color: CREAM, align: 'center', a: q2, stagger: .06 });
+  reveal(g, '但你永远无法战胜人性。', W / 2, 920, t, 53.4, { size: 112, w: 900, color: GOLD_HI, align: 'center', a: q2, stagger: .06 });
+});
+
+/* ---------- captions: the brief's narration, as reading subtitles ---------- */
+const CAPS = [
+  [1.3, 4.3, '他是华尔街无可争议的投机之王。'],
+  [4.5, 7.6, '他曾说：“市场没有新事物，因为人性永不改变。”'],
+  [7.8, 10.1, '他用一生，与人性玩了一场最极致的游戏。'],
+  [10.5, 14.2, '14岁，他带着5美金离家出走，'],
+  [14.6, 22.9, '一生经历了四次破产与四次东山再起。'],
+  [23.6, 26.6, '在交了无数血税后，他悟出了最伟大的交易法则：'],
+  [26.8, 30.0, '“赚大钱不能靠频繁操作，而是靠耐心‘坐等’趋势明朗。”'],
+  [30.5, 35.2, '1929年大崩溃前夕，他果断调集所有资金，做空整个美国。'],
+  [35.7, 39.9, '当全美陷入绝望时，他逆流而上，一天斩获1亿美金，富可敌国！'],
+  [40.4, 45.1, '他证明了：“市场上没有牛熊之分，只有正确的方向。”'],
+  [45.6, 48.3, '然而，赢了世界的他，最终死于无法战胜的抑郁。'],
+  [48.5, 51.0, '1940年他饮弹自尽，绝笔写道：“我的一生是一场失败。”'],
+  [51.4, 53.4, '他的财富早已烟消云散，'],
+  [53.5, 56.2, '但他用生命换来的语录，至今仍是投机者不可逾越的灯塔。'],
+];
+const CAP = { size: 74, w: 400, ls: 2 };
+function capLines(g, s) {
+  if (measure(g, s, CAP) <= 2150) return [s];
+  const chars = [...s], mid = chars.length / 2; let best = -1;
+  chars.forEach((ch, i) => { if ('，：、；'.includes(ch) && (best < 0 || Math.abs(i - mid) < Math.abs(best - mid))) best = i; });
+  if (best < 0) best = Math.floor(mid) - 1;
+  return [chars.slice(0, best + 1).join(''), chars.slice(best + 1).join('')];
+}
+function captions(g, t) {
+  for (const [a, b, s] of CAPS) {
+    const k = fadeIO(t, a, b, .3); if (k <= 0) continue;
+    const lines = capLines(g, s), dy = (1 - eo(prog(t, a, a + .3))) * 14;
+    // soft dark band behind the subtitle so it reads on any shot
+    const top = lines.length > 1 ? 1150 : 1235;
+    g.save(); g.globalAlpha = k * .75; const band = g.createLinearGradient(0, top - 40, 0, H);
+    band.addColorStop(0, 'rgba(8,6,4,0)'); band.addColorStop(.35, 'rgba(8,6,4,.7)'); band.addColorStop(1, 'rgba(8,6,4,.85)');
+    g.fillStyle = band; g.fillRect(0, top - 40, W, H - top + 40); g.restore();
+    lines.forEach((ln, i) => T(g, ln, W / 2, (lines.length > 1 ? 1225 : 1300) + i * 96 + dy, { ...CAP, color: CREAM, align: 'center', a: k, blur: 16 }));
+  }
+}
+
+/* ---------- lifetime ruler 1877 → 1940 (top right) ---------- */
+const YEARS = [[0, 1877, '1877 — 1940'], [10.26, 1891, '1891 · 14岁'], [14.42, 1908, '四起四落'], [23.34, 1923, '交易法则'], [30.19, 1929, '1929'], [45.35, 1940, '1940']];
+function ruler(g, t) {
+  const x0 = 1700, x1 = 2420, y = 108, a = 1 - prog(t, 54.5, 55.5);
+  if (a <= 0) return;
+  let cur = YEARS[0], prev = YEARS[0];
+  for (const yy of YEARS) if (yy[0] <= t) { prev = cur; cur = yy; }
+  const k = eio(prog(t, cur[0], cur[0] + .8));
+  const yr = lerp(prev[1], cur[1], k), X = lerp(x0, x1, (yr - 1877) / 63);
+  g.save(); g.globalAlpha = a * .9;
+  g.fillStyle = 'rgba(239,230,210,.35)'; g.fillRect(x0, y, x1 - x0, 2);
+  for (let i = 1880; i <= 1940; i += 10) { const xx = lerp(x0, x1, (i - 1877) / 63); g.fillRect(xx, y - 8, 2, 18); }
+  g.fillStyle = GOLD; g.fillRect(x0, y - 1, X - x0, 4);
+  g.beginPath(); g.arc(X, y + 1, 9, 0, 7); g.fill();
+  g.restore();
+  T(g, '1877', x0, y + 56, { size: 36, f: LAT, w: 500, color: DIM, a, shadow: false });
+  T(g, '1940', x1, y + 56, { size: 36, f: LAT, w: 500, color: DIM, align: 'right', a, shadow: false });
+  T(g, cur[2], Math.min(X, x1 - 90), y - 30, { size: 44, w: 600, color: GOLD_HI, align: 'center', a: a * k });
+}
+
+/* ---------- frame ---------- */
+const logo = new Image(); logo.src = 'assets/logo.png';
+const XF = .45;   // cross-dissolve length (s), centred on each cut
+function drawShot(g, i, t) {
+  const s = S[i]; g.save(); g.clearRect(0, 0, W, H);
+  // gate weave: a pixel or two of drift, like film in a projector
+  g.translate(Math.sin(t * 7.3) * 1.2 + (hash(Math.floor(t * FPS)) - .5) * 1.2, Math.cos(t * 5.1) * 1.0);
+  s.draw(g, t - s.start); g.restore();
+}
+function draw(t) {
+  let i = S.findIndex(s => t >= s.start && t < s.end); if (i < 0) i = S.length - 1;
+  const s = S[i];
+  ctx.fillStyle = INK; ctx.fillRect(0, 0, W, H);
+  // dissolve: from cut − XF/2 the next shot fades in over the outgoing one
+  const toNext = i < S.length - 1 && t > s.end - XF / 2, fromPrev = i > 0 && t < s.start + XF / 2;
+  if (toNext || fromPrev) {
+    const a = toNext ? i : i - 1, b = a + 1, cut = S[a].end;
+    const k = smooth(prog(t, cut - XF / 2, cut + XF / 2));
+    drawShot(ga, a, t); drawShot(gb, b, Math.max(t, S[b].start));
+    ctx.drawImage(bufA, 0, 0); ctx.globalAlpha = k; ctx.drawImage(bufB, 0, 0); ctx.globalAlpha = 1;
+  } else { drawShot(ga, i, t); ctx.drawImage(bufA, 0, 0); }
+
+  captions(ctx, t);
+  ruler(ctx, t);
+  // film: grain, flicker, dust, vignette
+  ctx.save(); ctx.globalAlpha = .07; ctx.globalCompositeOperation = 'overlay';
+  ctx.drawImage(GRAIN[Math.floor(t * FPS) % GRAIN.length], 0, 0, W, H); ctx.restore();
+  const fl = (hash(Math.floor(t * FPS) * 1.7) - .5) * .035; ctx.fillStyle = fl > 0 ? `rgba(255,240,210,${fl})` : `rgba(0,0,0,${-fl})`; ctx.fillRect(0, 0, W, H);
+  const fN = Math.floor(t * FPS);
+  for (let d = 0; d < 3; d++) if (hash(fN * 3 + d) > .7) {
+    ctx.fillStyle = `rgba(${hash(fN + d) > .5 ? '0,0,0' : '239,230,210'},.35)`;
+    ctx.beginPath(); ctx.arc(hash(fN + d * .3) * W, hash(fN + d * .7) * H, 1.5 + hash(fN * d) * 3, 0, 7); ctx.fill();
+  }
+  if (hash(Math.floor(t * 4)) > .8) { ctx.fillStyle = 'rgba(239,230,210,.06)'; ctx.fillRect(hash(Math.floor(t * 4) + 1) * W, 0, 2, H); }
+  ctx.drawImage(vign, 0, 0);
+  // fade in from black, fade out to black
+  const blk = Math.max(1 - prog(t, 0, .9), prog(t, 57.2, 58));
+  if (blk > 0) { ctx.fillStyle = `rgba(0,0,0,${blk})`; ctx.fillRect(0, 0, W, H); }
+  // watermark + disclaimer (whole film)
+  if (logo.complete && logo.naturalWidth) {
+    const w = 380, h = w * logo.naturalHeight / logo.naturalWidth;
+    ctx.save(); ctx.globalAlpha = .72 * (1 - blk * .7); ctx.drawImage(logo, 90, 80, w, h); ctx.restore();
+  }
+  T(ctx, '仅人物历史科普，不构成任何投资建议，市场有风险', W / 2, H - 38, { size: 42, f: SANS, w: 300, color: 'rgba(239,230,210,.6)', align: 'center', ls: 4, shadow: false });
+}
+
+window.seek = f => draw(f / FPS);
+window.ASSETS_READY = Promise.all([
+  ...['400 40px SerifSC', '600 40px SerifSC', '900 40px SerifSC', '300 40px Corm', '500 40px Corm', '300 40px SansSC'].map(s => document.fonts.load(s, '杰西A1')),
+  ...['portrait', 'bucketshop', 'wallst', 'crash1929', 'desk', 'rain'].map(k => loadPhoto(k)),
+  new Promise(r => { if (logo.complete) r(); else { logo.onload = r; logo.onerror = r; } }),
+]).then(() => draw(0));
+if (location.hash === '#play') {
+  const t0 = performance.now();
+  const loop = () => { draw(((performance.now() - t0) / 1000) % DUR); requestAnimationFrame(loop); };
+  window.ASSETS_READY.then(loop);
+}
+</script>
+</body>
+</html>
