@@ -97,7 +97,8 @@ window.renderFrame = t => {
 window.FPS = FPS; window.DURATION = DURATION;
 
 window.ready = (async () => {
-  setEvents(await (await fetch('events.json')).json());
+  const evq = new URLSearchParams(location.search).get('events');
+  setEvents(await (await fetch(evq && /^[\w.-]+\.json$/.test(evq) ? evq : 'events.json')).json());
   const loads = ['300 20px SC', '500 20px SC', '900 20px SC', '300 20px InterD', '600 20px InterD', '900 20px InterD', '300 20px Plex'];
   await Promise.all(loads.map(f => document.fonts.load(f, '占有欲你我ABC')));
   await document.fonts.ready;

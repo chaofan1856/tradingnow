@@ -10,3 +10,4 @@ possessive-video/out/*
 !possessive-video/out/poster.jpg
 possessive-video/tools/__pycache__/
 possessive-video/share/part-*
+possessive-video/music-in/
