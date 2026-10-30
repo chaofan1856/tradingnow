@@ -1,0 +1,96 @@
+{
+ "title": "股神巴菲特",
+ "fps": 60,
+ "frames": 3488,
+ "seconds": 58.13333333333333,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.4,
+   "f0": 0,
+   "f1": 264
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.4,
+   "dur": 3.8,
+   "f0": 264,
+   "f1": 492
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 8.2,
+   "dur": 6.22,
+   "f0": 492,
+   "f1": 865
+  },
+  {
+   "id": "eleven",
+   "type": "scene",
+   "start": 14.42,
+   "dur": 5.415,
+   "f0": 865,
+   "f1": 1190
+  },
+  {
+   "id": "moat",
+   "type": "scene",
+   "start": 19.835,
+   "dur": 4.84,
+   "f0": 1190,
+   "f1": 1480
+  },
+  {
+   "id": "tenyears",
+   "type": "scene",
+   "start": 24.675,
+   "dur": 5.3,
+   "f0": 1480,
+   "f1": 1798
+  },
+  {
+   "id": "crisis",
+   "type": "scene",
+   "start": 29.975,
+   "dur": 7.53,
+   "f0": 1798,
+   "f1": 2250
+  },
+  {
+   "id": "circle",
+   "type": "scene",
+   "start": 37.505,
+   "dur": 4.72,
+   "f0": 2250,
+   "f1": 2533
+  },
+  {
+   "id": "time",
+   "type": "scene",
+   "start": 42.225,
+   "dur": 6.22,
+   "f0": 2533,
+   "f1": 2907
+  },
+  {
+   "id": "snow",
+   "type": "scene",
+   "start": 48.445,
+   "dur": 5.295,
+   "f0": 2907,
+   "f1": 3224
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.74,
+   "dur": 4.4,
+   "f0": 3224,
+   "f1": 3488
+  }
+ ]
+}
