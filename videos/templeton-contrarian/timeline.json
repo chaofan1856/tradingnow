@@ -1,0 +1,112 @@
+{
+ "title": "逆向投资先驱邓普顿",
+ "fps": 60,
+ "frames": 3481,
+ "seconds": 58.016666666666666,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.4,
+   "f0": 0,
+   "f1": 264
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.4,
+   "dur": 3.8,
+   "f0": 264,
+   "f1": 492
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 8.2,
+   "dur": 5,
+   "f0": 492,
+   "f1": 792
+  },
+  {
+   "id": "cycle",
+   "type": "scene",
+   "start": 13.2,
+   "dur": 4.6,
+   "f0": 792,
+   "f1": 1068
+  },
+  {
+   "id": "y1939",
+   "type": "scene",
+   "start": 17.8,
+   "dur": 5.64,
+   "f0": 1068,
+   "f1": 1406
+  },
+  {
+   "id": "global",
+   "type": "scene",
+   "start": 23.44,
+   "dur": 3.42,
+   "f0": 1406,
+   "f1": 1612
+  },
+  {
+   "id": "rule",
+   "type": "scene",
+   "start": 26.86,
+   "dur": 3.42,
+   "f0": 1612,
+   "f1": 1817
+  },
+  {
+   "id": "japan",
+   "type": "scene",
+   "start": 30.28,
+   "dur": 4.92,
+   "f0": 1817,
+   "f1": 2112
+  },
+  {
+   "id": "bubble",
+   "type": "scene",
+   "start": 35.2,
+   "dur": 4.74,
+   "f0": 2112,
+   "f1": 2396
+  },
+  {
+   "id": "crowd",
+   "type": "scene",
+   "start": 39.94,
+   "dur": 4.72,
+   "f0": 2396,
+   "f1": 2680
+  },
+  {
+   "id": "life",
+   "type": "scene",
+   "start": 44.66,
+   "dur": 3.32,
+   "f0": 2680,
+   "f1": 2879
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 47.98,
+   "dur": 5.84,
+   "f0": 2879,
+   "f1": 3229
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.82,
+   "dur": 4.2,
+   "f0": 3229,
+   "f1": 3481
+  }
+ ]
+}
