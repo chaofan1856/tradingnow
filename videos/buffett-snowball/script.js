@@ -365,7 +365,7 @@ window.FILM = {
       ctx.save(); ctx.translate(cx, cy); ctx.rotate(u * 18); ctx.strokeStyle = 'rgba(150,130,90,.5)'; ctx.lineWidth = 1.5;
       for (let k = 0; k < 3; k++) { ctx.beginPath(); ctx.arc(0, 0, r * (.3 + k * .22), k, k + 1.6); ctx.stroke(); } ctx.restore();
       K.tag(ctx, 760, 760, '很湿的雪', { alpha: S.at(1, .3, .6), color: C.gold, font: F.serif(900, 22) });
-      K.tag(ctx, 1220, 500, '很长的坡', { alpha: S.at(1, .9, .6), color: C.gold, font: F.serif(900, 22) });
+      K.tag(ctx, 1220, 712, '很长的坡', { alpha: S.at(1, .9, .6), color: C.gold, font: F.serif(900, 22) });
       K.goldText(ctx, '慢慢变富 · 永恒传奇', 1240, 300, 38, { alpha: S.at(1, 1.6, .9), spacing: 8 });
     } },
 

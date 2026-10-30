@@ -1,0 +1,11 @@
+film: 3488 frames = 58.1 s, 11 scenes, 3840×2160
+bgm.wav 58.1 s · supplied track only (ends 57.68 s)
+film: 3488 frames = 58.1 s, 11 scenes, 3840×2160
+chunks: 17 total, 2 to render, 4 workers
+worker 0: stalled on frame 2922 — retrying chunk 2907-3207 (attempt 2)
+150/317 frames  0.61 fps  ETA 4.6 min
+300/317 frames  0.85 fps  ETA 0.3 min
+rendered 317 frames in 6.3 min
+stitched → video.mp4
+wrote 成片/股神巴菲特_4K60.mp4
+EXIT 0
