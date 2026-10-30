@@ -1,144 +1,129 @@
 {
  "title": "华尔街投机之王利弗莫尔",
- "size": 527800486,
- "sha": "b65bfd876ee8a0a954506145822739b4552cfdf1906dd163d7c558907bab374f",
+ "size": 474451104,
+ "sha": "cd32ffd66c07b84da84e5b24ab188272178acbcc5e40c62d2ce2216aa5f1ab9b",
  "pages": [
   {
    "assets": [
     {
      "name": "pg1_a01.mp4",
      "size": 19922944,
-     "sha": "9ef693b8291a2f471931de6b959c0e151ae9128d13a03eed91e936422ef3fe2d"
+     "sha": "96845704249a73866c8e58220f9bd409f93d06a84f061004d7510e6dbbd294b8"
     },
     {
      "name": "pg1_a02.mp4",
      "size": 19922944,
-     "sha": "df31ee574f19fa67aa701b2576d988b95bff7a583ea81ac821fd99e62ef91033"
+     "sha": "b84c0c5149962db29d56c69919ab6f56b82dfc9fb98dfb200aa12bc280cd9627"
     },
     {
      "name": "pg1_a03.mp4",
      "size": 19922944,
-     "sha": "2f8e18b1606c812e9d70fd467db705aea4b00e1269d0f18e91f632468d7a7023"
+     "sha": "6b7a9ecde2e598a0210b3f8ad70f68155ac6efd254828f0cf8ca144cbb7e4d3f"
     },
     {
      "name": "pg1_a04.mp4",
      "size": 19922944,
-     "sha": "cc6a1d4c520ea7a1033579ca02a0a12dc4cafbaf397b3025178957f9e95c3b4d"
+     "sha": "a5ed10c5d3c9fd0b2beb6e08ec2c9c17f80dcc88ed02c1030eb25ff57d0f8abb"
     },
     {
      "name": "pg1_a05.mp4",
      "size": 19922944,
-     "sha": "b568536f28ca7ac9d86d3780e516e07075d34a0403b00293cf0157f4ab4585bb"
+     "sha": "2134e80b9abb02f20c3add60089e8603af676e5d05aa7f58615f60b4dbe93bae"
     },
     {
      "name": "pg1_a06.mp4",
      "size": 19922944,
-     "sha": "10d5167e3d5080e2d968d5f0f4632554acdba9bbe0687248bf5f912e844443a4"
+     "sha": "78b7e69209c62af0212c4f0c99771511c810108c204dadd5a9e89d81b19e542f"
     },
     {
      "name": "pg1_a07.mp4",
      "size": 19922944,
-     "sha": "9a36558c9b547c0b1597daef483f078ffc99c72685cdda205f5993da6bc8766f"
+     "sha": "836218806b4d0e9d08757050531ed7f2ed0be65af35e51705831ea6df93aa485"
     },
     {
      "name": "pg1_a08.mp4",
      "size": 19922944,
-     "sha": "5d8a650cf064bc0a23a9003abdc19a7234c11d326f02b84e004e1170707d0fad"
+     "sha": "8b4c6f2d7c04273720dfc0404730f3e2e37fd04483426611acfedb13973a790d"
     },
     {
      "name": "pg1_a09.mp4",
      "size": 19922944,
-     "sha": "d500c4765a415df5b0f6a15c6419744fe9755bbe41d83094b97b392dc306055f"
+     "sha": "adf34dca4f3860c6cf0669b96db176a608ba405536001c4e7e611ba2a0b1b093"
     },
     {
      "name": "pg1_a10.mp4",
      "size": 19922944,
-     "sha": "e1ffcf57955a68e8bbc8c14b2f5bfc15c7014c0e5b8096222125e70e7d2218ff"
+     "sha": "99bdf6f9f6ae5a955c3eecaef6faaf721644a3a4f010a896540668444ca0172d"
     },
     {
      "name": "pg1_a11.mp4",
      "size": 19922944,
-     "sha": "46c580fb766f260411cf4939b3990023e316342ccd54286a0249f9973f5326cd"
+     "sha": "8cdbbab5cfe56332d27971701090f73bd3aa4c32b7bf4418d7ce46dc3e314a67"
     },
     {
      "name": "pg1_a12.mp4",
      "size": 19922944,
-     "sha": "012c1a221aef9922ed7c4ecc4a09581227fb4c504c3eceaa5f1ee1e8c85372b8"
+     "sha": "25055478501bcb188f453819e4f3f49230db1dad8effc05f2c7bf5a4db1d60b9"
     },
     {
      "name": "pg1_a13.mp4",
      "size": 19922944,
-     "sha": "3b14b8990838b6faed1cdd97a7b1294b3cc0976eb108fe14f99434c17297cacc"
+     "sha": "9fab0432f2f3a66b3ac034c551973280196c721efddce973151ede2139b6d422"
     },
     {
      "name": "pg1_a14.mp4",
      "size": 19922944,
-     "sha": "26efff5b903342ecfcb05633e858ff0ba0afe0c39b6f3a283f4f20cc62f2f87e"
+     "sha": "734ab7f9cdbd4afb296bd09e3be2c8abb06a2ec5dbb99dc49002a623b3a6f746"
     },
     {
      "name": "pg1_a15.mp4",
      "size": 19922944,
-     "sha": "cf124397a3640864fa013386ebd29d62f4fec5427c060eaeb6aa874eb9f0d16b"
+     "sha": "1c439b465874d00194c4beef24052a46b6f9542f5b2c5ae58fa3bc8e1718fd6c"
     },
     {
      "name": "pg1_a16.mp4",
      "size": 19922944,
-     "sha": "8663e4c8aa00e62f5708d8aa00625c592a055b1a5f1aa6f21d3428713e9747b6"
+     "sha": "c90f41caa28539a00e5fd3f081c50fe33276f1da343e5cb2553f6c6ebf55bee2"
     },
     {
      "name": "pg1_a17.mp4",
      "size": 19922944,
-     "sha": "698d9790f056e642dd84259a6c98cdf30ab44f7f896f598386f2c93fcc8e533d"
+     "sha": "f802ef0ff887388a65c728745979ff02d7f434910c19cfcbbd96beb9dff0f9c4"
     },
     {
      "name": "pg1_a18.mp4",
      "size": 19922944,
-     "sha": "b09b3eff7cda2286416c1b1958c9fcfc8671c93f8ac055ae32f16a2db8672f58"
+     "sha": "1fd78084e568775b18712a7bd86f143b2a7a92229dc3b565dfff2e7a1d1b72c7"
     },
     {
      "name": "pg1_a19.mp4",
      "size": 19922944,
-     "sha": "74057b783c640a2440c42b2d399ec913e8ae0b78b267a62627c4772874d31fda"
+     "sha": "3e32007fc7a846e6724fd3f0f1851e0ca76825c3faddfedcb65ae80b7fa2947e"
     },
     {
      "name": "pg1_a20.mp4",
      "size": 19922944,
-     "sha": "2160edd14bddadcc640aed8435f96287b5ca6c2ccfb689f30c4809fa443d75be"
+     "sha": "1e68bfdc6fd1f324458ac49599aa24bfcbfffe16318fadfcea24983786b55821"
     },
     {
      "name": "pg1_a21.mp4",
      "size": 19922944,
-     "sha": "c8a63ef7a0c007b9fd1d06ed2abd2d1430b8bac62e7ddfda04c4cbd6a50aa1b7"
+     "sha": "a5311cfee88622c28d19d7ed5a71babef918fa2cd99844a770ad73d2e14125fa"
     },
     {
      "name": "pg1_a22.mp4",
      "size": 19922944,
-     "sha": "a22268ffb66da5a6da4d20cf0ecfafc1fedebf2217c50e909d8526547f8bd9da"
+     "sha": "f3dd9780853b091d9652110bebb0bd5e67fa50a09b4fa4c4a45613cee523caa1"
     },
     {
      "name": "pg1_a23.mp4",
      "size": 19922944,
-     "sha": "bf3cb18779f3317d80e2bbf077ffb8804b8fd77a0260fb737fe909abb663aee3"
+     "sha": "3524b414c3b6f92feae4de699a4607e0c14734dbcdeab4d2b9052ddc2c6be9fb"
     },
     {
      "name": "pg1_a24.mp4",
-     "size": 19922944,
-     "sha": "3beed4bd9a519898772a02b684466a1630ef9706b79281a84e8e408427738920"
-    },
-    {
-     "name": "pg1_a25.mp4",
-     "size": 19922944,
-     "sha": "6a6eeba6e8e72bb382c14fc1e618de7801e1bca5f95cc5c878f9ff602d0a89b1"
-    },
-    {
-     "name": "pg1_a26.mp4",
-     "size": 19922944,
-     "sha": "eeb1e88d6a5f077deb5e2fe160157176f174918ac58a26b05b27847d19a1f0c5"
-    },
-    {
-     "name": "pg1_a27.mp4",
-     "size": 9803942,
-     "sha": "d3584903206ab4829ec9f112b4df1a47eb7746a89e8234fd8dcac47491c92f29"
+     "size": 16223392,
+     "sha": "afc6ad6d5b58a131c436860631bc32464f4307fbe8395fd246c53e2439157703"
     }
    ],
    "files": []
