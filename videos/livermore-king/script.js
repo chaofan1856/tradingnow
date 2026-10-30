@@ -8,8 +8,8 @@
    S (scene clock):  S.t, S.at(line, delay, dur) → eased 0..1, S.lin(...), S.p(sec, dur), S.beat(line)
    Transitions:      'zoom' | ['push', ±1] | 'sweep' | ['iris', [x,y]] | 'dissolve'
 
-   Cut to the supplied track (≈ 58 s): loud intro → open/title/导言 · breakdown → 模块一 ·
-   build → 模块二 · drop → 模块三 · the track's last bar → logo page.
+   One continuous story (no modules), cut to the supplied track (≈ 58 s): the film ends with it,
+   the logo page under its last bars.
    ============================================================ */
 (() => {
 const { C, clamp, lerp, easeOut, easeInOut, rgba, mix, F } = K;
@@ -18,33 +18,11 @@ const { C, clamp, lerp, easeOut, easeInOut, rgba, mix, F } = K;
    the engine's ASSETS_READY waits for it like the logo */
 const PHOTO = new Image(); PHOTO.src = 'assets/portrait.jpg'; PHOTO.hidden = true; document.body.appendChild(PHOTO);
 
-/* header presets */
-const H0 = { label: '导言', sub: '人物画像', en: 'Portrait of a Speculator', zh: '《投机之王》' };
-const H1 = { label: '模块', num: 1, sub: '四落四起 · 坐等法则', en: 'Four Falls, Four Rises', zh: '《坐等的法则》' };
-const H2 = { label: '模块', num: 2, sub: '1929 · 做空美国', en: 'Shorting the Crash', zh: '《逆流而上》' };
-const H3 = { label: '模块', num: 3, sub: '毁灭于人性 · 永恒于历史', en: 'Human Nature', zh: '《永恒的灯塔》' };
+/* one constant header for the whole story: no modules, only the book-title corner (label ' ' hides the module tag) */
+const HD = { label: ' ', en: 'Jesse Livermore', zh: '《投机之王》' };
 
 /* ---------- shared visual pieces ---------- */
 const easeBack = x => { x = clamp(x); const c1 = 1.5, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
-
-/** chapter card: 壹/贰/叁 → title → subtitle, with the gold rule (timed for a 2.6 s card) */
-function chapter(numCn, idx, title, en, sub) {
-  return (ctx, S) => {
-    const cx = 960, k = .72;                                            // the house card, paced to the track
-    const a = S.p(0.1 * k, 1.0 * k);
-    K.text(ctx, `MODULE · 0${idx}`, cx, 300, { font: F.latin(500, 20), color: C.gold, align: 'center', spacing: 9, alpha: S.p(0.05, .8) });
-    ctx.save(); ctx.translate(cx, 470); const s = lerp(1.25, 1, easeOut(S.t / 1.4)); ctx.scale(s, s);
-    K.goldText(ctx, numCn, 0, 0, 84, { alpha: a, glow: .8 + .2 * Math.sin(S.t * 2) });
-    ctx.restore();
-    K.rule(ctx, cx, 535, 280, S.p(0.6 * k, 1.2 * k));
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 548, 1920, 100); ctx.clip();
-    const tp = S.p(0.9 * k, 1.1 * k, K.expo);
-    K.text(ctx, title, cx, 625 + (1 - tp) * 70, { font: F.serif(900, 44), color: C.white, align: 'center', spacing: 12, alpha: tp });
-    ctx.restore();
-    K.text(ctx, en.toUpperCase(), cx, 690, { font: F.latin(500, 20), color: C.gray, align: 'center', spacing: 7, alpha: S.p(1.5 * k, .8) });
-    K.text(ctx, sub, cx, 752, { font: F.serif(500, 22), color: C.gray, align: 'center', spacing: 6, alpha: S.p(1.8 * k, .8) });
-  };
-}
 
 /** the photo, toned to the film (warm monochrome), cropped from source rect s into dest rect d */
 function photo(ctx, d, s, o = {}) {
@@ -105,7 +83,7 @@ window.FILM = {
   transition: 1.1,
   fontScale: 1.55,
   subtitle: { x: 220, y: 912, size: 42, maxW: 1480 },     // 42 × FS 1.55 = 65px
-  timing: { perChar: .095, base: .5, minLine: 1.8, pre: .3, post: .3 },   // paced to the 1-minute track
+  timing: { perChar: .11, base: .7, minLine: 2.0, pre: .3, post: .3 },   // one continuous story, paced to the track
   scenes: [
 
   /* ================= COLD OPEN ================= */
@@ -160,8 +138,7 @@ window.FILM = {
       K.text(ctx, '华尔街唯一的投机之王 · 杰西·利弗莫尔', cx, 650, { font: F.serif(500, 26), color: C.gray, align: 'center', spacing: 6, alpha: S.p(1.5, 1.0) });
     } },
 
-  /* ================= 导言 · 人物画像 ================= */
-  { id: 'intro', header: H0, tr: ['iris', [500, 500]], camera: { z0: 1.0, z1: 1.04, x1: -16 },
+  { id: 'intro', header: HD, tr: ['iris', [500, 500]], camera: { z0: 1.0, z1: 1.04, x1: -16 },
     lines: ['他说：“市场没有新事物，因为{人性永不改变}。”', '他用一生，与人性玩了一场{最极致的游戏}。'],
     visual(ctx, S) {
       // portrait, revealed by a vertical mask, slow push-in on the face
@@ -194,10 +171,8 @@ window.FILM = {
       }
     } },
 
-  /* ================= 模块一 ================= */
-  { id: 'ch1', dur: 2.6, tr: 'sweep', visual: chapter('壹', 1, '四落四起', 'Four Falls · Four Rises', '十四岁入市 · 四次破产 · 坐等法则') },
 
-  { id: 'life', header: H1, tr: ['iris', [960, 520]], camera: { z0: 1.02, z1: 1.06, x1: -24 },
+  { id: 'life', header: HD, tr: 'zoom', camera: { z0: 1.02, z1: 1.06, x1: -24 },
     lines: ['{14岁}，他揣着{5美金}离家出走，闯荡华尔街。', '一生经历<四次破产>，又[四次东山再起]。'],
     visual(ctx, S) {
       const ch = chartLIFE, n = LIFE.candles.length;
@@ -231,7 +206,7 @@ window.FILM = {
       K.tag(ctx, 1140, 250, `东山再起  ${rises} / 4`, { alpha: ca, color: C.red });
     } },
 
-  { id: 'sit', header: H1, tr: ['push', 1], camera: { z0: 1.0, z1: 1.04 },
+  { id: 'sit', header: HD, tr: ['push', 1], camera: { z0: 1.0, z1: 1.04 },
     lines: ['交了无数血本后，他悟出最伟大的交易法则：', '赚大钱不靠{频繁操作}，而靠耐心{坐等}趋势明朗。'],
     visual(ctx, S) {
       // the rule, as he wrote it
@@ -276,10 +251,8 @@ window.FILM = {
       }
     } },
 
-  /* ================= 模块二 ================= */
-  { id: 'ch2', dur: 2.6, tr: 'sweep', visual: chapter('贰', 2, '做空美国', 'Shorting the Crash', '1929 · 逆流而上 · 一日一亿') },
 
-  { id: 'crash', header: H2, post: .77, tr: ['iris', [690, 520]], camera: { z0: 1.0, z1: 1.05, x1: -16 },
+  { id: 'crash', header: HD, tr: 'zoom', camera: { z0: 1.0, z1: 1.05, x1: -16 },
     lines: ['1929年大崩溃前夕，他调集全部资金{做空美国}。', '当全美陷入<绝望>，他逆流而上——', '[一天狂赚1亿美金]，富可敌国！', '他证明了：没有[牛市]<熊市>，只有{正确的方向}。'],
     visual(ctx, S) {
       const ch = chart29, n = K29.length;
@@ -337,10 +310,8 @@ window.FILM = {
       }
     } },
 
-  /* ================= 模块三 ================= */
-  { id: 'ch3', dur: 2.6, tr: 'sweep', visual: chapter('叁', 3, '败给人性', 'Human Nature', '毁灭于人性 · 永恒于历史') },
 
-  { id: 'fall', header: H3, tr: ['iris', [640, 470]], camera: { z0: 1.0, z1: 1.05, x0: 10, x1: -20 },
+  { id: 'fall', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.05, x0: 10, x1: -20 },
     lines: ['然而赢了世界的他，最终败给了无法战胜的{抑郁}。', '1940年，他饮弹自尽。', '绝笔：“{我的一生是一场失败}。”'],
     visual(ctx, S) {
       // a street lamp in the rain, a lone figure walking away
@@ -403,7 +374,7 @@ window.FILM = {
       }
     } },
 
-  { id: 'legacy', header: H3, tr: 'dissolve', camera: { z0: 1.0, z1: 1.06 },
+  { id: 'legacy', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.06 },
     lines: ['财富烟消云散，他用生命换来的语录却成了{灯塔}。', '“你能战胜市场，但你永远{无法战胜人性}。”'],
     visual(ctx, S) {
       const cx = 960, by = 560;
@@ -445,23 +416,7 @@ window.FILM = {
       }
     } },
 
-  /* ================= RECAP & END ================= */
-  { id: 'recap', dur: 3.4, tr: 'dissolve', camera: { z0: 1.03, z1: 1.0 },
-    visual(ctx, S) {
-      const rows = [['壹', '坐等', '钱是坐着赚来的', C.red], ['贰', '方向', '没有牛熊，只有方向', C.goldHi], ['叁', '人性', '永远无法战胜', C.green]];
-      K.text(ctx, 'THREE LESSONS FROM LIVERMORE', 960, 256, { font: F.latin(500, 18), color: C.gold, align: 'center', spacing: 9, alpha: S.p(.1, .8) });
-      rows.forEach(([n, a, b, col], i) => {
-        const p = S.p(.25 + i * .35, .8), y = 380 + i * 140;
-        ctx.save(); ctx.globalAlpha = p; ctx.translate((1 - p) * -60, 0);
-        K.goldText(ctx, n, 560, y + 22, 64, { weight: 900 });
-        K.text(ctx, a, 680, y + 18, { font: F.serif(900, 48), color: C.white });
-        K.line(ctx, 860, y, 1010, y, { p, color: rgba(C.gold, .6) });
-        K.text(ctx, b, 1040, y + 16, { font: F.serif(700, 38), color: col, glow: .4, glowColor: col });
-        ctx.restore();
-      });
-      K.rule(ctx, 960, 770, 420, S.p(1.3, 1.0));
-    } },
-
+  /* ================= END ================= */
   { id: 'end', dur: 4.6, tr: 'zoom', noWatermark: true,
     visual(ctx, S) {
       const a = S.p(.2, 1.1);
