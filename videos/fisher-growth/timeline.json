@@ -1,0 +1,88 @@
+{
+ "title": "成长股教父菲利普费舍",
+ "fps": 60,
+ "frames": 3500,
+ "seconds": 58.333333333333336,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.6,
+   "f0": 0,
+   "f1": 276
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.6,
+   "dur": 4.6,
+   "f0": 276,
+   "f1": 552
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 9.2,
+   "dur": 5.74,
+   "f0": 552,
+   "f1": 896
+  },
+  {
+   "id": "scuttle",
+   "type": "scene",
+   "start": 14.94,
+   "dur": 7.115,
+   "f0": 896,
+   "f1": 1323
+  },
+  {
+   "id": "hold",
+   "type": "scene",
+   "start": 22.055,
+   "dur": 5.795,
+   "f0": 1323,
+   "f1": 1671
+  },
+  {
+   "id": "motorola",
+   "type": "scene",
+   "start": 27.85,
+   "dur": 6.74,
+   "f0": 1671,
+   "f1": 2075
+  },
+  {
+   "id": "focus",
+   "type": "scene",
+   "start": 34.59,
+   "dur": 5.615,
+   "f0": 2075,
+   "f1": 2412
+  },
+  {
+   "id": "legacy",
+   "type": "scene",
+   "start": 40.205,
+   "dur": 7.24,
+   "f0": 2412,
+   "f1": 2847
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 47.445,
+   "dur": 6.49,
+   "f0": 2847,
+   "f1": 3236
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.935,
+   "dur": 4.4,
+   "f0": 3236,
+   "f1": 3500
+  }
+ ]
+}
