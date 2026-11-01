@@ -1,0 +1,96 @@
+{
+ "title": "量化之王詹姆斯西蒙斯",
+ "fps": 60,
+ "frames": 3476,
+ "seconds": 57.93333333333333,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.6,
+   "f0": 0,
+   "f1": 276
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.6,
+   "dur": 4.6,
+   "f0": 276,
+   "f1": 552
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 9.2,
+   "dur": 5.84,
+   "f0": 552,
+   "f1": 902
+  },
+  {
+   "id": "math",
+   "type": "scene",
+   "start": 15.04,
+   "dur": 5.495,
+   "f0": 902,
+   "f1": 1232
+  },
+  {
+   "id": "medallion",
+   "type": "scene",
+   "start": 20.535,
+   "dur": 6.415,
+   "f0": 1232,
+   "f1": 1617
+  },
+  {
+   "id": "machine",
+   "type": "scene",
+   "start": 26.95,
+   "dur": 5.495,
+   "f0": 1617,
+   "f1": 1947
+  },
+  {
+   "id": "return66",
+   "type": "scene",
+   "start": 32.445,
+   "dur": 5.565,
+   "f0": 1947,
+   "f1": 2281
+  },
+  {
+   "id": "calm",
+   "type": "scene",
+   "start": 38.01,
+   "dur": 5.15,
+   "f0": 2281,
+   "f1": 2590
+  },
+  {
+   "id": "legacy",
+   "type": "scene",
+   "start": 43.16,
+   "dur": 5.61,
+   "f0": 2590,
+   "f1": 2926
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 48.77,
+   "dur": 4.76,
+   "f0": 2926,
+   "f1": 3212
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.53,
+   "dur": 4.4,
+   "f0": 3212,
+   "f1": 3476
+  }
+ ]
+}
