@@ -1,0 +1,88 @@
+{
+ "title": "价值苦行僧沃尔特施洛斯",
+ "fps": 60,
+ "frames": 3482,
+ "seconds": 58.03333333333333,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.6,
+   "f0": 0,
+   "f1": 276
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.6,
+   "dur": 4.6,
+   "f0": 276,
+   "f1": 552
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 9.2,
+   "dur": 7.3,
+   "f0": 552,
+   "f1": 990
+  },
+  {
+   "id": "disciple",
+   "type": "scene",
+   "start": 16.5,
+   "dur": 6.46,
+   "f0": 990,
+   "f1": 1378
+  },
+  {
+   "id": "cheap",
+   "type": "scene",
+   "start": 22.96,
+   "dur": 8,
+   "f0": 1378,
+   "f1": 1858
+  },
+  {
+   "id": "record",
+   "type": "scene",
+   "start": 30.96,
+   "dur": 6.74,
+   "f0": 1858,
+   "f1": 2262
+  },
+  {
+   "id": "dumb",
+   "type": "scene",
+   "start": 37.7,
+   "dur": 6.44,
+   "f0": 2262,
+   "f1": 2648
+  },
+  {
+   "id": "legacy",
+   "type": "scene",
+   "start": 44.14,
+   "dur": 3.74,
+   "f0": 2648,
+   "f1": 2873
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 47.88,
+   "dur": 5.76,
+   "f0": 2873,
+   "f1": 3218
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.64,
+   "dur": 4.4,
+   "f0": 3218,
+   "f1": 3482
+  }
+ ]
+}
