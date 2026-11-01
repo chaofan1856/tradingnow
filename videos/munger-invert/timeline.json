@@ -1,0 +1,104 @@
+{
+ "title": "终极智者查理芒格",
+ "fps": 60,
+ "frames": 3498,
+ "seconds": 58.3,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.6,
+   "f0": 0,
+   "f1": 276
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.6,
+   "dur": 4.6,
+   "f0": 276,
+   "f1": 552
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 9.2,
+   "dur": 6.16,
+   "f0": 552,
+   "f1": 922
+  },
+  {
+   "id": "lawyer",
+   "type": "scene",
+   "start": 15.36,
+   "dur": 4.6,
+   "f0": 922,
+   "f1": 1198
+  },
+  {
+   "id": "greatco",
+   "type": "scene",
+   "start": 19.96,
+   "dur": 5.26,
+   "f0": 1198,
+   "f1": 1513
+  },
+  {
+   "id": "models",
+   "type": "scene",
+   "start": 25.22,
+   "dur": 4.98,
+   "f0": 1513,
+   "f1": 1812
+  },
+  {
+   "id": "berkshire",
+   "type": "scene",
+   "start": 30.2,
+   "dur": 5.08,
+   "f0": 1812,
+   "f1": 2117
+  },
+  {
+   "id": "crisis",
+   "type": "scene",
+   "start": 35.28,
+   "dur": 3.38,
+   "f0": 2117,
+   "f1": 2320
+  },
+  {
+   "id": "compound",
+   "type": "scene",
+   "start": 38.66,
+   "dur": 4.6,
+   "f0": 2320,
+   "f1": 2596
+  },
+  {
+   "id": "farewell",
+   "type": "scene",
+   "start": 43.26,
+   "dur": 5.86,
+   "f0": 2596,
+   "f1": 2947
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 49.12,
+   "dur": 4.78,
+   "f0": 2947,
+   "f1": 3234
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.9,
+   "dur": 4.4,
+   "f0": 3234,
+   "f1": 3498
+  }
+ ]
+}

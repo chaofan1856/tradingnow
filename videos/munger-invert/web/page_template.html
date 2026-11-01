@@ -1,0 +1,149 @@
+<title>__PAGE_TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one dark "screening room" column — what this page does, the step(s), then specs and the upload kit. */
+:root{
+  --bg:#0A0A0C; --panel:#121216; --line:#2A2620; --fg:#ECE6D9; --muted:#958D7F;
+  --gold:#C9A25A; --gold-hi:#F1D597; --red:#E5484D; --green:#1FA36A;
+  --serif:'Noto Serif SC','Songti SC','STSong',serif; --latin:'Cormorant Garamond',Georgia,serif; --mono:ui-monospace,'SF Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+body{background:var(--bg);color:var(--fg);font-family:var(--serif);line-height:1.7}
+.wrap{max-width:980px;margin:0 auto;padding-block:32px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+.brand{font-family:var(--latin);letter-spacing:.32em;text-transform:uppercase;font-size:.8rem;color:var(--gold)}
+h1{font-size:clamp(2rem,6vw,3.2rem);font-weight:900;line-height:1.15;margin:.2em 0 .1em;text-wrap:balance;
+  background:linear-gradient(180deg,#FBEBC0,#E2BE73 45%,#B8893C 75%,#7A5A24);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{color:var(--muted);margin:0}
+.screen{position:relative;border:1px solid var(--line);background:#000;aspect-ratio:16/9;max-width:100%;overflow:hidden}
+.screen img{width:100%;height:100%;object-fit:contain;display:block}
+.badge{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:.75rem;color:var(--gold-hi);border:1px solid rgba(201,162,90,.6);padding:2px 8px;background:rgba(0,0,0,.55)}
+.steps{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.step{border:1px solid var(--line);background:var(--panel);padding:18px;display:grid;gap:12px;align-content:start;min-width:0}
+.step.here{border-color:var(--gold)}
+.step .n{font-family:var(--latin);color:var(--gold);letter-spacing:.2em;font-size:.8rem}
+.step h3{margin:0;font-size:1.15rem}
+.step p{margin:0;color:var(--muted);font-size:.92rem}
+.step a{color:var(--gold-hi)}
+button,.file{font:inherit;cursor:pointer;border-radius:3px}
+.primary{justify-self:start;background:linear-gradient(180deg,#E9C47A,#B88A3E);color:#1A1408;border:0;padding:12px 24px;font-weight:900;font-size:1.05rem;letter-spacing:.05em}
+.primary:disabled{opacity:.5;cursor:not-allowed}
+.primary:focus-visible,.ghost:focus-visible,.file:focus-within{outline:2px solid var(--gold-hi);outline-offset:3px}
+.file{display:inline-flex;justify-self:start;border:1px solid var(--gold);color:var(--gold-hi);padding:10px 18px}
+.file input{position:absolute;opacity:0;width:1px;height:1px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);padding:8px 16px}
+.ghost:hover{border-color:var(--gold)}
+.bar{height:6px;background:#000;border:1px solid var(--line);overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold),var(--gold-hi));transition:width .2s}
+.status{font-family:var(--mono);font-size:.85rem;color:var(--muted);min-height:1.4em;margin:0;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.status.ok{color:var(--green)} .status.err{color:var(--red)}
+.specs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.specs div{background:var(--panel);padding:14px 16px;min-width:0}
+.specs dt{font-size:.75rem;color:var(--muted);letter-spacing:.08em}
+.specs dd{margin:0;font-family:var(--mono);font-size:.92rem;overflow-wrap:anywhere}
+h2{font-size:1.3rem;font-weight:900;margin:0;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h2 small{font-family:var(--latin);font-weight:500;color:var(--muted);letter-spacing:.2em;font-size:.8rem;text-transform:uppercase}
+section{display:grid;gap:12px;min-width:0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+pre{margin:0;max-height:380px;overflow:auto;background:var(--panel);border:1px solid var(--line);padding:16px;font-family:var(--mono);font-size:.8rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;color:#D8D0C0}
+.hint{color:var(--muted);font-size:.9rem;margin:0}
+@media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
+</style>
+<div class="wrap">
+  <header>
+    <div class="brand">TradingNow · 4K 60fps Master</div>
+    <h1>__TITLE__</h1>
+    <p class="sub">4K 60fps 原片 · 第 __K__ / __N__ 步</p>
+  </header>
+  <div class="screen"><img src="poster.jpg" alt="《__TITLE__》画面"><span class="badge">3840 × 2160 · 60fps</span></div>
+  <div class="steps">__STEPS__</div>
+  <dl class="specs">
+    <div><dt>分辨率</dt><dd>3840 × 2160</dd></div><div><dt>帧率</dt><dd>60 fps</dd></div>
+    <div><dt>时长</dt><dd>__DURATION__</dd></div><div><dt>视频</dt><dd>H.264 High · CRF 12</dd></div>
+    <div><dt>音频</dt><dd>AAC 384 kbps</dd></div><div><dt>完整文件</dt><dd>__FULL_MB__ MB</dd></div>
+  </dl>
+  __EXTRA__
+</div>
+<script>
+const K = __K__, N = __N__, TITLE = __TITLE_JSON__;
+const OWN = __OWN__;            // pieces served by this page, in byte order: [{url,size,sha}]
+const PRIOR = __PRIOR__;        // pieces of every earlier page (to check the chosen file): [{size,sha}]
+const FULL = __FULL__;
+const NAME = k => k === N ? `${TITLE}_4K60.mp4` : `${TITLE}_4K60_前${k}段（共${N}段）.mp4`;
+const $ = id => document.getElementById(id);
+const st = (msg, cls = '') => { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; };
+const mb = n => (n / 1048576).toFixed(1);
+const hex = buf => [...new Uint8Array(buf)].map(x => x.toString(16).padStart(2, '0')).join('');
+const sha = async blob => hex(await crypto.subtle.digest('SHA-256', await blob.arrayBuffer()));
+const priorSize = PRIOR.reduce((s, p) => s + p.size, 0), endSize = priorSize + OWN.reduce((s, p) => s + p.size, 0);
+const got = []; let prev = null, out = null;
+
+async function fetchOwn() {
+  let done = priorSize + got.reduce((s, b) => s + b.size, 0);
+  for (let i = got.length; i < OWN.length; i++) {
+    const p = OWN[i]; let ok = null;
+    for (let attempt = 1; attempt <= 3 && !ok; attempt++) {
+      try {
+        const r = await fetch(p.url); if (!r.ok) throw new Error('HTTP ' + r.status);
+        const rd = r.body.getReader(), parts = []; let n = 0;
+        for (;;) { const { done: d, value } = await rd.read(); if (d) break; parts.push(value); n += value.length;
+          $('fill').style.width = ((done + n) / endSize * 100).toFixed(2) + '%';
+          st(`正在下载 ${mb(done + n)} / ${mb(endSize)} MB（本页第 ${i + 1}/${OWN.length} 块）`); }
+        const b = new Blob(parts);
+        if (b.size !== p.size || await sha(b) !== p.sha) throw new Error('校验不符');
+        ok = b;
+      } catch (e) { if (attempt === 3) throw new Error(`第 ${i + 1} 块下载失败（${e.message}），再点一次按钮会从这里继续。`); }
+    }
+    got.push(ok); done += ok.size;
+  }
+}
+
+async function offer(name, blob) {
+  const dl = await window.claude?.use?.('downloads');
+  if (!dl) { st('当前视图不支持保存文件，请在电脑浏览器的 claude.ai 中打开本页。', 'err'); return; }
+  try {
+    await dl.save({ filename: name, data: blob });
+    st(K === N ? `已保存完整原片 ${name}（${mb(FULL)} MB，每一块都已校验）。之前保存的分段文件可以删除了。`
+               : `已保存 ${name}（${mb(endSize)} MB）。下一步：打开第 ${K + 1} 步网页。`, 'ok');
+  } catch (e) {
+    if (e?.code === 'declined') st('已取消保存。再点一次按钮即可保存，不用重新下载。');
+    else if (e?.code === 'too_large') st('这个应用一次保存不了这么大的文件，请改用电脑浏览器打开本页。', 'err');
+    else if (e?.code === 'rate_limited') st('已经有一个保存窗口打开了，请先处理它。');
+    else st('保存失败：' + (e?.message || e?.code || e), 'err');
+  }
+}
+
+const pick = $('pick');
+if (pick) pick.addEventListener('change', async ev => {
+  const f = ev.target.files[0]; if (!f) return;
+  $('go').disabled = true; prev = null;
+  if (f.size !== priorSize) { st(`选中的文件是 ${mb(f.size)} MB，应为 ${mb(priorSize)} MB。请选择上一步保存的「${NAME(K - 1)}」。`, 'err'); return; }
+  let off = 0;
+  for (let i = 0; i < PRIOR.length; i++) {
+    st(`正在核对上一步的文件 ${i + 1}/${PRIOR.length}…`);
+    if (await sha(f.slice(off, off + PRIOR[i].size)) !== PRIOR[i].sha) { st(`上一步的文件第 ${i + 1} 块与原片不一致，请回到上一步网页重新保存。`, 'err'); return; }
+    off += PRIOR[i].size;
+  }
+  prev = f; st('上一步的文件核对通过。点按钮继续。', 'ok'); $('go').disabled = false;
+});
+
+$('go').addEventListener('click', async () => {
+  if (K > 1 && !prev) return;
+  $('go').disabled = true;
+  try {
+    if (!out) { await fetchOwn(); out = new Blob(K > 1 ? [prev, ...got] : got, { type: 'video/mp4' }); }
+    if (out.size !== endSize) throw new Error('合成后的大小不对，请刷新页面重试。');
+    st('全部校验通过，正在打开保存窗口…', 'ok');
+    await offer(NAME(K), out);
+  } catch (e) { st(e.message, 'err'); }
+  $('go').disabled = false;
+});
+
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+  const el = $(b.dataset.copy), old = b.textContent;
+  try { await navigator.clipboard.writeText(el.textContent); b.textContent = '已复制'; }
+  catch { const r = document.createRange(); r.selectNodeContents(el); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = '已选中，请按 Ctrl/⌘+C'; }
+  setTimeout(() => b.textContent = old, 1800);
+}));
+const md = $('save-md');
+if (md) md.addEventListener('click', async () => { const dl = await window.claude?.use?.('downloads'); if (!dl) return; try { await dl.save({ filename: 'TradingNow_视频提示词.md', data: $('prompt').textContent }); } catch {} });
+</script>
