@@ -1,0 +1,96 @@
+{
+ "title": "公募基金第一人彼得林奇",
+ "fps": 60,
+ "frames": 3491,
+ "seconds": 58.18333333333333,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.6,
+   "f0": 0,
+   "f1": 276
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.6,
+   "dur": 4.6,
+   "f0": 276,
+   "f1": 552
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 9.2,
+   "dur": 6.1,
+   "f0": 552,
+   "f1": 918
+  },
+  {
+   "id": "caddie",
+   "type": "scene",
+   "start": 15.3,
+   "dur": 4.958,
+   "f0": 918,
+   "f1": 1215
+  },
+  {
+   "id": "mall",
+   "type": "scene",
+   "start": 20.258,
+   "dur": 5.764,
+   "f0": 1215,
+   "f1": 1561
+  },
+  {
+   "id": "poker",
+   "type": "scene",
+   "start": 26.022,
+   "dur": 5.742,
+   "f0": 1561,
+   "f1": 1906
+  },
+  {
+   "id": "return29",
+   "type": "scene",
+   "start": 31.764,
+   "dur": 6.884,
+   "f0": 1906,
+   "f1": 2319
+  },
+  {
+   "id": "crash87",
+   "type": "scene",
+   "start": 38.648,
+   "dur": 5.876,
+   "f0": 2319,
+   "f1": 2671
+  },
+  {
+   "id": "retire",
+   "type": "scene",
+   "start": 44.524,
+   "dur": 3.966,
+   "f0": 2671,
+   "f1": 2909
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 48.49,
+   "dur": 5.294,
+   "f0": 2909,
+   "f1": 3227
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.784,
+   "dur": 4.4,
+   "f0": 3227,
+   "f1": 3491
+  }
+ ]
+}
