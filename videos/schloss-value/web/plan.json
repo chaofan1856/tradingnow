@@ -1,0 +1,132 @@
+{
+ "title": "价值苦行僧沃尔特施洛斯",
+ "size": 459350309,
+ "sha": "b64c8e1bed09b58e62d26f9842abcfbb3e478b932d3b28f2a7347a2e54c65fa7",
+ "pages": [
+  {
+   "assets": [
+    {
+     "name": "pg1_a01.mp4",
+     "size": 19922944,
+     "sha": "941131eb61945c3cd29e020d7fc4641045e62028e8ee32f9e39a0983eada4327"
+    },
+    {
+     "name": "pg1_a02.mp4",
+     "size": 19922944,
+     "sha": "ef007b4079175e3119a4afe591dddca733f286b433064052b331161cc76cecbe"
+    },
+    {
+     "name": "pg1_a03.mp4",
+     "size": 19922944,
+     "sha": "faff902731717d4358ab958cf7d3458254613b3761e3a1a6af3f5838d1c833c1"
+    },
+    {
+     "name": "pg1_a04.mp4",
+     "size": 19922944,
+     "sha": "c17e0405c6228fee15d760191a9330c03755195c11e0baf501ff5f872704ce77"
+    },
+    {
+     "name": "pg1_a05.mp4",
+     "size": 19922944,
+     "sha": "96fe6b2fd0ff2ebb0d7a8bfb80f2f199b37aeda913a4e3de31c6dfedb299fc03"
+    },
+    {
+     "name": "pg1_a06.mp4",
+     "size": 19922944,
+     "sha": "593941b60fab0b1593a6d025b002a63240aa007cc95c33567a0f6becf46b90ce"
+    },
+    {
+     "name": "pg1_a07.mp4",
+     "size": 19922944,
+     "sha": "14dfb0bbb5a0148c4aa6baaed94bdb64ebbc9d4d06a9294b4fde352ae0055770"
+    },
+    {
+     "name": "pg1_a08.mp4",
+     "size": 19922944,
+     "sha": "fc15ee6cc8c158f31a2aa49397fceb43428f58b5f658acd709695b6e343c0e75"
+    },
+    {
+     "name": "pg1_a09.mp4",
+     "size": 19922944,
+     "sha": "dac16894d579ed50207de6de3387a7e35108a87df6924867ad12ff6642934bc1"
+    },
+    {
+     "name": "pg1_a10.mp4",
+     "size": 19922944,
+     "sha": "393e153faed5ef1be7fc13db785fb9ac3f9c1707d9341ceeec5e0f40a963b70d"
+    },
+    {
+     "name": "pg1_a11.mp4",
+     "size": 19922944,
+     "sha": "f8d50a5eb223862be36e53770db1f52ccf8bad97c6637aa6fe7bfeead2400cf9"
+    },
+    {
+     "name": "pg1_a12.mp4",
+     "size": 19922944,
+     "sha": "5d3df81fe981d92303b72f6765b3c85d7f9ffe3f842e862abb514e1eadb106c5"
+    },
+    {
+     "name": "pg1_a13.mp4",
+     "size": 19922944,
+     "sha": "4c9cccc99285690875a8bd71329cd0f034f827ed5284d5cbb4fabb2efb4f0db1"
+    },
+    {
+     "name": "pg1_a14.mp4",
+     "size": 19922944,
+     "sha": "17bbc09c5b6a78eb8b78d48bcdb2dcf306fabbd0945d09653d2b0d24ab344fa3"
+    },
+    {
+     "name": "pg1_a15.mp4",
+     "size": 19922944,
+     "sha": "07a28a50d4294513860c8e68f13748690965083876bae0030c1cda3bf877d5fd"
+    },
+    {
+     "name": "pg1_a16.mp4",
+     "size": 19922944,
+     "sha": "b1eb730493032cc2a122d5f8d363e24f7653dd3cd65af25b3ad86c6181b00e2b"
+    },
+    {
+     "name": "pg1_a17.mp4",
+     "size": 19922944,
+     "sha": "000cd8dc15e7bae0db5694499539367ca925d7fd8b76e9ba4fdcb8642aafaa58"
+    },
+    {
+     "name": "pg1_a18.mp4",
+     "size": 19922944,
+     "sha": "2d2174ba5ce600404271fb0bc9ddaf8ebc45bbf6466be02b0391468604d7a0fe"
+    },
+    {
+     "name": "pg1_a19.mp4",
+     "size": 19922944,
+     "sha": "d9ec96200be77b254eaba416a631ac8e2ca2fbe74956fec9e4631db5f3ca1a2a"
+    },
+    {
+     "name": "pg1_a20.mp4",
+     "size": 19922944,
+     "sha": "c1dfc674beb4a3c64e0a4dd31e38e1070d129ebc67389db5658a78957191fa20"
+    },
+    {
+     "name": "pg1_a21.mp4",
+     "size": 19922944,
+     "sha": "c164645b549571733ad55261f5a0abc16a92addeccd4d08e013e1198c5e02770"
+    },
+    {
+     "name": "pg1_a22.mp4",
+     "size": 19922944,
+     "sha": "fe8ea281c5e1b2a3f8ecfed9191ab37cfbc2386a954ddb2b7742b05873f71f65"
+    },
+    {
+     "name": "pg1_a23.mp4",
+     "size": 19922944,
+     "sha": "a9d2d4cd3fbc6d1678f6a6a6eaa7018144a207a0491e7432ae0009e113c365ac"
+    },
+    {
+     "name": "pg1_a24.mp4",
+     "size": 1122597,
+     "sha": "7055bb191f6be401df816d3d69d9353a10a79932553e71db72d4bacbd82f3bbf"
+    }
+   ],
+   "files": []
+  }
+ ]
+}
