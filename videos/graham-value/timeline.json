@@ -1,0 +1,96 @@
+{
+ "title": "价值投资之父格雷厄姆",
+ "fps": 60,
+ "frames": 3487,
+ "seconds": 58.11666666666667,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 4.6,
+   "f0": 0,
+   "f1": 276
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 4.6,
+   "dur": 4.6,
+   "f0": 276,
+   "f1": 552
+  },
+  {
+   "id": "intro",
+   "type": "scene",
+   "start": 9.2,
+   "dur": 6.056,
+   "f0": 552,
+   "f1": 915
+  },
+  {
+   "id": "crash",
+   "type": "scene",
+   "start": 15.256,
+   "dur": 4.86,
+   "f0": 915,
+   "f1": 1207
+  },
+  {
+   "id": "margin",
+   "type": "scene",
+   "start": 20.116,
+   "dur": 5.432,
+   "f0": 1207,
+   "f1": 1533
+  },
+  {
+   "id": "weigh",
+   "type": "scene",
+   "start": 25.548,
+   "dur": 4.6,
+   "f0": 1533,
+   "f1": 1809
+  },
+  {
+   "id": "cigar",
+   "type": "scene",
+   "start": 30.148,
+   "dur": 5.744,
+   "f0": 1809,
+   "f1": 2154
+  },
+  {
+   "id": "mrmarket",
+   "type": "scene",
+   "start": 35.892,
+   "dur": 5.328,
+   "f0": 2154,
+   "f1": 2473
+  },
+  {
+   "id": "legacy",
+   "type": "scene",
+   "start": 41.22,
+   "dur": 7.536,
+   "f0": 2473,
+   "f1": 2925
+  },
+  {
+   "id": "final",
+   "type": "scene",
+   "start": 48.756,
+   "dur": 4.964,
+   "f0": 2925,
+   "f1": 3223
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 53.72,
+   "dur": 4.4,
+   "f0": 3223,
+   "f1": 3487
+  }
+ ]
+}

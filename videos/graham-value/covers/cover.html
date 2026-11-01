@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>封面 · 本杰明·格雷厄姆</title>
+<style>
+/* Black-and-gold cover. ?r=34 → 1500×2000 (3:4), ?r=43 → 2000×1500 (4:3). Rendered by covers/render.sh. */
+@font-face{font-family:'SerifSC';src:url(../tools/fonts-src/noto-serif-sc-chinese-simplified-500-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:'SerifSC';src:url(../tools/fonts-src/noto-serif-sc-chinese-simplified-700-normal.woff2) format('woff2');font-weight:600}
+@font-face{font-family:'SerifSC';src:url(../tools/fonts-src/noto-serif-sc-chinese-simplified-900-normal.woff2) format('woff2');font-weight:900}
+@font-face{font-family:'Corm';src:url(../tools/fonts-src/cormorant-garamond-latin-500-normal.woff2) format('woff2');font-weight:500}
+:root{--ink:#070605;--gold:#C9A45C;--gold-hi:#F3DCA0;--gold-lo:#8A6A2E;--cream:#EFE6D2}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--ink);overflow:hidden}
+#cv{position:relative;overflow:hidden;background:
+  radial-gradient(ellipse 70% 55% at var(--gx) var(--gy), rgba(201,164,92,.22), rgba(201,164,92,.05) 45%, transparent 70%),
+  radial-gradient(ellipse at 50% 50%, #14100B 0%, #070605 75%)}
+/* portrait: high-contrast mono, gold-toned highlights, dissolving into black */
+.ph{position:absolute;overflow:hidden;-webkit-mask-image:radial-gradient(ellipse 44% 48% at 50% 40%, #000 52%, transparent 100%);mask-image:radial-gradient(ellipse 44% 48% at 50% 40%, #000 52%, transparent 100%)}
+.ph img{position:absolute;width:100%;height:100%;object-fit:cover;object-position:56% 8%;filter:grayscale(1) contrast(1.38) brightness(.92)}
+.ph::after{content:'';position:absolute;inset:0;background:linear-gradient(160deg,#F3DCA0 0%,#C9A45C 45%,#5A421A 100%);mix-blend-mode:multiply;opacity:.78}
+.ph::before{content:'';position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,transparent 55%,rgba(7,6,5,.85) 100%)}
+.halo{position:absolute;border-radius:50%;border:2px solid rgba(201,164,92,.45);box-shadow:0 0 60px rgba(201,164,92,.18)}
+.halo.b{border-width:1px;border-color:rgba(201,164,92,.25)}
+/* engraved frame */
+.frame{position:absolute;inset:44px;border:2px solid var(--gold);pointer-events:none}
+.frame::before{content:'';position:absolute;inset:14px;border:1px solid rgba(201,164,92,.55)}
+.corner{position:absolute;width:26px;height:26px;background:var(--gold);transform:rotate(45deg)}
+.goldtxt{background:linear-gradient(180deg,#FFF1C9 0%,#F3DCA0 30%,#C9A45C 62%,#8A6A2E 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.t{position:absolute;font-family:'SerifSC',serif;white-space:nowrap}
+.latin{font-family:'Corm',serif;letter-spacing:.32em}
+.rule{position:absolute;height:2px;background:linear-gradient(90deg,transparent,var(--gold) 20%,var(--gold) 80%,transparent)}
+.chip{position:absolute;font-family:'SerifSC',serif;font-weight:900;color:var(--ink);background:linear-gradient(180deg,#F3DCA0,#C9A45C);padding:.18em .7em .22em;letter-spacing:.2em}
+canvas{position:absolute;inset:0}
+.logo{position:absolute;opacity:.9}
+</style>
+</head>
+<body>
+<div id="cv">
+  <canvas id="fx"></canvas>
+  <div class="halo a"></div><div class="halo b"></div>
+  <div class="ph"><img src="../assets/portrait.jpg" alt=""></div>
+  <div class="frame"></div>
+  <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>
+  <img class="logo" src="../assets/logo.png" alt="">
+  <div class="chip">大师列传</div>
+  <div class="t eyebrow goldtxt">华尔街无冕之王 · 价值投资之父</div>
+  <div class="t name goldtxt">本杰明·格雷厄姆</div>
+  <div class="rule"></div>
+  <div class="t latin en goldtxt">BENJAMIN GRAHAM · 1894—1976</div>
+  <div class="t quote">“买股票，就是买公司的一部分。”</div>
+</div>
+<script>
+const r = new URLSearchParams(location.search).get('r') || '34';
+const P = r === '43'
+  ? { W: 2000, H: 1500, gx: '68%', gy: '42%',
+      ph: [960, 70, 1060, 1360], halo: [1480, 640, 450], chip: [150, 250, 40], eyebrow: [150, 460, 62], name: [144, 590, 128],
+      quote: [150, 1180, 46], logo: [150, 120, 300], chart: [130, 960, 820, 150] }
+  : { W: 1500, H: 2000, gx: '50%', gy: '34%',
+      ph: [130, 80, 1240, 1300], halo: [750, 640, 520], chip: [150, 1130, 44], eyebrow: [150, 1290, 66], name: [144, 1420, 152],
+      quote: [150, 1800, 48], logo: [1050, 112, 300], chart: [150, 1180, 1200, 120] };
+const cv = document.getElementById('cv');
+cv.style.width = P.W + 'px'; cv.style.height = P.H + 'px';
+cv.style.setProperty('--gx', P.gx); cv.style.setProperty('--gy', P.gy);
+const at = (sel, x, y, extra = {}) => { const e = document.querySelector(sel); Object.assign(e.style, { left: x + 'px', top: y + 'px' }, extra); return e; };
+at('.ph', P.ph[0], P.ph[1], { width: P.ph[2] + 'px', height: P.ph[3] + 'px' });
+const [hx, hy, hr] = P.halo;
+at('.halo.a', hx - hr, hy - hr, { width: hr * 2 + 'px', height: hr * 2 + 'px' });
+at('.halo.b', hx - hr - 46, hy - hr - 46, { width: hr * 2 + 92 + 'px', height: hr * 2 + 92 + 'px' });
+at('.chip', P.chip[0], P.chip[1], { fontSize: P.chip[2] + 'px' });
+at('.eyebrow', P.eyebrow[0], P.eyebrow[1], { fontSize: P.eyebrow[2] + 'px', fontWeight: 600, letterSpacing: '.16em' });
+at('.name', P.name[0], P.name[1], { fontSize: P.name[2] + 'px', fontWeight: 900, letterSpacing: '.04em', lineHeight: 1 });
+// rule + English line hang off the name's measured box, so they never collide with it
+const nb = document.querySelector('.name');
+const placeBelow = () => {
+  const bottom = nb.offsetTop + nb.offsetHeight;
+  at('.rule', P.name[0] + 6, bottom + P.name[2] * .14, { width: Math.min(nb.offsetWidth, P.W - 300) + 'px' });
+  at('.en', P.name[0] + 8, bottom + P.name[2] * .26, { fontSize: Math.round(P.name[2] * .23) + 'px' });
+};
+placeBelow();
+at('.quote', P.quote[0], P.quote[1], { fontSize: P.quote[2] + 'px', fontWeight: 400, color: '#EFE6D2', letterSpacing: '.06em' });
+at('.logo', P.logo[0], P.logo[1], { width: P.logo[2] + 'px' });
+const k = 44 - 13;   // diamonds sit on the frame corners
+at('.c1', k, k); at('.c2', P.W - k - 26, k); at('.c3', k, P.H - k - 26); at('.c4', P.W - k - 26, P.H - k - 26);
+
+// gold dust + a faint crash-then-recovery curve, engraved into the black
+const c = document.getElementById('fx'); c.width = P.W; c.height = P.H; const g = c.getContext('2d');
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+for (let i = 0; i < 260; i++) {
+  const x = hash(i) * P.W, y = hash(i + .5) * P.H, rr = .6 + hash(i + .3) * 2.4;
+  g.fillStyle = `rgba(243,220,160,${.08 + hash(i + .7) * .35})`; g.beginPath(); g.arc(x, y, rr, 0, 7); g.fill();
+}
+const [cx, cy, cw, ch] = P.chart, key = [[0, .55], [.12, .8], [.22, .86], [.34, .4], [.44, .14], [.52, .2], [.62, .36], [.74, .48], [.86, .7], [1, .92]];
+g.strokeStyle = 'rgba(201,164,92,.22)'; g.lineWidth = 3; g.beginPath();
+for (let i = 0; i <= 160; i++) { const x = i / 160; let j = 0; while (key[j + 1] && key[j + 1][0] < x) j++; const [a, va] = key[j], [b, vb] = key[j + 1] || key[j];
+  const v = (b === a ? va : va + (vb - va) * (x - a) / (b - a)) + (hash(i) - .5) * .03; const X = cx + cw * x, Y = cy + ch * (1 - v); i ? g.lineTo(X, Y) : g.moveTo(X, Y); }
+g.stroke();
+document.fonts.ready.then(() => { placeBelow(); document.body.dataset.ready = '1'; });
+</script>
+</body>
+</html>
