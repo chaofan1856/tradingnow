@@ -21,13 +21,14 @@ def trim(a):
     i0 = max(0, on[0] - int(.04 * SR)); i1 = min(len(a), on[-1] + int(.10 * SR)); a = a[i0:i1].copy()
     f = int(.01 * SR); a[:f] *= np.linspace(0, 1, f); a[-f:] *= np.linspace(1, 0, f); return a
 han = lambda s: re.sub(r'[^一-鿿A-Za-z]', '', s)
+wl = lambda s: len(han(s)) + 1.8 * len(re.findall(r'[0-9]', s))          # heard length; a digit the recogniser wrote stands for ~1.8 spoken characters
 M = WhisperModel('medium', device='cpu', compute_type='int8')
 cache_p = os.path.join(V, 'align.json'); cache = json.load(open(cache_p)) if os.path.exists(cache_p) else {}
 meta = json.load(open(os.path.join(V, 'meta.json')))
 timing, bad = {}, []
 for key, lines in voice.sentences():
     sid = key.rsplit('_', 1)[0]; p = os.path.join(V, key + '.wav')
-    if not os.path.exists(p): bad.append((key, 'missing')); continue
+    if not os.path.exists(p) or key not in meta: bad.append((key, 'missing')); continue
     tag = meta[key]['h'] + str(meta[key]['seed'])
     if cache.get(key, {}).get('tag') != tag:
         a = trim(load(p)); w = wave.open(os.path.join(V, 't_' + key + '.wav'), 'wb'); w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)
@@ -37,12 +38,12 @@ for key, lines in voice.sentences():
         words = [(x.word, x.start) for s in segs for x in s.words]
         cache[key] = {'tag': tag, 'sec': len(a) / SR, 'words': words}; json.dump(cache, open(cache_p, 'w'), ensure_ascii=False)
     c = cache[key]; sec = c['sec']; heard = han(''.join(w for w, _ in c['words'])); want = han(voice.spoken(lines))
-    ratio = len(heard) / max(1, len(want)); cps = len(want) / sec
+    ratio = sum(wl(w) for w, _ in c['words']) / max(1, len(want)); cps = len(want) / sec
     if not (.8 <= ratio <= 1.2) or not (2.6 <= cps <= 6.5): bad.append((key, f'ratio {ratio:.2f} cps {cps:.1f} heard={heard}'))
     # line boundaries: by character share of the spoken text, snapped to the nearest heard word start
     spoke = [len(han(voice.spoken([l]))) for l in lines]; tot = sum(spoke); cuts = []; acc = 0
     starts = []; n = 0
-    for w, t in c['words']: starts.append((n, t)); n += len(han(w))
+    for w, t in c['words']: starts.append((n, t)); n += wl(w)
     for k in range(len(lines) - 1):
         acc += spoke[k]; target = acc / tot * max(1, n)
         j = min(range(len(starts)), key=lambda i: abs(starts[i][0] - target)) if starts else 0

@@ -6,6 +6,7 @@
 ## 文件
 - `src/narration.json` 旁白与字幕（场景 → 句 → 字幕行）；`src/body.js` 画面；`src/data.js` 上证指数日线（Yahoo Finance 000001.SS，含 RSI14、MA20）。
 - `tools/narr.py` 把上面三者拼成 `script.js`；有 `voice/timing.json` 时每行字幕带上旁白的实际时长。
+- `tools/vocals.py` 用 MDX-Net（Kim_Vocal_2.onnx）把参考视频里的人声从背景音乐中分离出来，截一段做 `voice/ref.wav`。
 - `tools/voice.py` 用 F5-TTS 按参考音色逐句合成旁白（`voice/ref.wav` 与合成的 wav 不入库）；`tools/align.py` 用 faster-whisper 校对每句并给字幕行定时；
   `tools/mix.py` 把各句放到对应字幕拍点上，生成只有人声的音轨。
 - `./build.sh` 一步出片（`DSF=1.3333` → 2560×1440，4K 画布超采样缩小）。
