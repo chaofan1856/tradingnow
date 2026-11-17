@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>封面 · RSI背离实战</title>
+<style>
+/* Black-and-gold cover. ?r=34 → 1500×2000 (3:4), ?r=43 → 2000×1500 (4:3). Rendered by covers/render.sh.
+   No portrait: the hero is a divergence drawn on candles + an RSI pane (illustrative). */
+@font-face{font-family:'SerifSC';src:url(../tools/fonts-src/noto-serif-sc-chinese-simplified-500-normal.woff2) format('woff2');font-weight:400}
+@font-face{font-family:'SerifSC';src:url(../tools/fonts-src/noto-serif-sc-chinese-simplified-700-normal.woff2) format('woff2');font-weight:600}
+@font-face{font-family:'SerifSC';src:url(../tools/fonts-src/noto-serif-sc-chinese-simplified-900-normal.woff2) format('woff2');font-weight:900}
+@font-face{font-family:'Corm';src:url(../tools/fonts-src/cormorant-garamond-latin-500-normal.woff2) format('woff2');font-weight:500}
+:root{--ink:#070605;--gold:#C9A45C;--gold-hi:#F3DCA0;--cream:#EFE6D2}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:var(--ink);overflow:hidden}
+#cv{position:relative;overflow:hidden;background:
+  radial-gradient(ellipse 70% 55% at var(--gx) var(--gy), rgba(201,164,92,.20), rgba(201,164,92,.05) 45%, transparent 70%),
+  radial-gradient(ellipse at 50% 50%, #14100B 0%, #070605 75%)}
+.frame{position:absolute;inset:44px;border:2px solid var(--gold);pointer-events:none}
+.frame::before{content:'';position:absolute;inset:14px;border:1px solid rgba(201,164,92,.55)}
+.corner{position:absolute;width:26px;height:26px;background:var(--gold);transform:rotate(45deg)}
+.goldtxt{background:linear-gradient(180deg,#FFF1C9 0%,#F3DCA0 30%,#C9A45C 62%,#8A6A2E 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.t{position:absolute;font-family:'SerifSC',serif;white-space:nowrap}
+.latin{font-family:'Corm',serif;letter-spacing:.32em}
+.rule{position:absolute;height:2px;background:linear-gradient(90deg,transparent,var(--gold) 20%,var(--gold) 80%,transparent)}
+.chip{position:absolute;font-family:'SerifSC',serif;font-weight:900;color:var(--ink);background:linear-gradient(180deg,#F3DCA0,#C9A45C);padding:.18em .7em .22em;letter-spacing:.2em}
+canvas{position:absolute;inset:0}
+.logo{position:absolute;opacity:.9}
+.red{color:#F0585D}.green{color:#2BC07E}
+</style>
+</head>
+<body>
+<div id="cv">
+  <canvas id="fx"></canvas>
+  <div class="frame"></div>
+  <i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i>
+  <img class="logo" src="../assets/logo.png" alt="">
+  <div class="chip">技术指标</div>
+  <div class="t eyebrow goldtxt">别再「70卖 30买」</div>
+  <div class="t name goldtxt">RSI背离实战</div>
+  <div class="rule"></div>
+  <div class="t latin en goldtxt">RELATIVE STRENGTH INDEX</div>
+  <div class="t quote"><span class="red">顶背离</span> · <span class="green">底背离</span> · 上证 2635 点复盘</div>
+</div>
+<script>
+const r = new URLSearchParams(location.search).get('r') || '34';
+const P = r === '43'
+  ? { W: 2000, H: 1500, gx: '70%', gy: '40%', chip: [150, 250, 40], eyebrow: [150, 440, 66], name: [144, 560, 150], quote: [150, 1220, 50], logo: [150, 120, 300],
+      price: [1060, 200, 820, 560], rsi: [1060, 820, 820, 300] }
+  : { W: 1500, H: 2000, gx: '50%', gy: '28%', chip: [150, 1180, 44], eyebrow: [150, 1320, 64], name: [144, 1440, 156], quote: [150, 1830, 50], logo: [1050, 112, 300],
+      price: [150, 230, 1200, 520], rsi: [150, 800, 1200, 280] };
+const cv = document.getElementById('cv');
+cv.style.width = P.W + 'px'; cv.style.height = P.H + 'px'; cv.style.setProperty('--gx', P.gx); cv.style.setProperty('--gy', P.gy);
+const at = (sel, x, y, extra = {}) => { const e = document.querySelector(sel); Object.assign(e.style, { left: x + 'px', top: y + 'px' }, extra); return e; };
+at('.chip', P.chip[0], P.chip[1], { fontSize: P.chip[2] + 'px' });
+at('.eyebrow', P.eyebrow[0], P.eyebrow[1], { fontSize: P.eyebrow[2] + 'px', fontWeight: 600, letterSpacing: '.12em' });
+at('.name', P.name[0], P.name[1], { fontSize: P.name[2] + 'px', fontWeight: 900, letterSpacing: '.04em', lineHeight: 1 });
+const nb = document.querySelector('.name');
+const placeBelow = () => { const b = nb.offsetTop + nb.offsetHeight;
+  at('.rule', P.name[0] + 6, b + P.name[2] * .14, { width: Math.min(nb.offsetWidth, P.W - 300) + 'px' });
+  at('.en', P.name[0] + 8, b + P.name[2] * .26, { fontSize: Math.round(P.name[2] * .2) + 'px' }); };
+placeBelow();
+at('.quote', P.quote[0], P.quote[1], { fontSize: P.quote[2] + 'px', fontWeight: 600, color: '#EFE6D2', letterSpacing: '.06em' });
+at('.logo', P.logo[0], P.logo[1], { width: P.logo[2] + 'px' });
+const k = 44 - 13; at('.c1', k, k); at('.c2', P.W - k - 26, k); at('.c3', k, P.H - k - 26); at('.c4', P.W - k - 26, P.H - k - 26);
+
+const c = document.getElementById('fx'); c.width = P.W; c.height = P.H; const g = c.getContext('2d');
+const hash = n => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); };
+for (let i = 0; i < 240; i++) { g.fillStyle = `rgba(243,220,160,${.06 + hash(i + .7) * .3})`; g.beginPath(); g.arc(hash(i) * P.W, hash(i + .5) * P.H, .6 + hash(i + .3) * 2.2, 0, 7); g.fill(); }
+// a falling market with a bottom divergence: price lower low, RSI higher low (illustrative)
+const legs = [[128, 112, 6], [112, 120, 3], [120, 100, 6], [100, 110, 3], [110, 92, 6], [92, 108, 5]], C = []; let p = legs[0][0];
+legs.forEach(([a, b, n], L) => { for (let j = 1; j <= n; j++) { const t = a + (b - a) * j / n + (j < n ? (hash(L * 9 + j) - .5) * 3 : 0), o = p;
+  const hi = Math.max(o, t) + hash(L * 7 + j) * 2.2, lo = Math.min(o, t) - hash(L * 5 + j) * 2.2 - (j === n && b < a ? 1.6 : 0); C.push({ o, c: t, h: hi, l: lo }); p = t; } });
+const R = [], rk = [[50, 0], [32, 6], [46, 9], [18, 15], [40, 18], [27, 24], [62, 29]];
+for (let i = 0; i < C.length; i++) { let j = 0; while (rk[j + 1] && rk[j + 1][1] < i) j++; const [va, ia] = rk[j], [vb, ib] = rk[j + 1] || rk[j];
+  const u = ib === ia ? 0 : (i - ia) / (ib - ia), e = .5 - .5 * Math.cos(Math.PI * u); R.push(va + (vb - va) * e); }
+const [px, py, pw, ph] = P.price, lo = 88, hi = 132, X = i => px + pw * (i + .5) / C.length, Y = v => py + ph * (1 - (v - lo) / (hi - lo)), bw = pw / C.length * .6;
+C.forEach((k, i) => { const up = k.c >= k.o, col = up ? '#E5484D' : '#1FA36A'; g.strokeStyle = g.fillStyle = col; g.lineWidth = 3; g.shadowColor = col; g.shadowBlur = 14;
+  g.beginPath(); g.moveTo(X(i), Y(k.h)); g.lineTo(X(i), Y(k.l)); g.stroke(); const t = Y(Math.max(k.o, k.c)); g.fillRect(X(i) - bw / 2, t, bw, Math.max(4, Y(Math.min(k.o, k.c)) - t)); });
+g.shadowBlur = 0;
+const [rx, ry, rw, rh] = P.rsi, RY = v => ry + rh * (1 - v / 100);
+g.fillStyle = 'rgba(229,72,77,.08)'; g.fillRect(rx, ry, rw, RY(70) - ry); g.fillStyle = 'rgba(31,163,106,.10)'; g.fillRect(rx, RY(30), rw, ry + rh - RY(30));
+g.strokeStyle = 'rgba(201,164,92,.4)'; g.lineWidth = 1.5; g.strokeRect(rx, ry, rw, rh);
+g.setLineDash([10, 9]); [[70, '#E5484D'], [30, '#1FA36A']].forEach(([v, col]) => { g.strokeStyle = col; g.globalAlpha = .7; g.beginPath(); g.moveTo(rx, RY(v)); g.lineTo(rx + rw, RY(v)); g.stroke(); });
+g.globalAlpha = 1; g.setLineDash([]);
+g.strokeStyle = '#F3DCA0'; g.lineWidth = 5; g.shadowColor = '#F3DCA0'; g.shadowBlur = 18; g.lineJoin = 'round'; g.beginPath(); R.forEach((v, i) => i ? g.lineTo(X(i), RY(v)) : g.moveTo(X(i), RY(v))); g.stroke(); g.shadowBlur = 0;
+g.font = `600 ${Math.round(rh * .14)}px Corm, serif`; g.fillStyle = '#C9A45C'; g.fillText('RSI', rx + 20, ry + rh * .2);
+// the divergence: two lows on price (falling) and on RSI (rising)
+const iA = 14, iB = 26, dash = (x1, y1, x2, y2, col) => { g.strokeStyle = col; g.lineWidth = 4; g.setLineDash([16, 12]); g.shadowColor = col; g.shadowBlur = 12;
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); g.setLineDash([]); g.shadowBlur = 0;
+  [[x1, y1], [x2, y2]].forEach(([x, y]) => { g.lineWidth = 3; g.beginPath(); g.arc(x, y, 14, 0, 7); g.stroke(); }); };
+const lA = Math.min(...C.slice(iA - 2, iA + 2).map(k => k.l)), lB = Math.min(...C.slice(iB - 3, iB + 1).map(k => k.l));
+dash(X(iA), Y(lA) + 26, X(iB - 1), Y(lB) + 26, '#FFFFFF'); dash(X(15), RY(R[15]) + 18, X(24), RY(R[24]) + 18, '#F3DCA0');
+g.font = `900 ${Math.round(pw * .045)}px SerifSC, serif`; g.fillStyle = '#F3DCA0'; g.textAlign = 'right'; g.fillText('底背离', px + pw - 10, py + 60);
+g.font = `400 ${Math.round(pw * .022)}px SerifSC, serif`; g.fillStyle = '#8C8578'; g.fillText('示意', px + pw - 10, py + 60 + pw * .04);
+document.fonts.ready.then(() => { placeBelow(); document.body.dataset.ready = '1'; });
+</script>
+</body>
+</html>

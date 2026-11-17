@@ -50,16 +50,16 @@ pre{margin:0;max-height:380px;overflow:auto;background:var(--panel);border:1px s
 </style>
 <div class="wrap">
   <header>
-    <div class="brand">TradingNow · 4K 60fps Master</div>
+    <div class="brand">TradingNow · 2K 60fps Master</div>
     <h1>__TITLE__</h1>
-    <p class="sub">4K 60fps 原片 · 第 __K__ / __N__ 步</p>
+    <p class="sub">2K 60fps 原片 · 第 __K__ / __N__ 步</p>
   </header>
-  <div class="screen"><img src="poster.jpg" alt="《__TITLE__》画面"><span class="badge">3840 × 2160 · 60fps</span></div>
+  <div class="screen"><img src="poster.jpg" alt="《__TITLE__》画面"><span class="badge">2560 × 1440 · 60fps</span></div>
   <div class="steps">__STEPS__</div>
   <dl class="specs">
-    <div><dt>分辨率</dt><dd>3840 × 2160</dd></div><div><dt>帧率</dt><dd>60 fps</dd></div>
+    <div><dt>分辨率</dt><dd>2560 × 1440</dd></div><div><dt>帧率</dt><dd>60 fps</dd></div>
     <div><dt>时长</dt><dd>__DURATION__</dd></div><div><dt>视频</dt><dd>H.264 High · CRF 12</dd></div>
-    <div><dt>音频</dt><dd>AAC 384 kbps</dd></div><div><dt>完整文件</dt><dd>__FULL_MB__ MB</dd></div>
+    <div><dt>音频</dt><dd>AAC 320 kbps · 仅旁白</dd></div><div><dt>完整文件</dt><dd>__FULL_MB__ MB</dd></div>
   </dl>
   __EXTRA__
 </div>
@@ -68,7 +68,7 @@ const K = __K__, N = __N__, TITLE = __TITLE_JSON__;
 const OWN = __OWN__;            // pieces served by this page, in byte order: [{url,size,sha}]
 const PRIOR = __PRIOR__;        // pieces of every earlier page (to check the chosen file): [{size,sha}]
 const FULL = __FULL__;
-const NAME = k => k === N ? `${TITLE}_4K60.mp4` : `${TITLE}_4K60_前${k}段（共${N}段）.mp4`;
+const NAME = k => k === N ? `${TITLE}_2K60.mp4` : `${TITLE}_2K60_前${k}段（共${N}段）.mp4`;
 const $ = id => document.getElementById(id);
 const st = (msg, cls = '') => { const s = $('status'); s.textContent = msg; s.className = 'status ' + cls; };
 const mb = n => (n / 1048576).toFixed(1);
