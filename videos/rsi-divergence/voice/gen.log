@@ -1,0 +1,15 @@
+/tmp/claude-0/-home-user-tradingnow/4cac369c-6a61-5561-b9e4-1c1b10b8af90/scratchpad/tts/lib/python3.11/site-packages/torch/jit/_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Download Vocos from huggingface charactr/vocos-mel-24khz
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+vocab :  /tmp/claude-0/-home-user-tradingnow/4cac369c-6a61-5561-b9e4-1c1b10b8af90/scratchpad/tts/lib/python3.11/site-packages/f5_tts/infer/examples/vocab.txt
+token :  custom
+model :  /root/.cache/huggingface/hub/models--SWivid--F5-TTS/snapshots/84e5a410d9cead4de2f847e7c9369a6440bdfaca/F5TTS_v1_Base/model_1250000.safetensors 
+
+
+ref_text   中国的首批国家公园，它们是完美的系统，也是正在生长的传奇。
+gen_text 0 在A股，几乎每个人的看盘软件里，都挂着一个指标，RSI。
+
+
+  0%|          | 0/1 [00:00<?, ?it/s]

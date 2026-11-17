@@ -1,2 +1,5 @@
 assets/music.m4a
 music_src.wav
+voice/*.wav
+voice/ref.wav
+bgm.wav

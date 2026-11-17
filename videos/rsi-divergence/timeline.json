@@ -1,0 +1,176 @@
+{
+ "title": "RSI背离实战",
+ "fps": 60,
+ "frames": 15996,
+ "seconds": 266.6,
+ "scenes": [
+  {
+   "id": "open",
+   "type": "scene",
+   "start": 0,
+   "dur": 10.95,
+   "f0": 0,
+   "f1": 657
+  },
+  {
+   "id": "title",
+   "type": "scene",
+   "start": 10.95,
+   "dur": 4.4,
+   "f0": 657,
+   "f1": 921
+  },
+  {
+   "id": "wilder",
+   "type": "scene",
+   "start": 15.35,
+   "dur": 17.25,
+   "f0": 921,
+   "f1": 1956
+  },
+  {
+   "id": "gauge",
+   "type": "scene",
+   "start": 32.6,
+   "dur": 12.4,
+   "f0": 1956,
+   "f1": 2700
+  },
+  {
+   "id": "myth",
+   "type": "scene",
+   "start": 45,
+   "dur": 19.3,
+   "f0": 2700,
+   "f1": 3858
+  },
+  {
+   "id": "basics",
+   "type": "scene",
+   "start": 64.3,
+   "dur": 13.45,
+   "f0": 3858,
+   "f1": 4665
+  },
+  {
+   "id": "params",
+   "type": "scene",
+   "start": 77.75,
+   "dur": 13.6,
+   "f0": 4665,
+   "f1": 5481
+  },
+  {
+   "id": "dull",
+   "type": "scene",
+   "start": 91.35,
+   "dur": 18.3,
+   "f0": 5481,
+   "f1": 6579
+  },
+  {
+   "id": "four",
+   "type": "scene",
+   "start": 109.65,
+   "dur": 4.95,
+   "f0": 6579,
+   "f1": 6876
+  },
+  {
+   "id": "top",
+   "type": "scene",
+   "start": 114.6,
+   "dur": 14.45,
+   "f0": 6876,
+   "f1": 7743
+  },
+  {
+   "id": "bottom",
+   "type": "scene",
+   "start": 129.05,
+   "dur": 13.85,
+   "f0": 7743,
+   "f1": 8574
+  },
+  {
+   "id": "hbull",
+   "type": "scene",
+   "start": 142.9,
+   "dur": 14.45,
+   "f0": 8574,
+   "f1": 9441
+  },
+  {
+   "id": "hbear",
+   "type": "scene",
+   "start": 157.35,
+   "dur": 14.45,
+   "f0": 9441,
+   "f1": 10308
+  },
+  {
+   "id": "left",
+   "type": "scene",
+   "start": 171.8,
+   "dur": 8.8,
+   "f0": 10308,
+   "f1": 10836
+  },
+  {
+   "id": "tactics",
+   "type": "scene",
+   "start": 180.6,
+   "dur": 13.65,
+   "f0": 10836,
+   "f1": 11655
+  },
+  {
+   "id": "case1",
+   "type": "scene",
+   "start": 194.25,
+   "dur": 8.5,
+   "f0": 11655,
+   "f1": 12165
+  },
+  {
+   "id": "case2",
+   "type": "scene",
+   "start": 202.75,
+   "dur": 16.7,
+   "f0": 12165,
+   "f1": 13167
+  },
+  {
+   "id": "case3",
+   "type": "scene",
+   "start": 219.45,
+   "dur": 15.05,
+   "f0": 13167,
+   "f1": 14070
+  },
+  {
+   "id": "case4",
+   "type": "scene",
+   "start": 234.5,
+   "dur": 14.85,
+   "f0": 14070,
+   "f1": 14961
+  },
+  {
+   "id": "recap",
+   "type": "scene",
+   "start": 249.35,
+   "dur": 12.25,
+   "f0": 14961,
+   "f1": 15696
+  },
+  {
+   "id": "end",
+   "type": "scene",
+   "start": 261.6,
+   "dur": 5,
+   "f0": 15696,
+   "f1": 15996
+  }
+ ]
+}

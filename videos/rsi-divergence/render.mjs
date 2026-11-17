@@ -26,7 +26,7 @@ const W = 1920, H = 1080, FPS = 60, CHUNK = 300;
 const argv = process.argv.slice(2);
 const arg = n => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] : undefined; };
 const PREVIEW = argv.includes('--preview');
-const DSF = PREVIEW ? 1 : 2;
+const DSF = PREVIEW ? 1 : +(process.env.DSF || 2);        // DSF=1.3333 → 2560×1440 (the 4K canvas is supersampled down)
 const WORKERS = parseInt(arg('--workers') || String(Math.max(2, os.cpus().length - 1)), 10);
 const ONLY = arg('--only')?.split(',');
 const STILLS = arg('--stills')?.split(',').map(Number).filter(Number.isFinite);
@@ -128,7 +128,7 @@ async function main() {
     const timeline = await first.evalJS('window.TIMELINE');
     const title = await first.evalJS('window.FILM.title');
     fs.writeFileSync(path.join(DIR, 'timeline.json'), JSON.stringify({ title, fps: FPS, frames: total, seconds: total / FPS, scenes: timeline }, null, 1));
-    console.log(`film: ${total} frames = ${(total / FPS).toFixed(1)} s, ${timeline.length} scenes, ${DSF === 2 ? '3840×2160' : '1920×1080'}`);
+    console.log(`film: ${total} frames = ${(total / FPS).toFixed(1)} s, ${timeline.length} scenes, ${Math.round(W * DSF)}×${Math.round(H * DSF)}`);
     if (TIMELINE_ONLY) return;
 
     if (STILLS) {

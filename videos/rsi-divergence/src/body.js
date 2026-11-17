@@ -1,0 +1,606 @@
+/* ============================================================
+   《RSI背离实战》 — content for the TradingNow film engine (index.html)
+
+   One continuous lesson, narrated: the subtitle lines (NARR, from src/narration.json) carry the spoken
+   duration of each line, so every visual beat — S.at(line, delay, dur) — lands on the voice.
+   Charts are illustrative ("示意") except the 上证指数 case, which is drawn from real daily data (SH).
+   ============================================================ */
+(() => {
+const { C, clamp, lerp, easeOut, rgba, mix, F } = K;
+const soft = x => { x = clamp(x); return x * x * x * (x * (6 * x - 15) + 10); };      // smootherstep
+const HD = { label: ' ', en: 'Relative Strength Index', zh: '《RSI 背离实战》' };
+const L = id => NARR[id];
+
+/* ---------- shared pieces ---------- */
+function ring(ctx, x, y, p, col = C.goldHi, R = 120) {
+  if (p <= 0 || p >= 1) return;
+  ctx.save(); ctx.strokeStyle = rgba(col, .7 * Math.sin(Math.PI * p)); ctx.lineWidth = 1.6; ctx.shadowColor = col; ctx.shadowBlur = 18;
+  ctx.beginPath(); ctx.arc(x, y, 10 + soft(p) * R, 0, 6.2832); ctx.stroke(); ctx.restore();
+}
+function card(ctx, x, y, w, h, a, hi = 0) {
+  if (a <= .002) return;
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(24,20,13,.86)'; ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = rgba(mix(C.gold, C.goldHi, hi), .5 + .4 * hi); ctx.lineWidth = 1.2 + hi; ctx.strokeRect(x, y, w, h);
+  ctx.strokeStyle = rgba(C.gold, .2); ctx.lineWidth = 1; ctx.strokeRect(x + 9, y + 9, w - 18, h - 18);
+  ctx.restore();
+}
+function riseText(ctx, str, cx, y, size, t, o = {}) {
+  const chars = [...str], sp = o.spacing ?? 0, st = o.stagger ?? .12, d = o.dur ?? 1.2;
+  ctx.save(); ctx.font = F.serif(900, size); const ws = chars.map(c => ctx.measureText(c).width + sp); ctx.restore();
+  let x = cx - (ws.reduce((a, b) => a + b, 0) - sp) / 2;
+  chars.forEach((c, i) => {
+    const p = soft((t - i * st) / d);
+    if (p > .002) {
+      ctx.save(); if (p < .98) ctx.filter = `blur(${((1 - p) * 10).toFixed(2)}px)`;
+      K.goldText(ctx, c, x, y + (1 - p) * 34, size, { align: 'left', alpha: p * (o.alpha ?? 1), glow: o.glow ?? 1 });
+      ctx.restore();
+    }
+    x += ws[i];
+  });
+}
+/** solid polyline drawn up to progress p (0..1 of its points) */
+function poly(ctx, pts, p, o = {}) {
+  p = clamp(p); if (p <= 0 || pts.length < 2 || (o.alpha ?? 1) <= .002) return;
+  const n = (pts.length - 1) * p, k = Math.floor(n), u = n - k;
+  ctx.save(); ctx.globalAlpha *= o.alpha ?? 1; ctx.strokeStyle = o.color || C.goldHi; ctx.lineWidth = o.width || 2.4; ctx.lineJoin = ctx.lineCap = 'round';
+  if (o.glow !== 0) { ctx.shadowColor = rgba(o.color || C.goldHi, o.glow ?? .6); ctx.shadowBlur = 12; }
+  if (o.dash) ctx.setLineDash(o.dash);
+  ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+  for (let i = 1; i <= k; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  if (k < pts.length - 1) ctx.lineTo(lerp(pts[k][0], pts[k + 1][0], u), lerp(pts[k][1], pts[k + 1][1], u));
+  ctx.stroke();
+  if (o.head && p < 1) { const hx = k < pts.length - 1 ? lerp(pts[k][0], pts[k + 1][0], u) : pts[k][0], hy = k < pts.length - 1 ? lerp(pts[k][1], pts[k + 1][1], u) : pts[k][1];
+    ctx.fillStyle = '#FFF6DC'; ctx.beginPath(); ctx.arc(hx, hy, 3.4, 0, 6.2832); ctx.fill(); }
+  ctx.restore();
+}
+/** Wilder's RSI of a close series (null while warming up) */
+function rsiOf(c, n) {
+  const out = Array(c.length).fill(null); let g = 0, l = 0;
+  for (let i = 1; i < c.length; i++) {
+    const ch = c[i] - c[i - 1], u = Math.max(ch, 0), d = Math.max(-ch, 0);
+    if (i <= n) { g += u / n; l += d / n; } else { g = (g * (n - 1) + u) / n; l = (l * (n - 1) + d) / n; }
+    if (i >= n) out[i] = l ? 100 - 100 / (1 + g / l) : 100;
+  }
+  return out;
+}
+/** a drawn ("示意") RSI: smooth legs through the given values, one value per candle */
+function drawn(vals, per, seed = 5) {
+  const R = K.rng(seed), out = [];
+  for (let k = 0; k < vals.length - 1; k++) for (let j = 1; j <= per[k]; j++) {
+    const u = j / per[k], e = .5 - .5 * Math.cos(Math.PI * u);
+    out.push(clamp(lerp(vals[k], vals[k + 1], e) + (j < per[k] ? (R() - .5) * 5 : 0), 2, 98));
+  }
+  return out;
+}
+/** the RSI pane: frame, 70 / 50 / 30 levels, zones. o:{a, z70, z30, mid, lab, name} each 0..1. Returns v → y */
+function rsiPane(ctx, b, o = {}) {
+  const a = o.a ?? 1, y = v => b.y + b.h * (1 - v / 100);
+  if (a <= .002) return y;
+  ctx.save(); ctx.globalAlpha *= a;
+  ctx.fillStyle = 'rgba(255,255,255,.018)'; ctx.fillRect(b.x, b.y, b.w, b.h);
+  ctx.strokeStyle = rgba(C.gold, .32); ctx.lineWidth = 1; ctx.strokeRect(b.x, b.y, b.w, b.h);
+  const z7 = o.z70 ?? .5, z3 = o.z30 ?? .5, md = o.mid ?? .6;
+  ctx.fillStyle = rgba(C.red, .05 + .09 * z7); ctx.fillRect(b.x, b.y, b.w, y(70) - b.y);
+  ctx.fillStyle = rgba(C.green, .05 + .09 * z3); ctx.fillRect(b.x, y(30), b.w, b.y + b.h - y(30));
+  ctx.restore();
+  K.dash(ctx, b.x, y(70), b.x + b.w, y(70), { color: C.red, alpha: a * (.45 + .5 * z7), width: 1.2, dash: [6, 6] });
+  K.dash(ctx, b.x, y(30), b.x + b.w, y(30), { color: C.green, alpha: a * (.45 + .5 * z3), width: 1.2, dash: [6, 6] });
+  K.dash(ctx, b.x, y(50), b.x + b.w, y(50), { color: C.goldHi, alpha: a * (.25 + .6 * md), width: 1.1, dash: [3, 7] });
+  if (o.lab !== 0) {
+    const f = F.mono(o.ls || 15);
+    K.text(ctx, '70', b.x + b.w + 12, y(70) + 6, { font: f, color: C.red, alpha: a * (.6 + .4 * z7) });
+    K.text(ctx, '50', b.x + b.w + 12, y(50) + 6, { font: f, color: C.goldHi, alpha: a * (.4 + .6 * md) });
+    K.text(ctx, '30', b.x + b.w + 12, y(30) + 6, { font: f, color: C.green, alpha: a * (.6 + .4 * z3) });
+  }
+  if (o.name !== 0) K.text(ctx, o.name || 'RSI', b.x + 12, b.y + 12 + (o.ns || 15) * 1.55 * .8, { font: F.latin(600, o.ns || 15), color: C.gold, alpha: a * .9, spacing: 2 });
+  return y;
+}
+const pts = (ch, vals, y) => vals.map((v, i) => v == null ? null : [ch.x(i), y(v)]).filter(Boolean);
+/** small corner note */
+const note = (ctx, s, x, y, a, al = 'right') => K.text(ctx, s, x, y, { font: F.serif(500, 14), color: C.gray, align: al, alpha: a * .85, spacing: 2 });
+
+/* ---------- data ---------- */
+// opening / parameter demo: one synthetic series (16 warm-up candles are hidden), real RSI maths on it
+const DEMO = (() => {
+  const g = K.gen.path([100, 103, 97, 109, 103, 117, 110, 126, 114, 105, 113, 101, 110, 122, 116], { per: [26, 4, 5, 3, 5, 3, 6, 4, 4, 3, 4, 3, 5, 3], seed: 23, noise: .6 });
+  const c = g.candles.map(k => k.c), W0 = 26, cut = a => a.slice(W0);
+  return { k: cut(g.candles), r6: cut(rsiOf(c, 6)), r9: cut(rsiOf(c, 9)), r14: cut(rsiOf(c, 14)), r24: cut(rsiOf(c, 24)) };
+})();
+
+/* ---------- the four divergences: one layout, four data sets ---------- */
+const DIV = {
+  top:    { wps: [100, 112, 106, 121, 113, 128, 117], per: [5, 3, 5, 3, 5, 4], rsi: [50, 66, 50, 80, 52, 67, 41], piv: [2, 4], type: 'H', seed: 31,
+            name: '顶背离', en: 'BEARISH DIVERGENCE', col: C.red, rows: ['股价 · 一顶比一顶高', 'RSI · 一顶比一顶低'], dir: [1, -1], verdict: '动能衰竭 · 逢高减仓', vcol: C.green },
+  bottom: { wps: [128, 116, 122, 106, 114, 98, 109], per: [5, 3, 5, 3, 5, 4], rsi: [50, 35, 50, 19, 46, 32, 58], piv: [2, 4], type: 'L', seed: 37,
+            name: '底背离', en: 'BULLISH DIVERGENCE', col: C.green, rows: ['股价 · 一底比一底低', 'RSI · 一底比一底高'], dir: [-1, 1], verdict: '抛压衰竭 · 关注买点', vcol: C.red },
+  hbull:  { wps: [100, 118, 110, 131, 118, 142], per: [6, 3, 6, 4, 6], rsi: [50, 72, 45, 77, 33, 71], piv: [1, 3], type: 'L', seed: 41,
+            name: '上升中的背离', en: 'HIDDEN BULLISH', col: C.red, rows: ['股价 · 低点抬高', 'RSI · 低点创新低'], dir: [1, -1], verdict: '多为洗盘 · 趋势延续', vcol: C.red },
+  hbear:  { wps: [142, 123, 132, 109, 123, 98], per: [6, 3, 6, 4, 6], rsi: [50, 29, 55, 23, 67, 28], piv: [1, 3], type: 'H', seed: 43,
+            name: '下跌中的背离', en: 'HIDDEN BEARISH', col: C.green, rows: ['股价 · 高点降低', 'RSI · 高点创新高'], dir: [-1, 1], verdict: '弱势反抽 · 不接飞刀', vcol: C.green },
+};
+for (const d of Object.values(DIV)) { const g = K.gen.path(d.wps, { per: d.per, seed: d.seed, noise: .35, wick: .4 }); d.k = g.candles; d.sw = g.swings; d.r = drawn(d.rsi, d.per, d.seed + 1); }
+
+function divScene(id, tr) {
+  const d = DIV[id];
+  return { id, header: HD, tr, lines: L(id), camera: { z0: 1.0, z1: 1.03, x1: id === 'top' || id === 'hbull' ? -10 : 10 },
+    visual(ctx, S) {
+      const PB = { x: 280, y: 262, w: 960, h: 300 }, RB = { x: 280, y: 596, w: 960, h: 186 };
+      const ch = new K.Chart(d.k, PB, { pad: .14 }), n = d.k.length;
+      const rev = lerp(0, n, clamp((S.t - .2) / Math.max(2.4, S.beat(2) - .2 + .6)));
+      ch.draw(ctx, rev, { glow: .3 });
+      K.baseline(ctx, PB.x, PB.x + PB.w, PB.y + PB.h + 12, { p: soft(S.t / 1.2), step: 48 });
+      const y = rsiPane(ctx, RB, { a: soft(S.t / 1.0), z70: .4, z30: .4 });
+      poly(ctx, pts(ch, d.r, y), clamp(rev / n), { head: 1 });
+      note(ctx, '示意', PB.x + PB.w, PB.y - 12, soft(S.t / 1.2));
+      // the two pivots: on price, then on RSI
+      const [a, b] = d.piv.map(i => d.sw[i]), up = d.type === 'H', off = up ? -20 : 20;
+      const pa = [ch.x(a.i), ch.y(a.price) + off], pb = [ch.x(b.i), ch.y(b.price) + off];
+      const p1 = S.at(1, .5, 1.4, soft), p2 = S.at(2, .5, 1.4, soft);
+      K.marker(ctx, pa[0], pa[1] - off * .5, { alpha: S.at(1, .1, .8, soft), color: C.white, r: 8 });
+      K.marker(ctx, pb[0], pb[1] - off * .5, { alpha: S.at(1, .9, .8, soft), color: C.white, r: 8 });
+      K.dash(ctx, pa[0], pa[1], pb[0], pb[1], { p: p1, color: C.white, width: 2.2, dash: [9, 7] });
+      const ra = [ch.x(a.i), y(d.r[a.i]) + off * .8], rb = [ch.x(b.i), y(d.r[b.i]) + off * .8];
+      K.marker(ctx, ra[0], y(d.r[a.i]), { alpha: S.at(2, .1, .8, soft), r: 8 });
+      K.marker(ctx, rb[0], y(d.r[b.i]), { alpha: S.at(2, .9, .8, soft), r: 8 });
+      K.dash(ctx, ra[0], ra[1], rb[0], rb[1], { p: p2, color: C.goldHi, width: 2.2, dash: [9, 7] });
+      // right column: name, the two rows, the verdict
+      const cx = 1500;
+      K.text(ctx, d.en, cx, 300, { font: F.latin(500, 14), color: C.gold, align: 'center', spacing: 5, alpha: S.at(0, .2, 1.0, soft) });
+      riseText(ctx, d.name, cx, 372, d.name.length > 3 ? 34 : 46, S.t - S.beat(0) - .15, { spacing: d.name.length > 3 ? 4 : 12, stagger: .1, dur: 1.0 });
+      K.rule(ctx, cx, 404, 200, S.at(0, .5, 1.2, soft));
+      d.rows.forEach((r, i) => {
+        const p = S.at(1 + i, .3, 1.0, soft), yy = 478 + i * 86, colr = i ? C.goldHi : C.white, s = d.dir[i];
+        K.text(ctx, r, cx - 30, yy + (1 - p) * 12, { font: F.serif(700, 20), color: colr, align: 'center', alpha: p });
+        K.arrow(ctx, cx + 150, yy - 8 + s * 14, cx + 198, yy - 8 - s * 14, { p: S.at(1 + i, .7, .9, soft), color: colr, alpha: p, head: 12, width: 2.4 });
+      });
+      const v = S.at(3, .2, 1.1, soft);
+      card(ctx, cx - 210, 646, 420, 100, v, S.at(4, 0, 1, soft));
+      K.text(ctx, d.verdict, cx, 708 + (1 - v) * 10, { font: F.serif(900, 22), color: mix(d.vcol, '#FFFFFF', .25), align: 'center', alpha: v, spacing: 2 });
+      ring(ctx, pb[0], pb[1] - off * .5, S.lin(3, .2, 1.6), d.vcol);
+    } };
+}
+
+/* ---------- the 上证指数 case: one real chart, shown further in each scene ---------- */
+const SHK = SH.map(r => ({ o: r[1], h: r[2], l: r[3], c: r[4] })), SHV = SH.map(r => r[5]), SHR = SH.map(r => r[6]), SHM = SH.map(r => r[7]);
+const I = Object.fromEntries(SH.map((r, i) => [r[0], i]));                       // 'MM-DD' → index
+const CB = { x: 270, y: 246, w: 1300, h: 322 }, VB = { x: 270, y: 580, w: 1300, h: 44 }, RB2 = { x: 270, y: 652, w: 1300, h: 138 };
+const SCH = new K.Chart(SHK, CB, { lo: 2600, hi: 3130, body: .62 });
+const VMAX = Math.max(...SHV);
+/** o: {rev (candles shown), a, ma (0..1), trend (0..1), hot (index of a highlighted candle), hotA} */
+function shChart(ctx, o) {
+  const a = o.a ?? 1, rev = o.rev, n = SHK.length;
+  K.text(ctx, '上证指数 000001 · 日线', CB.x, CB.y - 14, { font: F.serif(700, 17), color: C.white, alpha: a, spacing: 2 });
+  note(ctx, '2023-11 … 2024-03 · 真实行情', CB.x + CB.w, CB.y - 14, a);
+  for (const p of [2700, 2900, 3100]) {
+    K.dash(ctx, CB.x, SCH.y(p), CB.x + CB.w, SCH.y(p), { color: C.dim, alpha: a * .55, width: 1, dash: [2, 8] });
+    K.text(ctx, String(p), CB.x - 12, SCH.y(p) + 6, { font: F.mono(13), color: C.gray, align: 'right', alpha: a * .8 });
+  }
+  let pm = '';
+  SH.forEach((r, i) => { const m = r[0].slice(0, 2); if (m !== pm) { pm = m; K.text(ctx, +m + '月', SCH.x(i), RB2.y + RB2.h + 30, { font: F.serif(500, 13), color: C.gray, align: 'center', alpha: a * .8 }); } });
+  SCH.draw(ctx, rev, { alpha: a, glow: .25, dim: i => o.hot == null ? 1 : lerp(1, i === o.hot ? 1 : .5, o.hotA ?? 0) });
+  ctx.save(); ctx.globalAlpha *= a;
+  for (let i = 0; i < n && i < Math.ceil(rev); i++) {                               // volume
+    const g = clamp(rev - i), h = VB.h * SHV[i] / VMAX * g, up = SHK[i].c >= SHK[i].o;
+    ctx.fillStyle = rgba(up ? C.red : C.green, i === o.hot ? .5 + .5 * (o.hotA ?? 0) : .5); ctx.fillRect(SCH.x(i) - SCH.cw / 2, VB.y + VB.h - h, SCH.cw, h);
+  }
+  ctx.restore();
+  K.text(ctx, '成交量', CB.x - 12, VB.y + VB.h, { font: F.serif(500, 12), color: C.gray, align: 'right', alpha: a * .8 });
+  const y = rsiPane(ctx, RB2, { a, z70: .3, z30: .5, name: 'RSI 14', ns: 13, ls: 13 });
+  poly(ctx, pts(SCH, SHR, y).slice(0, Math.ceil(rev)), 1, { width: 2.2, alpha: a });
+  if (o.ma) poly(ctx, SHM.map((v, i) => [SCH.x(i), SCH.y(v)]).slice(0, Math.ceil(rev)), o.ma, { color: '#E8B04A', width: 1.8, glow: .35, alpha: a });
+  return y;
+}
+const TL = (() => { const i1 = I['11-21'], i2 = I['01-26'], k = (SHK[i2].h - SHK[i1].h) / (i2 - i1); return i => SHK[i1].h + k * (i - i1); })();   // the falling line through two highs
+
+/* ---------- small mini-panel (myth / dull): candles above, a drawn RSI below ---------- */
+function mini(ctx, bx, by, w, d, rev, o = {}) {
+  const PB = { x: bx, y: by, w, h: o.ph || 250 }, RB = { x: bx, y: by + PB.h + 26, w, h: o.rh || 150 };
+  const ch = new K.Chart(d.k, PB, { pad: .1 });
+  ch.draw(ctx, rev * d.k.length, { glow: .28, alpha: o.a ?? 1 });
+  const y = rsiPane(ctx, RB, { a: (o.a ?? 1) * (o.pa ?? 1), z70: o.z70 ?? .5, z30: o.z30 ?? .5, ns: 13, ls: 13 });
+  poly(ctx, pts(ch, d.r, y), rev, { head: 1, alpha: o.a ?? 1 });
+  return { ch, y, PB, RB };
+}
+const mk = (wps, per, rsi, seed) => { const g = K.gen.path(wps, { per, seed, noise: .4, wick: .4 }); return { k: g.candles, sw: g.swings, r: drawn(rsi, per, seed + 3) }; };
+const RUNUP = mk([100, 108, 106, 118, 115, 130, 127, 143], [4, 2, 4, 2, 5, 2, 5], [52, 74, 70, 82, 76, 86, 79, 88], 51);
+const RUNDN = mk([143, 133, 136, 123, 126, 112, 115, 100], [4, 2, 4, 2, 5, 2, 5], [48, 27, 31, 19, 25, 15, 21, 13], 53);
+const GAUGE_K = K.gen.seq(100, [[3.2, .5, .3], [3.6, .4, .4], [-1, .5, .6], [4, .6, .3], [3.4, .5, .4], [3.8, .4, .3], [2.2, 1.0, .4], [1.6, 1.4, .5], [-.6, .9, .6], [1.2, 1.7, .4], [.7, 1.9, .5], [.3, 2.0, .6], [-3.4, .4, .8], [-4.2, .3, .6], [-3, .5, .7]]);
+
+window.FILM = {
+  title: 'RSI背离实战',
+  transition: 1.4,
+  fontScale: 1.55,
+  subtitle: { x: 220, y: 912, size: 42, maxW: 1480 },
+  timing: { perChar: .2, base: .45, minLine: 1.6, pre: .5, post: .5 },                 // reading pace; replaced line by line once the voice is timed
+  scenes: [
+
+  /* ================= COLD OPEN ================= */
+  { id: 'open', camera: { z0: 1.05, z1: 1.0 }, lines: L('open'),
+    visual(ctx, S) {
+      const PB = { x: 260, y: 236, w: 1400, h: 300 }, RB = { x: 260, y: 610, w: 1400, h: 190 }, n = DEMO.k.length;
+      const ch = new K.Chart(DEMO.k, PB, { pad: .1 }), rev = lerp(0, n, clamp((S.t - .2) / (S.dur - 1.6)));
+      ch.draw(ctx, rev, { glow: .32, alpha: lerp(1, .55, S.at(1, .2, 1.2, soft)) });
+      const y = rsiPane(ctx, RB, { a: soft(S.t / 1.4), z70: S.at(2, .2, 1, soft), z30: S.at(2, .2, 1, soft), name: 0 });
+      poly(ctx, pts(ch, DEMO.r14, y), clamp(rev / n), { head: 1, width: 2.8 });
+      const a = S.at(1, .5, 1.0, soft);
+      K.goldText(ctx, 'RSI', RB.x + 70, RB.y - 12, 34, { alpha: a, glow: 1 + a });
+      ring(ctx, RB.x + 70, RB.y - 28, S.lin(1, .5, 1.6), C.goldHi, 110);
+      const q = S.at(2, .3, 1.0, soft);
+      K.tag(ctx, RB.x + RB.w - 150, y(70) - 28, '70 就卖？', { color: C.green, alpha: q });
+      K.tag(ctx, RB.x + RB.w - 150, y(30) + 28, '30 就买？', { color: C.red, alpha: S.at(2, .7, 1.0, soft) });
+    } },
+
+  /* ================= TITLE ================= */
+  { id: 'title', dur: 4.4, tr: 'dissolve', camera: { z0: 1.0, z1: 1.04 },
+    visual(ctx, S) {
+      const cx = 960, t = S.t, e = soft((t - .1) / 1.8);
+      const y = v => 250 + 560 * (1 - v / 100), bgp = DEMO.r14.map((v, i) => [140 + i * (1640 / (DEMO.r14.length - 1)), y(v)]);
+      poly(ctx, bgp, soft(t / 3), { color: C.gold, alpha: .2, width: 2, glow: .2 });
+      K.text(ctx, 'RELATIVE  STRENGTH  INDEX', cx, 384, { font: F.latin(500, 21), color: C.gold, align: 'center', spacing: lerp(26, 10, e), alpha: e });
+      riseText(ctx, 'RSI背离实战', cx, 528, 70, t - .45, { spacing: 16, stagger: .13, dur: 1.3 });
+      const sw = soft((t - 1.9) / 1.8);
+      if (sw > 0 && sw < 1) {
+        ctx.save(); ctx.globalCompositeOperation = 'lighter';
+        const x = lerp(520, 1400, sw), g = ctx.createLinearGradient(x - 120, 0, x + 120, 0), a = .26 * Math.sin(Math.PI * sw);
+        g.addColorStop(0, 'rgba(255,240,200,0)'); g.addColorStop(.5, `rgba(255,240,200,${a.toFixed(3)})`); g.addColorStop(1, 'rgba(255,240,200,0)');
+        ctx.fillStyle = g; ctx.fillRect(x - 120, 410, 240, 150); ctx.restore();
+      }
+      K.rule(ctx, cx, 590, 360, soft((t - 1.2) / 1.8));
+      const s = soft((t - 1.9) / 1.4);
+      K.text(ctx, '动能测速仪 · 四种背离 · 三重确认', cx, 650 + (1 - s) * 14, { font: F.serif(500, 25), color: C.gray, align: 'center', spacing: 6, alpha: s });
+    } },
+
+  /* ================= 1978 · 怀尔德 ================= */
+  { id: 'wilder', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.03, x1: -12 }, lines: L('wilder'),
+    visual(ctx, S) {
+      // an abstract book (no cover art), the year, then the formula
+      const a = .4 * S.at(0, .7, 1.4, soft) + .6 * S.at(3, -.2, 1.2, soft), bx = 330, by = 276, bw = 330, bh = 470;
+      ctx.save(); ctx.globalAlpha *= a; ctx.translate(0, (1 - a) * 18);
+      const g = ctx.createLinearGradient(bx, 0, bx + bw, 0); g.addColorStop(0, '#2A2113'); g.addColorStop(.06, '#3A2E1A'); g.addColorStop(1, '#1E180E');
+      ctx.fillStyle = g; ctx.shadowColor = rgba(C.gold, .4); ctx.shadowBlur = 34; ctx.fillRect(bx, by, bw, bh); ctx.shadowBlur = 0;
+      ctx.strokeStyle = rgba(C.gold, .75); ctx.lineWidth = 1.4; ctx.strokeRect(bx + 16, by + 16, bw - 32, bh - 32);
+      K.text(ctx, '技术交易系统', bx + bw / 2, by + 180, { font: F.serif(900, 25), color: C.goldHi, align: 'center', spacing: 3 });
+      K.text(ctx, '新概念', bx + bw / 2, by + 238, { font: F.serif(900, 25), color: C.goldHi, align: 'center', spacing: 10 });
+      K.text(ctx, 'NEW CONCEPTS IN', bx + bw / 2, by + 296, { font: F.latin(500, 10), color: C.gold, align: 'center', spacing: 3 });
+      K.text(ctx, 'TECHNICAL TRADING SYSTEMS', bx + bw / 2, by + 320, { font: F.latin(500, 10), color: C.gold, align: 'center', spacing: 2 });
+      K.text(ctx, '1978', bx + bw / 2, by + bh - 46, { font: F.latin(500, 15), color: C.gray, align: 'center', spacing: 6 });
+      ctx.restore();
+      const cx = 1210, e = S.at(0, .1, 1.3, soft);
+      K.goldText(ctx, '1978', cx, 392 + (1 - e) * 20, 96, { alpha: e, spacing: 8 });
+      const w = S.at(1, .2, 1.1, soft);
+      K.text(ctx, '威尔斯·怀尔德', cx, 462 + (1 - w) * 10, { font: F.serif(700, 26), color: C.white, align: 'center', spacing: 6, alpha: w });
+      K.text(ctx, 'J. WELLES WILDER JR.', cx, 506, { font: F.latin(500, 15), color: C.gold, align: 'center', spacing: 5, alpha: w });
+      K.rule(ctx, cx, 540, 300, S.at(2, 0, 1.2, soft));
+      const f = S.at(4, 0, 1.2, soft), f0 = S.at(2, .3, 1.0, soft);
+      K.text(ctx, '买方力量  ⇄  卖方力量', cx, 606, { font: F.serif(500, 20), color: C.gray, align: 'center', spacing: 4, alpha: f0 * (1 - f) });
+      card(ctx, cx - 400, 566, 800, 190, f, .4);
+      K.text(ctx, 'RSI = 100 − 100 ÷ ( 1 + RS )', cx, 650, { font: F.latin(600, 30), color: C.goldHi, align: 'center', spacing: 2, alpha: f, glow: .5 });
+      K.text(ctx, 'RS = N 日平均涨幅 ÷ N 日平均跌幅', cx, 716, { font: F.serif(500, 19), color: C.white, align: 'center', spacing: 2, alpha: S.at(4, .5, 1.0, soft) });
+    } },
+
+  /* ================= 动能测速仪 ================= */
+  { id: 'gauge', header: HD, tr: ['push', 1], camera: { z0: 1.0, z1: 1.03 }, lines: L('gauge'),
+    visual(ctx, S) {
+      const PB = { x: 270, y: 280, w: 700, h: 470 }, n = GAUGE_K.length, ch = new K.Chart(GAUGE_K, PB, { pad: .1, body: .56 });
+      const tEnd = S.beat(3) + 1.6, rev = clamp(S.t / tEnd) * 12 + clamp((S.t - tEnd - .2) / 1.4) * 3;
+      ch.draw(ctx, rev, { glow: .35 });
+      K.baseline(ctx, PB.x, PB.x + PB.w, PB.y + PB.h + 10, { p: soft(S.t / 1.2), step: 50 });
+      note(ctx, '示意', PB.x + PB.w, PB.y - 6, soft(S.t / 1.2));
+      K.text(ctx, '价格 · 表面', PB.x + 8, PB.y + 16, { font: F.serif(700, 19), color: C.white, alpha: S.at(1, .1, 1, soft) });
+      // the gauge: a half dial 0 … 100
+      const cx = 1400, cy = 640, R = 250, ang = v => Math.PI * (1 + v / 100), ga = soft(S.t / 1.2);
+      ctx.save(); ctx.globalAlpha *= ga; ctx.lineCap = 'butt';
+      for (const [v0, v1, col] of [[0, 30, C.green], [30, 70, C.gold], [70, 100, C.red]]) {
+        ctx.strokeStyle = rgba(col, .75); ctx.lineWidth = 14; ctx.beginPath(); ctx.arc(cx, cy, R, ang(v0) + .012, ang(v1) - .012); ctx.stroke();
+      }
+      for (let v = 0; v <= 100; v += 10) { const c = Math.cos(ang(v)), s = Math.sin(ang(v));
+        ctx.strokeStyle = rgba(C.goldHi, .7); ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(cx + c * (R - 26), cy + s * (R - 26)); ctx.lineTo(cx + c * (R - 12), cy + s * (R - 12)); ctx.stroke();
+        if (v % 50 === 0 || v === 30 || v === 70) K.text(ctx, String(v), cx + c * (R - 54), cy + s * (R - 54) + 8, { font: F.mono(15), color: C.gray, align: 'center' }); }
+      const up = soft(clamp(S.t / (S.beat(1) + 1.2))), dn = S.at(2, .6, S.beat(3) + 1.6 - S.beat(2), soft), v = lerp(lerp(48, 84, up), 46, dn) + Math.sin(S.t * 5.1) * .7;
+      const c = Math.cos(ang(v)), s = Math.sin(ang(v));
+      ctx.strokeStyle = C.goldHi; ctx.lineWidth = 4; ctx.shadowColor = C.goldHi; ctx.shadowBlur = 16; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(cx - c * 20, cy - s * 20); ctx.lineTo(cx + c * (R - 40), cy + s * (R - 40)); ctx.stroke();
+      ctx.fillStyle = '#FFF6DC'; ctx.beginPath(); ctx.arc(cx, cy, 9, 0, 6.2832); ctx.fill();
+      ctx.restore();
+      K.text(ctx, 'RSI ' + Math.round(v), cx, cy + 62, { font: F.latin(600, 26), color: C.goldHi, align: 'center', spacing: 3, alpha: ga });
+      K.text(ctx, '动能 · 力道', cx, cy - R - 26, { font: F.serif(700, 19), color: C.goldHi, align: 'center', spacing: 4, alpha: S.at(2, .1, 1, soft) });
+      const w = S.at(3, .5, 1.0, soft);
+      K.tag(ctx, cx, cy + 112, '价格还在涨 · 动能已衰竭', { color: C.green, alpha: w, font: F.serif(700, 19) });
+      ring(ctx, cx + c * (R - 40), cy + s * (R - 40), S.lin(3, .5, 1.6), C.green, 90);
+    } },
+
+  /* ================= 用反了：70 卖 / 30 买 ================= */
+  { id: 'myth', header: HD, tr: ['push', 1], camera: { z0: 1.0, z1: 1.03 }, lines: L('myth'),
+    visual(ctx, S) {
+      const fade = 1 - .82 * S.at(4, .2, 1.2, soft), rev = clamp((S.t - .3) / (S.beat(1) + 1.5));
+      ctx.save(); ctx.globalAlpha *= fade;
+      const A = mini(ctx, 270, 262, 620, RUNUP, rev, { z70: 1 }), B = mini(ctx, 1030, 262, 620, RUNDN, rev, { z30: 1 });
+      note(ctx, '示意', 890, 250, 1); note(ctx, '示意', 1650, 250, 1);
+      // "70 就卖": sold at the first cross, price keeps running
+      const s1 = S.at(1, .3, .9, soft), iS = 4, iB = 4;
+      K.marker(ctx, A.ch.x(iS), A.ch.y(RUNUP.k[iS].h) - 16, { alpha: s1, color: C.green, label: '70 · 卖出', pos: 'above', r: 8, font: F.serif(700, 18) });
+      K.marker(ctx, B.ch.x(iB), B.ch.y(RUNDN.k[iB].l) + 16, { alpha: s1, color: C.red, label: '30 · 抄底', pos: 'below', r: 8, font: F.serif(700, 18) });
+      const m1 = S.at(2, .2, 1.0, soft), m2 = S.at(3, .2, 1.0, soft), nA = RUNUP.k.length - 1, nB = RUNDN.k.length - 1;
+      K.arrow(ctx, A.ch.x(iS) + 30, A.ch.y(RUNUP.k[iS].h) - 16, A.ch.x(nA) - 10, A.ch.y(RUNUP.k[nA].h) - 4, { p: m1, color: C.red, alpha: m1 * .9, width: 2 });
+      K.tag(ctx, A.PB.x + 150, A.PB.y + 34, '卖飞了主升浪', { color: C.red, alpha: m1, font: F.serif(700, 19) });
+      K.arrow(ctx, B.ch.x(iB) + 30, B.ch.y(RUNDN.k[iB].l) + 16, B.ch.x(nB) - 10, B.ch.y(RUNDN.k[nB].l) + 4, { p: m2, color: C.green, alpha: m2 * .9, width: 2 });
+      K.tag(ctx, B.PB.x + B.PB.w - 150, B.PB.y + 34, '抄在了半山腰', { color: C.green, alpha: m2, font: F.serif(700, 19) });
+      ctx.restore();
+      const t = S.t - S.beat(5);
+      K.text(ctx, 'DIVERGENCE', 960, 420, { font: F.latin(500, 20), color: C.gold, align: 'center', spacing: 14, alpha: S.at(5, 0, 1.2, soft) });
+      riseText(ctx, '背离', 960, 560, 110, t + .1, { spacing: 40, stagger: .2, dur: 1.2 });
+      K.rule(ctx, 960, 620, 300, S.at(5, .5, 1.2, soft));
+    } },
+
+  /* ================= 0 … 100 · 50 · 70 · 30 ================= */
+  { id: 'basics', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.03, y1: -6 }, lines: L('basics'),
+    visual(ctx, S) {
+      const B = { x: 380, y: 270, w: 1160, h: 500 }, n = DEMO.r14.length;
+      const z7 = S.at(3, .1, 1.0, soft), z3 = S.at(4, .1, 1.0, soft), md = S.at(2, .1, 1.0, soft);
+      const y = rsiPane(ctx, B, { a: soft(S.t / 1.2), z70: z7, z30: z3, mid: md, ls: 19, name: 0 });
+      const P = DEMO.r14.map((v, i) => [B.x + i * B.w / (n - 1), y(v)]);
+      poly(ctx, P, clamp((S.t - .4) / (S.dur - 2)), { head: 1, width: 3 });
+      const e = S.at(1, .1, 1.0, soft);
+      K.text(ctx, '100', B.x - 16, B.y + 14, { font: F.mono(19), color: C.goldHi, align: 'right', alpha: e });
+      K.text(ctx, '0', B.x - 16, B.y + B.h, { font: F.mono(19), color: C.goldHi, align: 'right', alpha: e });
+      K.vbrace(ctx, B.x - 92, B.y + 4, B.y + B.h - 4, '', { p: S.at(1, .2, 1.2, soft) });
+      K.text(ctx, '强', B.x + 60, y(50) - 20, { font: F.serif(900, 26), color: C.red, align: 'center', alpha: md });
+      K.text(ctx, '弱', B.x + 60, y(50) + 52, { font: F.serif(900, 26), color: C.green, align: 'center', alpha: md });
+      K.tag(ctx, B.x + B.w - 150, y(50) - 30, '50 · 强弱分水岭', { alpha: md, font: F.serif(700, 19) });
+      K.text(ctx, '超买区', B.x + B.w / 2, y(85) + 16, { font: F.serif(900, 34), color: C.red, align: 'center', spacing: 12, alpha: z7 * .95, glow: .5, glowColor: C.red });
+      K.text(ctx, '超卖区', B.x + B.w / 2, y(15) + 16, { font: F.serif(900, 34), color: C.green, align: 'center', spacing: 12, alpha: z3 * .95, glow: .5, glowColor: C.green });
+    } },
+
+  /* ================= 参数 6 / 12 / 24 · 14 · 9 ================= */
+  { id: 'params', header: HD, tr: ['push', 1], camera: { z0: 1.0, z1: 1.03 }, lines: L('params'),
+    visual(ctx, S) {
+      const B = { x: 300, y: 430, w: 1320, h: 350 }, n = DEMO.r14.length, X = i => B.x + i * B.w / (n - 1);
+      const y = rsiPane(ctx, B, { a: soft(S.t / 1.2), z70: .3, z30: .3, name: 0 });
+      const P = r => r.map((v, i) => [X(i), y(v)]), rev = clamp((S.t - .3) / 2.4);
+      const w = S.at(1, .1, 1.0, soft), s = S.at(2, .1, 1.0, soft), d0 = 1 - .7 * w;
+      poly(ctx, P(DEMO.r6), rev, { color: C.white, width: 1.6, alpha: .8 * d0, glow: .2 });
+      poly(ctx, P(DEMO.r24), rev, { color: C.gray, width: 1.6, alpha: .9 * d0, glow: .2 });
+      poly(ctx, P(DEMO.r14), Math.max(rev * (1 - w), S.at(1, .2, 1.8, soft)), { color: C.goldHi, width: lerp(1.8, 3.4, w), alpha: lerp(.85, 1, w) });
+      poly(ctx, P(DEMO.r9), S.at(2, .2, 1.8, soft), { color: '#FFFFFF', width: 2.6, alpha: s });
+      // three default periods, then the two picks
+      [['6', C.white], ['12', C.goldHi], ['24', C.gray]].forEach(([p, col], i) => {
+        const a = S.at(0, .2 + i * .25, .9, soft), x = 380 + i * 170;
+        card(ctx, x - 70, 262, 140, 120, a * (1 - .55 * w));
+        K.text(ctx, p, x, 334, { font: F.latin(600, 38), color: col, align: 'center', alpha: a * (1 - .55 * w) });
+        K.text(ctx, '日', x + 46, 366, { font: F.serif(500, 13), color: C.gray, align: 'center', alpha: a * (1 - .55 * w) });
+      });
+      K.text(ctx, '软件默认', 380 + 170, 250, { font: F.serif(500, 14), color: C.gray, align: 'center', spacing: 6, alpha: S.at(0, .3, 1, soft) * (1 - .55 * w) });
+      card(ctx, 900, 262, 340, 120, w, w * (1 - s * .6));
+      K.text(ctx, '波段', 936, 336, { font: F.serif(700, 21), color: C.white, alpha: w });
+      K.text(ctx, '12 / 14 日', 1212, 338, { font: F.latin(600, 30), color: C.goldHi, align: 'right', alpha: w, glow: .5 });
+      card(ctx, 1280, 262, 340, 120, s, s);
+      K.text(ctx, '短线', 1316, 336, { font: F.serif(700, 21), color: C.white, alpha: s });
+      K.text(ctx, '9 日', 1592, 338, { font: F.latin(600, 30), color: '#FFFFFF', align: 'right', alpha: s, glow: .5 });
+      note(ctx, '怀尔德原书用 14 日 · 曲线为示意', B.x + B.w, B.y - 12, S.at(1, .6, 1, soft));
+      K.text(ctx, '参数越小越灵敏，也越容易来回打脸', B.x + B.w / 2, B.y + B.h + 44, { font: F.serif(500, 17), color: C.gray, align: 'center', spacing: 3, alpha: S.at(3, .1, 1, soft) });
+    } },
+
+  /* ================= 指标钝化 ================= */
+  { id: 'dull', header: HD, tr: ['push', 1], camera: { z0: 1.0, z1: 1.03 }, lines: L('dull'),
+    visual(ctx, S) {
+      const fade = 1 - .8 * S.at(4, .2, 1.2, soft), rev = clamp((S.t - .3) / (S.beat(2) + .6));
+      ctx.save(); ctx.globalAlpha *= fade;
+      const A = mini(ctx, 270, 262, 620, RUNUP, rev, { z70: 1 }), B = mini(ctx, 1030, 262, 620, RUNDN, rev, { z30: 1 });
+      note(ctx, '示意', 890, 250, 1); note(ctx, '示意', 1650, 250, 1);
+      const a = S.at(0, .6, 1.0, soft), b = S.at(1, .3, 1.0, soft), d = S.at(2, .1, 1.1, soft);
+      K.tag(ctx, A.PB.x + 150, A.PB.y + 34, '超买 ≠ 马上跌', { color: C.red, alpha: a, font: F.serif(700, 19) });
+      K.tag(ctx, B.PB.x + B.PB.w - 150, B.PB.y + 34, '超卖 ≠ 马上涨', { color: C.green, alpha: b, font: F.serif(700, 19) });
+      K.bracket(ctx, A.ch.x(5), A.ch.x(RUNUP.k.length - 1), A.y(93), '', { p: d, color: C.red });
+      K.bracket(ctx, B.ch.x(5), B.ch.x(RUNDN.k.length - 1), B.y(7), '', { p: d, color: C.green, up: false });
+      K.text(ctx, '高位钝化', A.ch.x(14), A.y(34), { font: F.serif(900, 24), color: C.red, align: 'center', alpha: d, spacing: 6 });
+      K.text(ctx, '低位钝化', B.ch.x(14), B.y(58), { font: F.serif(900, 24), color: C.green, align: 'center', alpha: d, spacing: 6 });
+      ctx.restore();
+      const v = S.at(3, .1, 1.0, soft) * (1 - S.at(4, 0, .8, soft));
+      card(ctx, 660, 440, 600, 110, v, .6);
+      K.text(ctx, '单看数值 · 胜率很低', 960, 508, { font: F.serif(900, 26), color: C.goldHi, align: 'center', spacing: 4, alpha: v });
+      const k = S.at(4, .4, 1.2, soft), cy = 520;
+      K.text(ctx, '股价', 700, cy + 14, { font: F.serif(900, 40), color: C.white, align: 'center', alpha: k });
+      K.text(ctx, 'RSI', 1220, cy + 14, { font: F.latin(600, 44), color: C.goldHi, align: 'center', alpha: k });
+      K.arrow(ctx, 790, cy - 20, 890, cy - 70, { p: k, color: C.white, width: 3 });
+      K.arrow(ctx, 1030, cy - 70, 1130, cy - 20, { p: k, color: C.goldHi, width: 3 });
+      riseText(ctx, '背离', 960, cy + 150, 64, S.t - S.beat(4) - .9, { spacing: 30, stagger: .16, dur: 1.0 });
+      K.text(ctx, '方向相反 · 变盘的预警', 960, cy + 214, { font: F.serif(500, 19), color: C.gray, align: 'center', spacing: 5, alpha: S.at(5, .2, 1, soft) });
+    } },
+
+  /* ================= 四种形态 ================= */
+  { id: 'four', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.03 }, lines: L('four'), post: 1.2,
+    visual(ctx, S) {
+      const cols = [['趋势反转', 'REVERSAL', ['top', 'bottom']], ['趋势延续', 'CONTINUATION', ['hbull', 'hbear']]];
+      cols.forEach(([zh, en, ids], c) => {
+        const x = 300 + c * 680, a = soft((S.t - .2 - c * .35) / 1.0);
+        K.text(ctx, zh, x + 20, 286, { font: F.serif(900, 24), color: C.goldHi, alpha: a, spacing: 6 });
+        K.text(ctx, en, x + 620, 284, { font: F.latin(500, 13), color: C.gold, align: 'right', alpha: a, spacing: 5 });
+        ids.forEach((id, r) => {
+          const d = DIV[id], p = soft((S.t - .6 - c * .35 - r * .3) / 1.0), y = 316 + r * 232;
+          card(ctx, x, y + (1 - p) * 14, 640, 208, p);
+          K.text(ctx, d.name, x + 36, y + 76 + (1 - p) * 14, { font: F.serif(900, 25), color: mix(d.col, '#FFFFFF', .2), alpha: p });
+          K.text(ctx, d.rows[0].replace('股价 · ', '股价') + '，' + d.rows[1].replace('RSI · ', 'RSI '), x + 36, y + 150 + (1 - p) * 14, { font: F.serif(500, 14.5), color: C.gray, alpha: p });
+          const gx = x + 440, gy = y + 84, q = soft((S.t - 1.2 - c * .35 - r * .3) / 1.1);
+          K.arrow(ctx, gx, gy + d.dir[0] * 20, gx + 150, gy - d.dir[0] * 20, { p: q, color: C.white, width: 2.6, alpha: p });
+          K.arrow(ctx, gx, gy + 52 + d.dir[1] * 20, gx + 150, gy + 52 - d.dir[1] * 20, { p: q, color: C.goldHi, width: 2.6, alpha: p });
+        });
+      });
+    } },
+
+  divScene('top', ['iris', [760, 420]]),
+  divScene('bottom', ['push', 1]),
+  divScene('hbull', ['push', 1]),
+  divScene('hbear', ['push', 1]),
+
+  /* ================= 左侧预警 · 右侧确认 ================= */
+  { id: 'left', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.03 }, lines: L('left'),
+    visual(ctx, S) {
+      const wp = [[300, 330], [520, 520], [640, 450], [860, 640], [960, 600], [1080, 560], [1250, 430], [1420, 380], [1620, 300]];
+      const P = []; for (let k = 0; k < wp.length - 1; k++) for (let j = 0; j < 14; j++) { const u = j / 14, e = .5 - .5 * Math.cos(Math.PI * u); P.push([lerp(wp[k][0], wp[k + 1][0], u), lerp(wp[k][1], wp[k + 1][1], e) + Math.sin((k * 14 + j) * 1.3) * 5]); }
+      P.push(wp[wp.length - 1]);
+      K.dotted(ctx, P, clamp((S.t - .2) / (S.beat(3) + 1.2)), { gap: 8, r: 2.4, color: C.white });
+      const lv = S.at(2, .1, 1.2, soft);
+      K.dash(ctx, 300, 330, 1500, 570, { p: lv, color: C.gold, width: 1.6 });                       // the falling line it has to clear
+      K.text(ctx, '下降趋势线 / 关键价位', 700, 392, { font: F.serif(500, 16), color: C.gold, alpha: lv, spacing: 2 });
+      const a = S.at(1, .1, 1.0, soft), b = S.at(3, .1, 1.0, soft);
+      K.marker(ctx, 860, 644, { alpha: a, color: C.goldHi, r: 12, pulse: (S.t * .6) % 1 });
+      card(ctx, 620, 676, 480, 110, a, a * (1 - b));
+      K.text(ctx, '左侧 · 预警', 656, 744, { font: F.serif(900, 25), color: C.goldHi, alpha: a });
+      K.text(ctx, '背离出现', 1066, 742, { font: F.serif(500, 18), color: C.gray, align: 'right', alpha: a });
+      K.marker(ctx, 1112, 536, { alpha: b, color: C.red, r: 12, pulse: (S.t * .6 + .5) % 1 });
+      card(ctx, 1180, 596, 480, 110, b, b);
+      K.text(ctx, '右侧 · 确认', 1216, 664, { font: F.serif(900, 25), color: mix(C.red, '#FFFFFF', .25), alpha: b });
+      K.text(ctx, '突破 / 破位', 1626, 662, { font: F.serif(500, 18), color: C.gray, align: 'right', alpha: b });
+      ring(ctx, 1112, 536, S.lin(3, .1, 1.6), C.red);
+      note(ctx, '示意', 1660, 262, soft(S.t / 1.2));
+    } },
+
+  /* ================= 三大战法 ================= */
+  { id: 'tactics', header: HD, tr: ['push', 1], camera: { z0: 1.0, z1: 1.03 }, lines: L('tactics'),
+    visual(ctx, S) {
+      const T = [['壹', '背离 + 关键价位', '双重确认', 0], ['贰', '大周期 + 小周期', '周期共振', 1], ['叁', '双周期背离 + 20 日线', '波段共振', 3]];
+      T.forEach(([num, zh, sub, li], i) => {
+        const x = 280 + i * 470, y = 270, w = 420, h = 500, p = S.at(li, .05, 1.1, soft), nx = i < 2 ? S.at(T[i + 1][3], 0, 1, soft) : 0;
+        card(ctx, x, y + (1 - p) * 18, w, h, p, p * (1 - nx));
+        K.goldText(ctx, num, x + 70, y + 106, 54, { alpha: p });
+        K.text(ctx, zh, x + w / 2, y + 404, { font: F.serif(900, 21), color: C.white, align: 'center', alpha: p });
+        K.text(ctx, sub, x + w / 2, y + 454, { font: F.serif(500, 16), color: C.gold, align: 'center', spacing: 6, alpha: p });
+        const q = S.at(li, .5, 1.4, soft), ox = x + 60, oy = y + 150;               // a line-art icon, 300 × 180
+        if (i === 0) {
+          K.dash(ctx, ox, oy + 70, ox + 300, oy + 70, { color: C.gold, alpha: p, width: 1.6 });
+          poly(ctx, [[ox, oy + 120], [ox + 60, oy + 160], [ox + 110, oy + 120], [ox + 160, oy + 150], [ox + 215, oy + 70], [ox + 300, oy + 14]], q, { color: C.white, width: 2.6, glow: .3 });
+          K.marker(ctx, ox + 215, oy + 70, { alpha: S.at(li, 1.3, .8, soft), color: C.red, r: 10 });
+        } else if (i === 1) {
+          ctx.save(); ctx.globalAlpha *= p; ctx.strokeStyle = rgba(C.gold, .7); ctx.lineWidth = 1.4; ctx.strokeRect(ox, oy, 300, 180); ctx.strokeRect(ox + 150, oy + 76, 120, 84); ctx.restore();
+          poly(ctx, [[ox + 14, oy + 150], [ox + 80, oy + 96], [ox + 130, oy + 122], [ox + 286, oy + 22]], q, { color: C.goldHi, width: 2.6 });
+          poly(ctx, [[ox + 158, oy + 150], [ox + 186, oy + 118], [ox + 206, oy + 136], [ox + 262, oy + 86]], S.at(li + 1, .2, 1.2, soft), { color: C.white, width: 2.2, glow: .3 });
+          K.text(ctx, '周线', ox + 10, oy + 26, { font: F.serif(500, 13), color: C.gold, alpha: p });
+          K.text(ctx, '日线', ox + 158, oy + 70, { font: F.serif(500, 13), color: C.white, alpha: S.at(li + 1, .2, 1, soft) });
+        } else {
+          poly(ctx, [[ox, oy + 40], [ox + 70, oy + 130], [ox + 120, oy + 96], [ox + 180, oy + 166], [ox + 236, oy + 80], [ox + 300, oy + 20]], q, { color: C.white, width: 2.6, glow: .3 });
+          poly(ctx, [[ox, oy + 10], [ox + 90, oy + 76], [ox + 180, oy + 116], [ox + 236, oy + 106], [ox + 300, oy + 80]], S.at(li + 1, .1, 1.3, soft), { color: '#E8B04A', width: 2 });
+          K.text(ctx, 'MA20', ox + 300, oy + 112, { font: F.latin(600, 13), color: '#E8B04A', align: 'right', alpha: S.at(li + 1, .6, 1, soft) });
+          K.marker(ctx, ox + 228, oy + 96, { alpha: S.at(li + 1, 1.0, .8, soft), color: C.red, r: 10 });
+        }
+      });
+    } },
+
+  /* ================= 上证指数 2024 年初 ================= */
+  { id: 'case1', header: HD, tr: ['iris', [960, 520]], camera: { z0: 1.0, z1: 1.02 }, lines: L('case1'),
+    visual(ctx, S) {
+      shChart(ctx, { rev: lerp(0, I['01-19'] + 1, clamp((S.t - .3) / (S.dur - 1.4))), a: soft(S.t / 1.0) });
+      const a = S.at(1, .4, 1.0, soft);
+      K.arrow(ctx, SCH.x(16), SCH.y(3110), SCH.x(50), SCH.y(2950), { p: a, color: C.green, alpha: a * .9, width: 2.4 });
+      K.tag(ctx, SCH.x(40), SCH.y(3070), '连续数月走低', { color: C.green, alpha: a, font: F.serif(700, 18) });
+    } },
+  { id: 'case2', header: HD, tr: 'dissolve', camera: { z0: 1.02, z1: 1.05, x1: -30, y1: -8 }, lines: L('case2'),
+    visual(ctx, S) {
+      const i1 = I['01-23'], i2 = I['02-05'], r1 = I['01-22'];
+      const rev = lerp(I['01-19'] + 1, i1 + 3, S.at(0, 0, 1.6, soft)) + (i2 + 1 - i1 - 3) * S.at(1, -.2, 1.8, soft);
+      const y = shChart(ctx, { rev });
+      const a = S.at(0, 1.0, .9, soft), b = S.at(1, 1.2, .9, soft);
+      K.marker(ctx, SCH.x(i1), SCH.y(SHK[i1].l) + 14, { alpha: a, color: C.white, r: 8, label: '2724', pos: 'left', font: F.latin(600, 20) });
+      K.marker(ctx, SCH.x(i2), SCH.y(SHK[i2].l) + 14, { alpha: b, color: C.white, r: 8, label: '2635', pos: 'right', font: F.latin(600, 20) });
+      K.dash(ctx, SCH.x(i1), SCH.y(SHK[i1].l) + 14, SCH.x(i2), SCH.y(SHK[i2].l) + 14, { p: S.at(2, .1, 1.2, soft), color: C.white, width: 2.4, dash: [8, 6] });
+      K.text(ctx, '价格 · 新低', SCH.x(i2) + 34, SCH.y(SHK[i2].l) - 30, { font: F.serif(700, 18), color: C.white, alpha: S.at(2, .5, 1, soft) });
+      const q = S.at(3, .1, 1.0, soft), q2 = S.at(4, .1, 1.2, soft);
+      K.marker(ctx, SCH.x(r1), y(SHR[r1]), { alpha: q, r: 8, label: SHR[r1].toFixed(1), pos: 'left', font: F.latin(600, 18) });
+      K.marker(ctx, SCH.x(i2), y(SHR[i2]), { alpha: q2, r: 8, label: SHR[i2].toFixed(1), pos: 'right', font: F.latin(600, 18) });
+      K.dash(ctx, SCH.x(r1), y(SHR[r1]) + 12, SCH.x(i2), y(SHR[i2]) + 12, { p: q2, color: C.goldHi, width: 2.4, dash: [8, 6] });
+      K.text(ctx, 'RSI · 低点抬高', SCH.x(i2) + 70, y(SHR[i2]) + 40, { font: F.serif(700, 18), color: C.goldHi, alpha: q2 });
+      const v = S.at(5, .1, 1.1, soft);
+      card(ctx, 1290, 300, 360, 104, v, 1);
+      K.text(ctx, '日线 · 底背离', 1470, 364, { font: F.serif(900, 26), color: C.goldHi, align: 'center', alpha: v, spacing: 3 });
+      ring(ctx, SCH.x(i2), SCH.y(SHK[i2].l), S.lin(5, .1, 1.6), C.goldHi);
+    } },
+  { id: 'case3', header: HD, tr: 'dissolve', camera: { z0: 1.05, z1: 1.03, x0: -30, x1: -34, y0: -8, y1: -8 }, lines: L('case3'),
+    visual(ctx, S) {
+      const i2 = I['02-05'], i6 = I['02-06'], i8 = I['02-08'], i19 = I['02-19'];
+      const rev = i2 + 1 + S.at(2, 0, 1.0, soft) + (i8 - i6) * S.at(3, 0, 1.4, soft) + (i19 + 3 - i8) * S.at(4, 0, 1.6, soft);
+      const hot = S.at(2, .2, .8, soft) * (1 - S.at(3, .2, .8, soft));
+      shChart(ctx, { rev, ma: S.at(3, -.6, 1.6, soft), hot: i6, hotA: hot });
+      const w = S.at(0, .3, 1.0, soft) * (1 - S.at(2, 0, .8, soft));
+      K.tag(ctx, SCH.x(i2) + 150, SCH.y(2660), '左侧抄底 · 仍可能再跌', { color: C.green, alpha: w, font: F.serif(700, 18) });
+      const a = S.at(2, .5, .9, soft);
+      K.marker(ctx, SCH.x(i6), SCH.y(SHK[i6].h) - 12, { alpha: a, color: C.red, r: 8 });
+      K.text(ctx, '① 2 月 6 日 · 放量阳线 +3.2%', 320, 462, { font: F.serif(700, 18), color: mix(C.red, '#FFFFFF', .3), alpha: a });
+      const b = S.at(3, .7, .9, soft);
+      K.marker(ctx, SCH.x(i8), SCH.y(SHM[i8]), { alpha: b, color: '#E8B04A', r: 8 });
+      K.text(ctx, '② 站上 20 日均线', 320, 510, { font: F.serif(700, 18), color: '#E8B04A', alpha: b });
+      const c = S.at(4, .2, 1.4, soft), ia = I['11-21'], ib = Math.min(SHK.length - 1, i19 + 6);
+      K.dash(ctx, SCH.x(ia), SCH.y(TL(ia)), SCH.x(ib), SCH.y(TL(ib)), { p: c, color: C.white, width: 1.8, dash: [10, 7] });
+      const d = S.at(4, 1.2, .9, soft);
+      K.marker(ctx, SCH.x(i19), SCH.y(TL(i19)), { alpha: d, color: C.white, r: 8 });
+      K.text(ctx, '③ 突破下降趋势线', 320, 558, { font: F.serif(700, 18), color: C.white, alpha: d });
+      ring(ctx, SCH.x(i19), SCH.y(TL(i19)), S.lin(4, 1.2, 1.6), C.red);
+    } },
+  { id: 'case4', header: HD, tr: 'dissolve', camera: { z0: 1.03, z1: 1.0, x0: -34, x1: 0, y0: -8, y1: 0 }, lines: L('case4'),
+    visual(ctx, S) {
+      const i19 = I['02-19'], n = SHK.length, ia = I['11-21'], i2 = I['02-05'], iH = I['03-21'];
+      shChart(ctx, { rev: lerp(i19 + 3, n, S.at(0, 0, S.beat(3) + 1 - S.beat(0), soft)), ma: 1 });
+      K.dash(ctx, SCH.x(ia), SCH.y(TL(ia)), SCH.x(i19 + 6), SCH.y(TL(i19 + 6)), { color: C.white, width: 1.8, dash: [10, 7], alpha: .7 });
+      ['底背离', '放量阳线', '突破趋势线'].forEach((s, i) => {
+        const p = S.at(0, .2 + i * .9, .9, soft), hi = S.at(1, 0, 1, soft);
+        K.tag(ctx, 400 + i * 230, 520, s, { color: mix(C.gold, C.red, hi), alpha: p, font: F.serif(700, 19) });
+        if (i) K.text(ctx, '+', 285 + i * 230, 528, { font: F.latin(600, 22), color: C.gold, align: 'center', alpha: p });
+      });
+      const v = S.at(4, .2, 1.4, soft), x = SCH.x(iH) + 34;
+      K.dash(ctx, SCH.x(i2), SCH.y(SHK[i2].l), x, SCH.y(SHK[i2].l), { p: v, color: C.gold, width: 1.2, dash: [4, 6] });
+      K.dash(ctx, SCH.x(iH), SCH.y(SHK[iH].h), x, SCH.y(SHK[iH].h), { p: v, color: C.gold, width: 1.2, dash: [4, 6] });
+      K.arrow(ctx, x, SCH.y(SHK[i2].l), x, SCH.y(SHK[iH].h) + 4, { p: v, color: C.red, width: 2.6 });
+      const t = S.at(4, .9, 1.0, soft);
+      K.text(ctx, '2635 → 3090', 1560, 470, { font: F.latin(600, 20), color: C.white, align: 'right', alpha: t, spacing: 1 });
+      K.text(ctx, '+455 点', 1560, 524, { font: F.serif(900, 30), color: C.red, align: 'right', alpha: t, glow: .6, glowColor: C.red });
+      note(ctx, '历史个案 · 不代表未来表现', 300, 470, S.at(3, .3, 1, soft), 'left');
+    } },
+
+  /* ================= 口诀 ================= */
+  { id: 'recap', header: HD, tr: 'dissolve', camera: { z0: 1.0, z1: 1.025 }, lines: L('recap'), post: 2.4,
+    visual(ctx, S) {
+      const a = soft(S.t / 1.2);
+      card(ctx, 260, 240, 1400, 580, a, .3);
+      K.text(ctx, 'RSI 背离速查', 320, 306, { font: F.serif(900, 24), color: C.goldHi, alpha: a, spacing: 6 });
+      note(ctx, '建议截图保存', 1600, 304, a);
+      K.line(ctx, 320, 326, 1600, 326, { p: a, color: rgba(C.gold, .5) });
+      [['top', '动能衰竭，考虑减仓'], ['bottom', '抛压衰竭，关注买点'], ['hbull', '多为洗盘，趋势延续'], ['hbear', '弱势反抽，不接飞刀']].forEach(([id, v], i) => {
+        const d = DIV[id], p = soft((S.t - .5 - i * .28) / .9), y = 378 + i * 54;
+        K.text(ctx, d.name, 320, y, { font: F.serif(900, 19), color: mix(d.col, '#FFFFFF', .2), alpha: p });
+        K.text(ctx, d.rows[0].replace(' · ', '') + '，' + d.rows[1].replace(' · ', ' '), 620, y, { font: F.serif(500, 17), color: C.white, alpha: p });
+        K.text(ctx, v, 1600, y, { font: F.serif(500, 17), color: C.gray, align: 'right', alpha: p });
+      });
+      const c = soft((S.t - 1.8) / 1.0);
+      K.line(ctx, 320, 572, 1600, 572, { p: c, color: rgba(C.gold, .3) });
+      K.text(ctx, '买入确认', 320, 622, { font: F.serif(900, 19), color: mix(C.red, '#FFFFFF', .2), alpha: c });
+      K.text(ctx, '底背离预警 + 放量阳线 + 突破下降趋势线 / 20 日均线', 620, 622, { font: F.serif(500, 17), color: C.white, alpha: c });
+      K.text(ctx, '卖出确认', 320, 676, { font: F.serif(900, 19), color: mix(C.green, '#FFFFFF', .2), alpha: c });
+      K.text(ctx, '顶背离预警 + 放量阴线跌破上升趋势线 / 20 日均线', 620, 676, { font: F.serif(500, 17), color: C.white, alpha: c });
+      const m1 = S.at(1, .1, 1.2, soft), m2 = S.at(2, .1, 1.2, soft);
+      K.line(ctx, 320, 706, 1600, 706, { p: m1, color: rgba(C.gold, .5) });
+      K.goldText(ctx, '背离看动能，量价辨真假；', 640, 778 + (1 - m1) * 10, 25, { alpha: m1, spacing: 3 });
+      K.goldText(ctx, '不破趋势不抄底，跌破均线不恋战。', 1220, 778 + (1 - m2) * 10, 25, { alpha: m2, spacing: 3 });
+    } },
+
+  /* ================= END ================= */
+  { id: 'end', dur: 5.0, tr: 'dissolve', noWatermark: true,
+    visual(ctx, S) {
+      const a = S.p(.3, 1.4, soft);
+      ctx.save(); ctx.translate(960, 470); const z = lerp(.95, 1, soft(S.t / 2.6)); ctx.scale(z, z);
+      const Lg = document.getElementById('logo'), lw = 760, lh = lw * Lg.naturalHeight / Lg.naturalWidth;   // the channel's own logo
+      ctx.globalAlpha = a; ctx.shadowColor = rgba(C.goldHi, .35); ctx.shadowBlur = 40;
+      ctx.drawImage(Lg, -lw / 2, -lh / 2, lw, lh); ctx.shadowBlur = 0;
+      const sw = soft((S.t - 1.0) / 1.8);
+      if (sw > 0 && sw < 1) {
+        ctx.save(); ctx.beginPath(); ctx.rect(-lw / 2, -lh / 2, lw, lh); ctx.clip(); ctx.globalCompositeOperation = 'lighter';
+        const x = lerp(-lw / 2 - 120, lw / 2 + 120, sw), g = ctx.createLinearGradient(x - 90, 0, x + 90, 0);
+        g.addColorStop(0, 'rgba(255,236,190,0)'); g.addColorStop(.5, 'rgba(255,236,190,.22)'); g.addColorStop(1, 'rgba(255,236,190,0)');
+        ctx.fillStyle = g; ctx.fillRect(x - 90, -lh / 2, 180, lh); ctx.restore();
+      }
+      ctx.restore();
+      K.rule(ctx, 960, 560, 340, S.p(.8, 1.4, soft));
+      K.text(ctx, 'RSI背离实战', 960, 625, { font: F.serif(700, 28), color: C.white, align: 'center', spacing: 6, alpha: S.p(1.1, 1.2, soft) });
+      K.text(ctx, '内容仅供学习交流，不构成任何投资建议。市场有风险，投资需谨慎。', 960, 940, { font: F.serif(500, 19), color: C.gray, align: 'center', spacing: 2, alpha: S.p(1.5, 1.2, soft) });
+    } },
+  ],
+};
+})();
