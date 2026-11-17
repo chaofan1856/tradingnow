@@ -4,3 +4,4 @@ voice/*.wav
 voice/ref.wav
 bgm.wav
 voice/gen.log
+render*.log
